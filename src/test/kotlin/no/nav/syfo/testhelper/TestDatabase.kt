@@ -28,7 +28,14 @@ class TestDatabase : DatabaseInterface {
 }
 
 fun DatabaseInterface.dropData() {
-    val queryList = emptyList<String>()
+    val queryList = listOf(
+        """
+            DELETE FROM HUSKELAPP_VERSJON
+        """.trimIndent(),
+        """
+            DELETE FROM HUSKELAPP
+        """.trimIndent(),
+    )
     this.connection.use { connection ->
         queryList.forEach { query ->
             connection.prepareStatement(query).execute()

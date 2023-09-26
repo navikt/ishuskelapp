@@ -12,6 +12,7 @@ import no.nav.syfo.application.database.DatabaseInterface
 import no.nav.syfo.application.metric.registerMetricApi
 import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.client.wellknown.WellKnown
+import no.nav.syfo.huskelapp.api.registerHuskelappApi
 
 fun Application.apiModule(
     applicationState: ApplicationState,
@@ -37,9 +38,13 @@ fun Application.apiModule(
     routing {
         registerPodApi(
             applicationState = applicationState,
-            database = database
+            database = database,
         )
         registerMetricApi()
-//        authenticate(JwtIssuerType.INTERNAL_AZUREAD.name) {}
+        authenticate(JwtIssuerType.INTERNAL_AZUREAD.name) {
+            registerHuskelappApi(
+                veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+            )
+        }
     }
 }
