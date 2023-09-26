@@ -40,8 +40,6 @@ fun Application.apiModule(
             database = database
         )
         registerMetricApi()
-        authenticate(JwtIssuerType.INTERNAL_AZUREAD.name) {
-            TODO()
-        }
+//        authenticate(JwtIssuerType.INTERNAL_AZUREAD.name) {}
     }
 }
