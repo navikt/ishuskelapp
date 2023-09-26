@@ -8,6 +8,7 @@ import io.ktor.server.routing.*
 import no.nav.syfo.application.api.VeilederTilgangskontrollPlugin
 import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.domain.PersonIdent
+import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
 import no.nav.syfo.util.getNAVIdent
 import no.nav.syfo.util.getPersonIdent
@@ -18,6 +19,7 @@ private const val API_ACTION = "access huskelapp for person"
 
 fun Route.registerHuskelappApi(
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
+    huskelappService: HuskelappService,
 ) {
     route(huskelappApiBasePath) {
         install(VeilederTilgangskontrollPlugin) {
@@ -27,7 +29,19 @@ fun Route.registerHuskelappApi(
         get {
             val personIdent = call.personIdent()
 
-            call.respond(HttpStatusCode.OK)
+            val huskelapp = huskelappService.getHuskelapp(personIdent)
+
+            if (huskelapp == null) {
+                call.respond(HttpStatusCode.NoContent)
+            } else {
+                val responseDTO = HuskelappResponseDTO(
+                    veilederIdent = huskelapp.veilederIdent,
+                    updatedAt = huskelapp.updatedAt,
+                    tekst = huskelapp.tekst,
+                )
+
+                call.respond(responseDTO)
+            }
         }
 
         post {
@@ -35,7 +49,13 @@ fun Route.registerHuskelappApi(
             val requestDTO = call.receive<HuskelappRequestDTO>()
             val veilederIdent = call.getNAVIdent()
 
-            call.respond(HttpStatusCode.OK)
+            huskelappService.createHuskelapp(
+                personIdent = personIdent,
+                veilederIdent = veilederIdent,
+                tekst = requestDTO.tekst,
+            )
+
+            call.respond(HttpStatusCode.Created)
         }
     }
 }

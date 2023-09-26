@@ -8,6 +8,6 @@ data class HuskelappRequestDTO(
 
 data class HuskelappResponseDTO(
     val veilederIdent: String,
-    val createdAt: OffsetDateTime,
+    val updatedAt: OffsetDateTime,
     val tekst: String,
 )
