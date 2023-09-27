@@ -1,6 +1,7 @@
 package no.nav.syfo.huskelapp.api
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import no.nav.syfo.testhelper.*
@@ -42,7 +43,7 @@ class HuskelappApiSpek : Spek({
                                 addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
                             }
                         ) {
-                            response.status() shouldBeEqualTo HttpStatusCode.OK
+                            response.status() shouldBeEqualTo HttpStatusCode.NoContent
                         }
                     }
 
@@ -76,7 +77,21 @@ class HuskelappApiSpek : Spek({
                                     setBody(objectMapper.writeValueAsString(requestDTO))
                                 }
                             ) {
+                                response.status() shouldBeEqualTo HttpStatusCode.Created
+                            }
+
+                            with(
+                                handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                                    addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                    addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                                }
+                            ) {
                                 response.status() shouldBeEqualTo HttpStatusCode.OK
+                                val responseDTO =
+                                    objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
+
+                                responseDTO.tekst shouldBeEqualTo requestDTO.tekst
+                                responseDTO.veilederIdent shouldBeEqualTo UserConstants.VEILEDER_IDENT
                             }
                         }
                     }

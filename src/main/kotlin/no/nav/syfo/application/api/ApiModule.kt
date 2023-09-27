@@ -12,6 +12,7 @@ import no.nav.syfo.application.database.DatabaseInterface
 import no.nav.syfo.application.metric.registerMetricApi
 import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.client.wellknown.WellKnown
+import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.huskelapp.api.registerHuskelappApi
 
 fun Application.apiModule(
@@ -20,6 +21,7 @@ fun Application.apiModule(
     environment: Environment,
     wellKnownInternalAzureAD: WellKnown,
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
+    huskelappService: HuskelappService,
 ) {
     installMetrics()
     installCallId()
@@ -44,6 +46,7 @@ fun Application.apiModule(
         authenticate(JwtIssuerType.INTERNAL_AZUREAD.name) {
             registerHuskelappApi(
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+                huskelappService = huskelappService,
             )
         }
     }

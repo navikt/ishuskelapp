@@ -13,6 +13,8 @@ import no.nav.syfo.application.database.databaseModule
 import no.nav.syfo.client.azuread.AzureAdClient
 import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.client.wellknown.getWellKnown
+import no.nav.syfo.huskelapp.HuskelappService
+import no.nav.syfo.huskelapp.database.HuskelappRepository
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
@@ -43,12 +45,19 @@ fun main() {
             databaseModule(
                 databaseEnvironment = environment.database,
             )
+            val huskelappRepository = HuskelappRepository(
+                database = applicationDatabase,
+            )
+            val huskelappService = HuskelappService(
+                huskelappRepository = huskelappRepository,
+            )
             apiModule(
                 applicationState = applicationState,
                 database = applicationDatabase,
                 environment = environment,
                 wellKnownInternalAzureAD = wellKnownInternalAzureAD,
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+                huskelappService = huskelappService,
             )
         }
     }
