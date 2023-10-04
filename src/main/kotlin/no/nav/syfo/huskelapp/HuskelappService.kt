@@ -38,4 +38,12 @@ class HuskelappService(
             )
         }
     }
+
+    fun getUnpublishedHuskelapper(): List<Huskelapp> {
+        return emptyList() // TODO: Implement
+    }
+
+    fun setPublished(huskelapp: Huskelapp) {
+        TODO()
+    }
 }

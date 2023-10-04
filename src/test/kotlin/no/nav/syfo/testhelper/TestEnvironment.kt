@@ -29,6 +29,7 @@ fun testEnvironment() = Environment(
         aivenSecurityProtocol = "SSL",
         aivenTruststoreLocation = "truststore",
     ),
+    electorPath = "electorPath",
     clients = ClientsEnvironment(
         istilgangskontroll = ClientEnvironment(
             baseUrl = "istilgangskontrollUrl",
