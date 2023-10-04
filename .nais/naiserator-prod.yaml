@@ -27,6 +27,7 @@ spec:
     periodSeconds: 5
     timeout: 5
     failureThreshold: 3
+  leaderElection: true
   prometheus:
     enabled: true
     path: /internal/metrics

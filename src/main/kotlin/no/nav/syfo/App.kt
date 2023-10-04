@@ -8,6 +8,7 @@ import io.ktor.server.netty.*
 import no.nav.syfo.application.ApplicationState
 import no.nav.syfo.application.Environment
 import no.nav.syfo.application.api.apiModule
+import no.nav.syfo.application.cronjob.cronjobModule
 import no.nav.syfo.application.database.applicationDatabase
 import no.nav.syfo.application.database.databaseModule
 import no.nav.syfo.client.azuread.AzureAdClient
@@ -65,6 +66,12 @@ fun main() {
                 wellKnownInternalAzureAD = wellKnownInternalAzureAD,
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
                 huskelappService = huskelappService,
+            )
+            cronjobModule(
+                applicationState = applicationState,
+                environment = environment,
+                huskelappService = huskelappService,
+                huskelappProducer = huskelappProducer,
             )
         }
     }
