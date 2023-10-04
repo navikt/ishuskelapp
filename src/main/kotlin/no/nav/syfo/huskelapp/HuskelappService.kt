@@ -5,7 +5,7 @@ import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.domain.Huskelapp
 
 class HuskelappService(
-    val huskelappRepository: HuskelappRepository
+    private val huskelappRepository: HuskelappRepository,
 ) {
     fun getHuskelapp(personIdent: PersonIdent): Huskelapp? {
         val huskelapp = huskelappRepository.getHuskelapper(personIdent).firstOrNull()

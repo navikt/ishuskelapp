@@ -15,6 +15,8 @@ import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.client.wellknown.getWellKnown
 import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.huskelapp.database.HuskelappRepository
+import no.nav.syfo.huskelapp.kafka.HuskelappProducer
+import no.nav.syfo.huskelapp.kafka.huskelappKafkaProducer
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
@@ -33,6 +35,11 @@ fun main() {
     val veilederTilgangskontrollClient = VeilederTilgangskontrollClient(
         azureAdClient = azureAdClient,
         clientEnvironment = environment.clients.istilgangskontroll,
+    )
+    val huskelappProducer = HuskelappProducer(
+        kafkaProducer = huskelappKafkaProducer(
+            kafkaEnvironment = environment.kafka,
+        )
     )
 
     val applicationEngineEnvironment = applicationEngineEnvironment {
