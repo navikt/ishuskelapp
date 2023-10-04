@@ -9,6 +9,7 @@ object Versions {
     const val flyway = "9.20.0"
     const val hikari = "5.0.1"
     const val jacksonDataType = "2.15.2"
+    const val kafka = "3.5.1"
     const val kluent = "1.73"
     const val ktor = "2.3.4"
     const val logback = "1.4.7"
@@ -67,6 +68,12 @@ dependencies {
             }
         }
     }
+
+    // Kafka
+    val excludeLog4j = fun ExternalModuleDependency.() {
+        exclude(group = "log4j")
+    }
+    implementation("org.apache.kafka:kafka_2.13:${Versions.kafka}", excludeLog4j)
 
     // (De-)serialization
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${Versions.jacksonDataType}")

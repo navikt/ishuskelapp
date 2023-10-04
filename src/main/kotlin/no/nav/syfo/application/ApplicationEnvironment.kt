@@ -2,6 +2,7 @@ package no.nav.syfo.application
 
 import io.ktor.server.application.*
 import no.nav.syfo.application.database.DatabaseEnvironment
+import no.nav.syfo.application.kafka.KafkaEnvironment
 import no.nav.syfo.client.ClientEnvironment
 import no.nav.syfo.client.ClientsEnvironment
 import no.nav.syfo.client.azuread.AzureEnvironment
@@ -21,6 +22,13 @@ data class Environment(
         appClientSecret = getEnvVar("AZURE_APP_CLIENT_SECRET"),
         appWellKnownUrl = getEnvVar("AZURE_APP_WELL_KNOWN_URL"),
         openidConfigTokenEndpoint = getEnvVar("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"),
+    ),
+    val kafka: KafkaEnvironment = KafkaEnvironment(
+        aivenBootstrapServers = getEnvVar("KAFKA_BROKERS"),
+        aivenCredstorePassword = getEnvVar("KAFKA_CREDSTORE_PASSWORD"),
+        aivenKeystoreLocation = getEnvVar("KAFKA_KEYSTORE_PATH"),
+        aivenSecurityProtocol = "SSL",
+        aivenTruststoreLocation = getEnvVar("KAFKA_TRUSTSTORE_PATH"),
     ),
     val clients: ClientsEnvironment = ClientsEnvironment(
         istilgangskontroll = ClientEnvironment(
