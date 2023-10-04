@@ -12,6 +12,7 @@ data class PHuskelapp(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val isActive: Boolean,
+    val publishedAt: OffsetDateTime?,
 ) {
     fun toHuskelapp(pHuskelappVersjon: PHuskelappVersjon): Huskelapp {
         return Huskelapp.createFromDatabase(

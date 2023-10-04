@@ -2,18 +2,14 @@ package no.nav.syfo.huskelapp
 
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.database.HuskelappRepository
+import no.nav.syfo.huskelapp.database.PHuskelapp
 import no.nav.syfo.huskelapp.domain.Huskelapp
 
 class HuskelappService(
     private val huskelappRepository: HuskelappRepository,
 ) {
-    fun getHuskelapp(personIdent: PersonIdent): Huskelapp? {
-        val huskelapp = huskelappRepository.getHuskelapper(personIdent).firstOrNull()
-        return huskelapp?.let {
-            val huskelappVersjon = huskelappRepository.getHuskelappVersjoner(it.id).first()
-            it.toHuskelapp(huskelappVersjon)
-        }
-    }
+    fun getHuskelapp(personIdent: PersonIdent): Huskelapp? =
+        huskelappRepository.getHuskelapper(personIdent).firstOrNull()?.toHuskelapp()
 
     fun createHuskelapp(
         personIdent: PersonIdent,
@@ -39,11 +35,12 @@ class HuskelappService(
         }
     }
 
-    fun getUnpublishedHuskelapper(): List<Huskelapp> {
-        return emptyList() // TODO: Implement
-    }
+    fun getUnpublishedHuskelapper(): List<Huskelapp> = huskelappRepository.getUnpublished().map { it.toHuskelapp() }
 
-    fun setPublished(huskelapp: Huskelapp) {
-        TODO()
+    fun setPublished(huskelapp: Huskelapp) = huskelappRepository.setPublished(huskelapp = huskelapp)
+
+    private fun PHuskelapp.toHuskelapp(): Huskelapp {
+        val huskelappVersjon = huskelappRepository.getHuskelappVersjoner(this.id).first()
+        return this.toHuskelapp(huskelappVersjon)
     }
 }
