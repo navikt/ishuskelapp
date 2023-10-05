@@ -8,6 +8,7 @@ import no.nav.syfo.huskelapp.domain.Huskelapp
 import no.nav.syfo.util.nowUTC
 import java.sql.Connection
 import java.sql.ResultSet
+import java.sql.SQLException
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -44,9 +45,13 @@ class HuskelappRepository(
             connection.commit()
         }
     }
+
+    fun getUnpublished(): List<PHuskelapp> = database.getUnpublishedHuskelapper()
+
+    fun setPublished(huskelapp: Huskelapp) = database.setPublished(huskelapp = huskelapp)
 }
 
-const val queryCreateHuskelappVersjon =
+private const val queryCreateHuskelappVersjon =
     """
     INSERT INTO HUSKELAPP_VERSJON (
         id,
@@ -80,7 +85,7 @@ private fun Connection.createHuskelappVersjon(
     return idList.first()
 }
 
-const val queryCreateHuskelapp =
+private const val queryCreateHuskelapp =
     """
     INSERT INTO HUSKELAPP (
         id,
@@ -113,7 +118,7 @@ private fun Connection.createHuskelapp(
     return idList.first()
 }
 
-const val queryGetHuskelapp = """
+private const val queryGetHuskelapp = """
     SELECT *
     FROM HUSKELAPP
     WHERE personident = ?
@@ -129,7 +134,7 @@ private fun DatabaseInterface.getHuskelapper(personIdent: PersonIdent): List<PHu
     }
 }
 
-const val queryGetHuskelappVersjon = """
+private const val queryGetHuskelappVersjon = """
     SELECT *
     FROM HUSKELAPP_VERSJON
     WHERE huskelapp_id = ?
@@ -145,6 +150,42 @@ private fun DatabaseInterface.getHuskelappVersjoner(huskelappId: Int): List<PHus
     }
 }
 
+private const val queryGetUnpublishedHuskelapper = """
+    SELECT * 
+    FROM huskelapp 
+    WHERE published_at IS NULL
+"""
+
+private fun DatabaseInterface.getUnpublishedHuskelapper(): List<PHuskelapp> {
+    return this.connection.use { connection ->
+        connection.prepareStatement(queryGetUnpublishedHuskelapper).use {
+            it.executeQuery().toList { toPHuskelapp() }
+        }
+    }
+}
+
+private const val querySetPublished = """
+    UPDATE huskelapp
+    SET published_at = ?, updated_at = ?
+    WHERE uuid = ?
+"""
+
+private fun DatabaseInterface.setPublished(huskelapp: Huskelapp) {
+    val now = nowUTC()
+    this.connection.use { connection ->
+        connection.prepareStatement(querySetPublished).use {
+            it.setObject(1, now)
+            it.setObject(2, now)
+            it.setString(3, huskelapp.uuid.toString())
+            val updated = it.executeUpdate()
+            if (updated != 1) {
+                throw SQLException("Expected a single row to be updated, got update count $updated")
+            }
+        }
+        connection.commit()
+    }
+}
+
 private fun ResultSet.toPHuskelapp() = PHuskelapp(
     id = getInt("id"),
     uuid = UUID.fromString(getString("uuid")),
@@ -152,6 +193,7 @@ private fun ResultSet.toPHuskelapp() = PHuskelapp(
     createdAt = getObject("created_at", OffsetDateTime::class.java),
     updatedAt = getObject("updated_at", OffsetDateTime::class.java),
     isActive = getBoolean("is_active"),
+    publishedAt = getObject("published_at", OffsetDateTime::class.java),
 )
 
 private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(

@@ -23,7 +23,7 @@ class PublishHuskelappCronjob(
         )
     }
 
-    private fun runJob(): CronjobResult {
+    fun runJob(): CronjobResult {
         val result = CronjobResult()
         val unpublishedHuskelapper = huskelappService.getUnpublishedHuskelapper()
 
