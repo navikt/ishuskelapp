@@ -23,5 +23,5 @@ spec:
       application: ishuskelapp
       access: readwrite
     - team: teamsykefravr
-      application: ispersonoppgave
+      application: syfooversiktsrv
       access: read
