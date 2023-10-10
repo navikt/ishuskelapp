@@ -13,6 +13,7 @@ data class PHuskelapp(
     val updatedAt: OffsetDateTime,
     val isActive: Boolean,
     val publishedAt: OffsetDateTime?,
+    val removedBy: String?,
 ) {
     fun toHuskelapp(pHuskelappVersjon: PHuskelappVersjon): Huskelapp {
         return Huskelapp.createFromDatabase(
@@ -23,6 +24,8 @@ data class PHuskelapp(
             isActive = isActive,
             createdAt = createdAt,
             updatedAt = pHuskelappVersjon.createdAt,
+            publishedAt = publishedAt,
+            removedBy = removedBy,
         )
     }
 }

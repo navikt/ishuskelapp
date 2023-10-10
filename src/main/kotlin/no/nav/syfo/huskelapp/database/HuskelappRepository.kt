@@ -27,7 +27,7 @@ class HuskelappRepository(
         database.connection.use { connection ->
             connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
-                veilederIdent = veilederIdent,
+                createdBy = veilederIdent,
                 tekst = tekst,
             )
             connection.commit()
@@ -39,7 +39,7 @@ class HuskelappRepository(
             val huskelappId = connection.createHuskelapp(huskelapp)
             connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
-                veilederIdent = huskelapp.veilederIdent,
+                createdBy = huskelapp.createdBy,
                 tekst = huskelapp.tekst,
             )
             connection.commit()
@@ -66,14 +66,14 @@ private const val queryCreateHuskelappVersjon =
 
 private fun Connection.createHuskelappVersjon(
     huskelappId: Int,
-    veilederIdent: String,
+    createdBy: String,
     tekst: String,
 ): Int {
     val idList = this.prepareStatement(queryCreateHuskelappVersjon).use {
         it.setString(1, UUID.randomUUID().toString())
         it.setInt(2, huskelappId)
         it.setObject(3, nowUTC())
-        it.setString(4, veilederIdent)
+        it.setString(4, createdBy)
         it.setString(5, tekst)
         it.executeQuery().toList { getInt("id") }
     }
@@ -194,6 +194,7 @@ private fun ResultSet.toPHuskelapp() = PHuskelapp(
     updatedAt = getObject("updated_at", OffsetDateTime::class.java),
     isActive = getBoolean("is_active"),
     publishedAt = getObject("published_at", OffsetDateTime::class.java),
+    removedBy = getString("removed_by"),
 )
 
 private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(

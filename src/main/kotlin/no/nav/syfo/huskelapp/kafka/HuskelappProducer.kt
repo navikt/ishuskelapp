@@ -17,7 +17,7 @@ class HuskelappProducer(
         val kafkaHuskelapp = KafkaHuskelapp(
             uuid = huskelapp.uuid,
             personIdent = huskelapp.personIdent.value,
-            veilederIdent = huskelapp.veilederIdent,
+            veilederIdent = huskelapp.createdBy,
             tekst = huskelapp.tekst,
             isActive = huskelapp.isActive,
             createdAt = huskelapp.createdAt,

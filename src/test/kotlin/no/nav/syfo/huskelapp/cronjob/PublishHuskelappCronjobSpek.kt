@@ -75,7 +75,7 @@ class PublishHuskelappCronjobSpek : Spek({
 
             enKafkaHuskelapp.tekst shouldBeEqualTo enHuskelapp.tekst
             enKafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
-            enKafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.veilederIdent
+            enKafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
             enKafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
 
             huskelappRepository.getHuskelapper(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
