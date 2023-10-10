@@ -49,7 +49,7 @@ class PublishHuskelappCronjobSpek : Spek({
             database.dropData()
         }
 
-        it("publishes unpublished huskelapper") {
+        it("publishes unpublished huskelapper oldest first") {
             val enHuskelapp = Huskelapp.create("En huskelapp", personIdent, veilederIdent)
             val annenHuskelapp = Huskelapp.create("Annen huskelapp", personIdent, veilederIdent)
             listOf(enHuskelapp, annenHuskelapp).forEach {
@@ -68,10 +68,7 @@ class PublishHuskelappCronjobSpek : Spek({
                 kafkaProducer.send(capture(kafkaRecordSlot2))
             }
 
-            val enKafkaHuskelapp = listOf(
-                kafkaRecordSlot1.captured.value(),
-                kafkaRecordSlot2.captured.value()
-            ).first { it.uuid == enHuskelapp.uuid }
+            val enKafkaHuskelapp = kafkaRecordSlot1.captured.value()
 
             enKafkaHuskelapp.tekst shouldBeEqualTo enHuskelapp.tekst
             enKafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value

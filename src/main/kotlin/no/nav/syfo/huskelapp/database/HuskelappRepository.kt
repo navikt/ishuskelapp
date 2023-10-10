@@ -19,6 +19,10 @@ class HuskelappRepository(
         return database.getHuskelapper(personIdent)
     }
 
+    fun getHuskelapp(uuid: UUID): PHuskelapp? {
+        return database.getHuskelapp(uuid)
+    }
+
     fun getHuskelappVersjoner(huskelappId: Int): List<PHuskelappVersjon> {
         return database.getHuskelappVersjoner(huskelappId)
     }
@@ -47,8 +51,8 @@ class HuskelappRepository(
     }
 
     fun getUnpublished(): List<PHuskelapp> = database.getUnpublishedHuskelapper()
-
     fun setPublished(huskelapp: Huskelapp) = database.setPublished(huskelapp = huskelapp)
+    fun updateRemovedHuskelapp(huskelapp: Huskelapp) = database.updateRemovedHuskelapp(huskelapp = huskelapp)
 }
 
 private const val queryCreateHuskelappVersjon =
@@ -118,7 +122,7 @@ private fun Connection.createHuskelapp(
     return idList.first()
 }
 
-private const val queryGetHuskelapp = """
+private const val queryGetHuskelappByPersonIdent = """
     SELECT *
     FROM HUSKELAPP
     WHERE personident = ?
@@ -127,9 +131,24 @@ private const val queryGetHuskelapp = """
 
 private fun DatabaseInterface.getHuskelapper(personIdent: PersonIdent): List<PHuskelapp> {
     return connection.use { connection ->
-        connection.prepareStatement(queryGetHuskelapp).use {
+        connection.prepareStatement(queryGetHuskelappByPersonIdent).use {
             it.setString(1, personIdent.value)
             it.executeQuery().toList { toPHuskelapp() }
+        }
+    }
+}
+
+private const val queryGetHuskelappByUuid = """
+    SELECT *
+    FROM HUSKELAPP
+    WHERE uuid = ?
+"""
+
+private fun DatabaseInterface.getHuskelapp(uuid: UUID): PHuskelapp? {
+    return connection.use { connection ->
+        connection.prepareStatement(queryGetHuskelappByUuid).use {
+            it.setString(1, uuid.toString())
+            it.executeQuery().toList { toPHuskelapp() }.firstOrNull()
         }
     }
 }
@@ -154,6 +173,7 @@ private const val queryGetUnpublishedHuskelapper = """
     SELECT * 
     FROM huskelapp 
     WHERE published_at IS NULL
+    ORDER BY created_at ASC
 """
 
 private fun DatabaseInterface.getUnpublishedHuskelapper(): List<PHuskelapp> {
@@ -177,6 +197,29 @@ private fun DatabaseInterface.setPublished(huskelapp: Huskelapp) {
             it.setObject(1, now)
             it.setObject(2, now)
             it.setString(3, huskelapp.uuid.toString())
+            val updated = it.executeUpdate()
+            if (updated != 1) {
+                throw SQLException("Expected a single row to be updated, got update count $updated")
+            }
+        }
+        connection.commit()
+    }
+}
+
+private const val queryUpdateRemoved = """
+    UPDATE huskelapp
+    SET is_active = ?, removed_by = ?, published_at = ?, updated_at = ?
+    WHERE uuid = ?
+"""
+
+private fun DatabaseInterface.updateRemovedHuskelapp(huskelapp: Huskelapp) {
+    this.connection.use { connection ->
+        connection.prepareStatement(queryUpdateRemoved).use {
+            it.setBoolean(1, huskelapp.isActive)
+            it.setString(2, huskelapp.removedBy)
+            it.setObject(3, huskelapp.publishedAt)
+            it.setObject(4, huskelapp.updatedAt)
+            it.setString(5, huskelapp.uuid.toString())
             val updated = it.executeUpdate()
             if (updated != 1) {
                 throw SQLException("Expected a single row to be updated, got update count $updated")

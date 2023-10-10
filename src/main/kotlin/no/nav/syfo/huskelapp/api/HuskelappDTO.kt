@@ -7,6 +7,7 @@ data class HuskelappRequestDTO(
 )
 
 data class HuskelappResponseDTO(
+    val uuid: String,
     val createdBy: String,
     val updatedAt: OffsetDateTime,
     val tekst: String,
