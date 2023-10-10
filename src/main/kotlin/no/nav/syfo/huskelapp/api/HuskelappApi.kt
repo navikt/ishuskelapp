@@ -35,7 +35,7 @@ fun Route.registerHuskelappApi(
                 call.respond(HttpStatusCode.NoContent)
             } else {
                 val responseDTO = HuskelappResponseDTO(
-                    veilederIdent = huskelapp.veilederIdent,
+                    createdBy = huskelapp.createdBy,
                     updatedAt = huskelapp.updatedAt,
                     tekst = huskelapp.tekst,
                 )

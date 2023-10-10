@@ -91,7 +91,7 @@ class HuskelappApiSpek : Spek({
                                     objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
 
                                 responseDTO.tekst shouldBeEqualTo requestDTO.tekst
-                                responseDTO.veilederIdent shouldBeEqualTo UserConstants.VEILEDER_IDENT
+                                responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
                             }
                         }
                     }
