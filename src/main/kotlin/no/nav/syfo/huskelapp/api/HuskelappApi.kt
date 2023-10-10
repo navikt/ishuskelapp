@@ -12,8 +12,10 @@ import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
 import no.nav.syfo.util.getNAVIdent
 import no.nav.syfo.util.getPersonIdent
+import java.util.*
 
 const val huskelappApiBasePath = "/api/internad/v1/huskelapp"
+const val huskelappParam = "huskelappUuid"
 
 private const val API_ACTION = "access huskelapp for person"
 
@@ -43,7 +45,6 @@ fun Route.registerHuskelappApi(
                 call.respond(responseDTO)
             }
         }
-
         post {
             val personIdent = call.personIdent()
             val requestDTO = call.receive<HuskelappRequestDTO>()
@@ -56,6 +57,18 @@ fun Route.registerHuskelappApi(
             )
 
             call.respond(HttpStatusCode.Created)
+        }
+        delete("/{$huskelappParam}") {
+            val huskelappUuid = UUID.fromString(call.parameters[huskelappParam])
+            val veilederIdent = call.getNAVIdent()
+
+            val huskelapp = huskelappService.getHuskelapp(uuid = huskelappUuid)
+            if (huskelapp == null) {
+                call.respond(HttpStatusCode.NotFound)
+            } else {
+                huskelappService.removeHuskelapp(huskelapp = huskelapp, veilederIdent = veilederIdent)
+                call.respond(HttpStatusCode.NoContent)
+            }
         }
     }
 }

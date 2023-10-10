@@ -4,13 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import no.nav.syfo.huskelapp.database.HuskelappRepository
+import no.nav.syfo.huskelapp.domain.Huskelapp
 import no.nav.syfo.testhelper.*
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
 import no.nav.syfo.util.bearerHeader
 import no.nav.syfo.util.configuredJacksonMapper
 import org.amshove.kluent.shouldBeEqualTo
+import org.amshove.kluent.shouldBeFalse
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.util.*
 
 class HuskelappApiSpek : Spek({
     val objectMapper: ObjectMapper = configuredJacksonMapper()
@@ -22,6 +26,9 @@ class HuskelappApiSpek : Spek({
             val database = externalMockEnvironment.database
             application.testApiModule(
                 externalMockEnvironment = externalMockEnvironment,
+            )
+            val huskelappRepository = HuskelappRepository(
+                database = externalMockEnvironment.database,
             )
 
             afterEachTest {
@@ -35,8 +42,42 @@ class HuskelappApiSpek : Spek({
             )
 
             describe("Get huskelapp for person") {
+                val huskelapp = Huskelapp.create(
+                    tekst = "En huskelapp",
+                    personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
+                    veilederIdent = UserConstants.VEILEDER_IDENT
+                )
+                val inactiveHuskelapp = huskelapp.copy(
+                    uuid = UUID.randomUUID(),
+                    isActive = false
+                )
+
                 describe("Happy path") {
-                    it("OK") {
+                    it("Returns OK if active huskelapp exists") {
+                        huskelappRepository.create(huskelapp = huskelapp)
+
+                        with(
+                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.OK
+                        }
+                    }
+                    it("Returns no content if no huskelapp exists") {
+                        with(
+                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.NoContent
+                        }
+                    }
+                    it("Returns no content if no active huskelapp exists") {
+                        huskelappRepository.create(huskelapp = inactiveHuskelapp)
+
                         with(
                             handleRequest(HttpMethod.Get, huskelappApiBasePath) {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
@@ -62,52 +103,122 @@ class HuskelappApiSpek : Spek({
                         }
                     }
                 }
-
-                describe("Post huskelapp") {
-                    describe("Happy path") {
-                        val requestDTO = HuskelappRequestDTO(
-                            tekst = "Hei",
-                        )
-                        it("OK") {
-                            with(
-                                handleRequest(HttpMethod.Post, huskelappApiBasePath) {
-                                    addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                                    addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
-                                    addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
-                                    setBody(objectMapper.writeValueAsString(requestDTO))
-                                }
-                            ) {
-                                response.status() shouldBeEqualTo HttpStatusCode.Created
+            }
+            describe("Post huskelapp") {
+                describe("Happy path") {
+                    val requestDTO = HuskelappRequestDTO(
+                        tekst = "Hei",
+                    )
+                    it("OK") {
+                        with(
+                            handleRequest(HttpMethod.Post, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                                setBody(objectMapper.writeValueAsString(requestDTO))
                             }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.Created
+                        }
 
-                            with(
-                                handleRequest(HttpMethod.Get, huskelappApiBasePath) {
-                                    addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
-                                    addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
-                                }
-                            ) {
-                                response.status() shouldBeEqualTo HttpStatusCode.OK
-                                val responseDTO =
-                                    objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
-
-                                responseDTO.tekst shouldBeEqualTo requestDTO.tekst
-                                responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
+                        with(
+                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
                             }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.OK
+                            val responseDTO =
+                                objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
+
+                            responseDTO.tekst shouldBeEqualTo requestDTO.tekst
+                            responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
                         }
                     }
-                    describe("Unhappy path") {
-                        it("Returns status Unauthorized if no token is supplied") {
-                            testMissingToken(huskelappApiBasePath, HttpMethod.Post)
+                }
+                describe("Unhappy path") {
+                    it("Returns status Unauthorized if no token is supplied") {
+                        testMissingToken(huskelappApiBasePath, HttpMethod.Post)
+                    }
+                    it("returns status Forbidden if denied access to person") {
+                        testDeniedPersonAccess(huskelappApiBasePath, validToken, HttpMethod.Post)
+                    }
+                    it("returns status BadRequest if no $NAV_PERSONIDENT_HEADER is supplied") {
+                        testMissingPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Post)
+                    }
+                    it("returns status BadRequest if $NAV_PERSONIDENT_HEADER with invalid PersonIdent is supplied") {
+                        testInvalidPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Post)
+                    }
+                }
+            }
+            describe("Delete huskelapp") {
+                val huskelapp = Huskelapp.create(
+                    tekst = "En huskelapp",
+                    personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
+                    veilederIdent = UserConstants.VEILEDER_IDENT
+                )
+                val inactiveHuskelapp = huskelapp.copy(
+                    uuid = UUID.randomUUID(),
+                    isActive = false
+                )
+
+                val deleteHuskelappUrl = "$huskelappApiBasePath/${huskelapp.uuid}"
+
+                describe("Happy path") {
+                    it("returns NoContent and sets huskelapp inactive") {
+                        huskelappRepository.create(huskelapp = huskelapp)
+
+                        with(
+                            handleRequest(HttpMethod.Delete, deleteHuskelappUrl) {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.NoContent
                         }
-                        it("returns status Forbidden if denied access to person") {
-                            testDeniedPersonAccess(huskelappApiBasePath, validToken, HttpMethod.Post)
+
+                        val huskelapper = huskelappRepository.getHuskelapper(UserConstants.ARBEIDSTAKER_PERSONIDENT)
+                        huskelapper.size shouldBeEqualTo 1
+                        huskelapper.first().isActive.shouldBeFalse()
+                    }
+                }
+                describe("Unhappy path") {
+                    it("returns status NotFound if no huskelapp exists for given uuid") {
+                        with(
+                            handleRequest(HttpMethod.Delete, "$huskelappApiBasePath/${UUID.randomUUID()}") {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.NotFound
                         }
-                        it("returns status BadRequest if no $NAV_PERSONIDENT_HEADER is supplied") {
-                            testMissingPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Post)
+                    }
+                    it("returns status NotFound if no active huskelapp exists for given uuid") {
+                        huskelappRepository.create(huskelapp = inactiveHuskelapp)
+
+                        with(
+                            handleRequest(HttpMethod.Delete, "$huskelappApiBasePath/${inactiveHuskelapp.uuid}") {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.NotFound
                         }
-                        it("returns status BadRequest if $NAV_PERSONIDENT_HEADER with invalid PersonIdent is supplied") {
-                            testInvalidPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Post)
-                        }
+                    }
+                    it("returns status Unauthorized if no token is supplied") {
+                        testMissingToken(deleteHuskelappUrl, HttpMethod.Delete)
+                    }
+                    it("returns status Forbidden if denied access to person") {
+                        testDeniedPersonAccess(deleteHuskelappUrl, validToken, HttpMethod.Delete)
+                    }
+                    it("returns status BadRequest if no $NAV_PERSONIDENT_HEADER is supplied") {
+                        testMissingPersonIdent(deleteHuskelappUrl, validToken, HttpMethod.Delete)
+                    }
+                    it("returns status BadRequest if $NAV_PERSONIDENT_HEADER with invalid PersonIdent is supplied") {
+                        testInvalidPersonIdent(deleteHuskelappUrl, validToken, HttpMethod.Delete)
                     }
                 }
             }
