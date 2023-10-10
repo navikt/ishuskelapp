@@ -23,11 +23,14 @@ class HuskelappService(
         val huskelapp = huskelappRepository.getHuskelapper(personIdent).firstOrNull()
 
         if (huskelapp?.isActive == true) {
-            huskelappRepository.createVersjon(
-                huskelappId = huskelapp.id,
-                veilederIdent = veilederIdent,
-                tekst = tekst,
-            )
+            val huskelappVersjon = huskelappRepository.getHuskelappVersjoner(huskelapp.id).first()
+            if (!tekst.equals(huskelappVersjon.tekst)) {
+                huskelappRepository.createVersjon(
+                    huskelappId = huskelapp.id,
+                    veilederIdent = veilederIdent,
+                    tekst = tekst,
+                )
+            }
         } else {
             huskelappRepository.create(
                 huskelapp = Huskelapp.create(

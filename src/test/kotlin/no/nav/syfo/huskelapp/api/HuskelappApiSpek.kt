@@ -135,6 +135,30 @@ class HuskelappApiSpek : Spek({
                             responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
                         }
                     }
+                    it("Does not store unchanged") {
+                        with(
+                            handleRequest(HttpMethod.Post, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                                setBody(objectMapper.writeValueAsString(requestDTO))
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.Created
+                        }
+                        with(
+                            handleRequest(HttpMethod.Post, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                                setBody(objectMapper.writeValueAsString(requestDTO))
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.Created
+                        }
+                        val huskelapp = huskelappRepository.getHuskelapper(UserConstants.ARBEIDSTAKER_PERSONIDENT).first()
+                        huskelappRepository.getHuskelappVersjoner(huskelapp.id).size shouldBeEqualTo 1
+                    }
                 }
                 describe("Unhappy path") {
                     it("Returns status Unauthorized if no token is supplied") {
