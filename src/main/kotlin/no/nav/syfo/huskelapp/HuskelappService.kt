@@ -10,7 +10,10 @@ class HuskelappService(
     private val huskelappRepository: HuskelappRepository,
 ) {
     fun getHuskelapp(personIdent: PersonIdent): Huskelapp? =
-        huskelappRepository.getHuskelapper(personIdent).firstOrNull()?.takeIf { it.isActive }?.toHuskelapp()
+        huskelappRepository.getHuskelapper(personIdent)
+            .firstOrNull()
+            ?.takeIf { it.isActive }
+            ?.toHuskelapp()
 
     fun createHuskelapp(
         personIdent: PersonIdent,
@@ -41,7 +44,9 @@ class HuskelappService(
     fun setPublished(huskelapp: Huskelapp) = huskelappRepository.setPublished(huskelapp = huskelapp)
 
     fun getHuskelapp(uuid: UUID): Huskelapp? =
-        huskelappRepository.getHuskelapp(uuid)?.takeIf { it.isActive }?.toHuskelapp()
+        huskelappRepository.getHuskelapp(uuid)
+            ?.takeIf { it.isActive }
+            ?.toHuskelapp()
 
     fun removeHuskelapp(
         huskelapp: Huskelapp,
