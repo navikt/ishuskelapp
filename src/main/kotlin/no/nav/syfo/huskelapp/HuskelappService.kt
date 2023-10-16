@@ -1,5 +1,8 @@
 package no.nav.syfo.huskelapp
 
+import no.nav.syfo.application.metric.COUNT_HUSKELAPP_CREATED
+import no.nav.syfo.application.metric.COUNT_HUSKELAPP_REMOVED
+import no.nav.syfo.application.metric.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.database.PHuskelapp
@@ -30,6 +33,7 @@ class HuskelappService(
                     veilederIdent = veilederIdent,
                     tekst = tekst,
                 )
+                COUNT_HUSKELAPP_VERSJON_CREATED.increment()
             }
         } else {
             huskelappRepository.create(
@@ -39,6 +43,7 @@ class HuskelappService(
                     veilederIdent = veilederIdent,
                 )
             )
+            COUNT_HUSKELAPP_CREATED.increment()
         }
     }
 
@@ -57,6 +62,7 @@ class HuskelappService(
     ) {
         val removedHuskelapp = huskelapp.remove(veilederIdent = veilederIdent)
         huskelappRepository.updateRemovedHuskelapp(huskelapp = removedHuskelapp)
+        COUNT_HUSKELAPP_REMOVED.increment()
     }
 
     private fun PHuskelapp.toHuskelapp(): Huskelapp {
