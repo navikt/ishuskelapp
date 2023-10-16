@@ -44,6 +44,7 @@ class HuskelappService(
                 )
             )
             COUNT_HUSKELAPP_CREATED.increment()
+            COUNT_HUSKELAPP_VERSJON_CREATED.increment()
         }
     }
 
