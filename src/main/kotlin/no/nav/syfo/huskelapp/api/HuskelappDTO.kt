@@ -3,7 +3,7 @@ package no.nav.syfo.huskelapp.api
 import java.time.OffsetDateTime
 
 data class HuskelappRequestDTO(
-    val tekst: String,
+    val oppfolgingsgrunner: List<String>,
 )
 
 data class HuskelappResponseDTO(

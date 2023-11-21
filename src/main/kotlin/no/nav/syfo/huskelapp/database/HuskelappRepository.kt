@@ -1,5 +1,7 @@
 package no.nav.syfo.huskelapp.database
 
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import no.nav.syfo.application.database.DatabaseInterface
 import no.nav.syfo.application.database.NoElementInsertedException
 import no.nav.syfo.application.database.toList
@@ -27,12 +29,12 @@ class HuskelappRepository(
         return database.getHuskelappVersjoner(huskelappId)
     }
 
-    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String) {
+    fun createVersjon(huskelappId: Int, veilederIdent: String, oppfolgingsgrunn: List<String>) {
         database.connection.use { connection ->
             connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
                 createdBy = veilederIdent,
-                tekst = tekst,
+                oppfolgingsgrunner = oppfolgingsgrunn,
             )
             connection.commit()
         }
@@ -44,7 +46,7 @@ class HuskelappRepository(
             connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
                 createdBy = huskelapp.createdBy,
-                tekst = huskelapp.tekst,
+                oppfolgingsgrunner = huskelapp.oppfolgingsgrunner,
             )
             connection.commit()
         }
@@ -63,7 +65,7 @@ private const val queryCreateHuskelappVersjon =
         huskelapp_id,
         created_at,
         created_by,
-        tekst
+        oppfolgingsgrunner
     ) values (DEFAULT, ?, ?, ?, ?, ?)
     RETURNING id
     """
@@ -71,14 +73,14 @@ private const val queryCreateHuskelappVersjon =
 private fun Connection.createHuskelappVersjon(
     huskelappId: Int,
     createdBy: String,
-    tekst: String,
+    oppfolgingsgrunner: List<String>,
 ): Int {
     val idList = this.prepareStatement(queryCreateHuskelappVersjon).use {
         it.setString(1, UUID.randomUUID().toString())
         it.setInt(2, huskelappId)
         it.setObject(3, nowUTC())
         it.setString(4, createdBy)
-        it.setString(5, tekst)
+        it.setString(5, Json.encodeToString(oppfolgingsgrunner))
         it.executeQuery().toList { getInt("id") }
     }
 
@@ -247,4 +249,5 @@ private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(
     createdAt = getObject("created_at", OffsetDateTime::class.java),
     createdBy = getString("created_by"),
     tekst = getString("tekst"),
+    oppfolgingsgrunner = Json.decodeFromString(getString("oppfolgingsgrunner"))
 )

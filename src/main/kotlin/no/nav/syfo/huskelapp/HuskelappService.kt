@@ -4,6 +4,7 @@ import no.nav.syfo.application.metric.COUNT_HUSKELAPP_CREATED
 import no.nav.syfo.application.metric.COUNT_HUSKELAPP_REMOVED
 import no.nav.syfo.application.metric.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
+import no.nav.syfo.huskelapp.api.HuskelappRequestDTO
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.database.PHuskelapp
 import no.nav.syfo.huskelapp.domain.Huskelapp
@@ -21,28 +22,28 @@ class HuskelappService(
     fun createHuskelapp(
         personIdent: PersonIdent,
         veilederIdent: String,
-        tekst: String,
+        huskelapp: HuskelappRequestDTO,
     ) {
-        val huskelapp = huskelappRepository.getHuskelapper(personIdent).firstOrNull()
+        val existingHuskelapp = huskelappRepository.getHuskelapper(personIdent).firstOrNull()
 
-        if (huskelapp?.isActive == true) {
-            val huskelappVersjon = huskelappRepository.getHuskelappVersjoner(huskelapp.id).first()
-            if (!tekst.equals(huskelappVersjon.tekst)) {
+        if (existingHuskelapp?.isActive == true) {
+            val huskelappVersjon = huskelappRepository.getHuskelappVersjoner(existingHuskelapp.id).first()
+            if (!huskelapp.oppfolgingsgrunner.equals(huskelappVersjon.oppfolgingsgrunner)) {
                 huskelappRepository.createVersjon(
-                    huskelappId = huskelapp.id,
+                    huskelappId = existingHuskelapp.id,
                     veilederIdent = veilederIdent,
-                    tekst = tekst,
+                    oppfolgingsgrunn = huskelapp.oppfolgingsgrunner,
                 )
                 COUNT_HUSKELAPP_VERSJON_CREATED.increment()
             }
         } else {
-            huskelappRepository.create(
-                huskelapp = Huskelapp.create(
-                    tekst = tekst,
-                    personIdent = personIdent,
-                    veilederIdent = veilederIdent,
-                )
+            val newHuskelapp = Huskelapp.create(
+                personIdent = personIdent,
+                veilederIdent = veilederIdent,
+                tekst = "", // Litt usikker på hvordan man skal håndtere at man ikke lenger sender tekst på en pen måte
+                oppfolgingsgrunner = huskelapp.oppfolgingsgrunner
             )
+            huskelappRepository.create(huskelapp = newHuskelapp)
             COUNT_HUSKELAPP_CREATED.increment()
             COUNT_HUSKELAPP_VERSJON_CREATED.increment()
         }

@@ -10,6 +10,7 @@ data class Huskelapp private constructor(
     val personIdent: PersonIdent,
     val createdBy: String,
     val tekst: String,
+    val oppfolgingsgrunner: List<String>,
     val isActive: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
@@ -18,9 +19,10 @@ data class Huskelapp private constructor(
 ) {
     companion object {
         fun create(
-            tekst: String,
             personIdent: PersonIdent,
             veilederIdent: String,
+            tekst: String,
+            oppfolgingsgrunner: List<String>,
         ): Huskelapp {
             val now = nowUTC()
             return Huskelapp(
@@ -28,6 +30,7 @@ data class Huskelapp private constructor(
                 personIdent = personIdent,
                 createdBy = veilederIdent,
                 tekst = tekst,
+                oppfolgingsgrunner = oppfolgingsgrunner,
                 isActive = true,
                 createdAt = now,
                 updatedAt = now,
@@ -41,6 +44,7 @@ data class Huskelapp private constructor(
             personIdent: PersonIdent,
             veilederIdent: String,
             tekst: String,
+            oppfolgingsgrunner: List<String>,
             isActive: Boolean,
             createdAt: OffsetDateTime,
             updatedAt: OffsetDateTime,
@@ -51,6 +55,7 @@ data class Huskelapp private constructor(
             personIdent = personIdent,
             createdBy = veilederIdent,
             tekst = tekst,
+            oppfolgingsgrunner = oppfolgingsgrunner,
             isActive = isActive,
             createdAt = createdAt,
             updatedAt = updatedAt,

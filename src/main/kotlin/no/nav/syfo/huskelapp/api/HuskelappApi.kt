@@ -54,7 +54,7 @@ fun Route.registerHuskelappApi(
             huskelappService.createHuskelapp(
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
-                tekst = requestDTO.tekst,
+                huskelapp = requestDTO,
             )
 
             call.respond(HttpStatusCode.Created)

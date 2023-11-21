@@ -10,4 +10,5 @@ data class PHuskelappVersjon(
     val createdAt: OffsetDateTime,
     val createdBy: String,
     val tekst: String,
+    val oppfolgingsgrunner: List<String>,
 )

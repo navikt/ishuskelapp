@@ -21,6 +21,7 @@ data class PHuskelapp(
             personIdent = personIdent,
             veilederIdent = pHuskelappVersjon.createdBy,
             tekst = pHuskelappVersjon.tekst,
+            oppfolgingsgrunner = pHuskelappVersjon.oppfolgingsgrunner,
             isActive = isActive,
             createdAt = createdAt,
             updatedAt = pHuskelappVersjon.createdAt,
