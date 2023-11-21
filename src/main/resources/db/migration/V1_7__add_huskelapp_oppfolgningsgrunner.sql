@@ -1,0 +1,2 @@
+ALTER TABLE HUSKELAPP_VERSJON
+    ADD COLUMN oppfolgingsgrunner TEXT;
