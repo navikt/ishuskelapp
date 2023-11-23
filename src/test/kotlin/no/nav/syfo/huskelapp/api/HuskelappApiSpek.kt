@@ -43,9 +43,9 @@ class HuskelappApiSpek : Spek({
 
             describe("Get huskelapp for person") {
                 val huskelapp = Huskelapp.create(
-                    tekst = "En huskelapp",
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
-                    veilederIdent = UserConstants.VEILEDER_IDENT
+                    veilederIdent = UserConstants.VEILEDER_IDENT,
+                    oppfolgingsgrunner = listOf("En veldig god grunn")
                 )
                 val inactiveHuskelapp = huskelapp.copy(
                     uuid = UUID.randomUUID(),
@@ -107,7 +107,7 @@ class HuskelappApiSpek : Spek({
             describe("Post huskelapp") {
                 describe("Happy path") {
                     val requestDTO = HuskelappRequestDTO(
-                        tekst = "Hei",
+                        oppfolgingsgrunn = "En veldig god grunn"
                     )
                     it("OK") {
                         with(
@@ -131,7 +131,7 @@ class HuskelappApiSpek : Spek({
                             val responseDTO =
                                 objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
 
-                            responseDTO.tekst shouldBeEqualTo requestDTO.tekst
+                            responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTO.oppfolgingsgrunn
                             responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
                         }
                     }
@@ -177,9 +177,9 @@ class HuskelappApiSpek : Spek({
             }
             describe("Delete huskelapp") {
                 val huskelapp = Huskelapp.create(
-                    tekst = "En huskelapp",
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
-                    veilederIdent = UserConstants.VEILEDER_IDENT
+                    veilederIdent = UserConstants.VEILEDER_IDENT,
+                    oppfolgingsgrunner = listOf("En veldig god grunn"),
                 )
                 val inactiveHuskelapp = huskelapp.copy(
                     uuid = UUID.randomUUID(),

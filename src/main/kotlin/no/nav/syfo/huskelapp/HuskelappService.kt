@@ -24,29 +24,14 @@ class HuskelappService(
         veilederIdent: String,
         huskelapp: HuskelappRequestDTO,
     ) {
-        val existingHuskelapp = huskelappRepository.getHuskelapper(personIdent).firstOrNull()
-
-        if (existingHuskelapp?.isActive == true) {
-            val huskelappVersjon = huskelappRepository.getHuskelappVersjoner(existingHuskelapp.id).first()
-            if (!huskelapp.oppfolgingsgrunner.equals(huskelappVersjon.oppfolgingsgrunner)) {
-                huskelappRepository.createVersjon(
-                    huskelappId = existingHuskelapp.id,
-                    veilederIdent = veilederIdent,
-                    oppfolgingsgrunn = huskelapp.oppfolgingsgrunner,
-                )
-                COUNT_HUSKELAPP_VERSJON_CREATED.increment()
-            }
-        } else {
-            val newHuskelapp = Huskelapp.create(
-                personIdent = personIdent,
-                veilederIdent = veilederIdent,
-                tekst = "", // Litt usikker på hvordan man skal håndtere at man ikke lenger sender tekst på en pen måte
-                oppfolgingsgrunner = huskelapp.oppfolgingsgrunner
-            )
-            huskelappRepository.create(huskelapp = newHuskelapp)
-            COUNT_HUSKELAPP_CREATED.increment()
-            COUNT_HUSKELAPP_VERSJON_CREATED.increment()
-        }
+        val newHuskelapp = Huskelapp.create(
+            personIdent = personIdent,
+            veilederIdent = veilederIdent,
+            oppfolgingsgrunner = listOf(huskelapp.oppfolgingsgrunn)
+        )
+        huskelappRepository.create(huskelapp = newHuskelapp)
+        COUNT_HUSKELAPP_CREATED.increment()
+        COUNT_HUSKELAPP_VERSJON_CREATED.increment()
     }
 
     fun getUnpublishedHuskelapper(): List<Huskelapp> = huskelappRepository.getUnpublished().map { it.toHuskelapp() }

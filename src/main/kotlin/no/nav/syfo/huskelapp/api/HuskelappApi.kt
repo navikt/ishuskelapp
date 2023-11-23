@@ -41,6 +41,7 @@ fun Route.registerHuskelappApi(
                     createdBy = huskelapp.createdBy,
                     updatedAt = huskelapp.updatedAt,
                     tekst = huskelapp.tekst,
+                    oppfolgingsgrunn = huskelapp.oppfolgingsgrunner.first(),
                 )
 
                 call.respond(responseDTO)

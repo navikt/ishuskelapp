@@ -50,8 +50,8 @@ class PublishHuskelappCronjobSpek : Spek({
         }
 
         it("publishes unpublished huskelapper oldest first") {
-            val enHuskelapp = Huskelapp.create("En huskelapp", personIdent, veilederIdent)
-            val annenHuskelapp = Huskelapp.create("Annen huskelapp", personIdent, veilederIdent)
+            val enHuskelapp = Huskelapp.create(personIdent, veilederIdent, oppfolgingsgrunner = listOf("En veldig god grunn"))
+            val annenHuskelapp = Huskelapp.create(personIdent, veilederIdent, oppfolgingsgrunner = listOf("En annen veldig god grunn"))
             listOf(enHuskelapp, annenHuskelapp).forEach {
                 huskelappRepository.create(it)
             }
@@ -70,7 +70,7 @@ class PublishHuskelappCronjobSpek : Spek({
 
             val enKafkaHuskelapp = kafkaRecordSlot1.captured.value()
 
-            enKafkaHuskelapp.tekst shouldBeEqualTo enHuskelapp.tekst
+            enKafkaHuskelapp.oppfolgingsgrunner shouldBeEqualTo enHuskelapp.oppfolgingsgrunner
             enKafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
             enKafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
             enKafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
@@ -78,7 +78,7 @@ class PublishHuskelappCronjobSpek : Spek({
             huskelappRepository.getHuskelapper(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
         }
         it("does not publish published huskelapp") {
-            val enHuskelapp = Huskelapp.create("En huskelapp", personIdent, veilederIdent)
+            val enHuskelapp = Huskelapp.create(personIdent, veilederIdent, oppfolgingsgrunner = listOf("En veldig god grunn"))
             huskelappRepository.create(enHuskelapp)
             huskelappRepository.setPublished(enHuskelapp)
 

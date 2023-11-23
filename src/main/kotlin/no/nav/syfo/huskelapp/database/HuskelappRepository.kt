@@ -1,7 +1,5 @@
 package no.nav.syfo.huskelapp.database
 
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import no.nav.syfo.application.database.DatabaseInterface
 import no.nav.syfo.application.database.NoElementInsertedException
 import no.nav.syfo.application.database.toList
@@ -29,17 +27,6 @@ class HuskelappRepository(
         return database.getHuskelappVersjoner(huskelappId)
     }
 
-    fun createVersjon(huskelappId: Int, veilederIdent: String, oppfolgingsgrunn: List<String>) {
-        database.connection.use { connection ->
-            connection.createHuskelappVersjon(
-                huskelappId = huskelappId,
-                createdBy = veilederIdent,
-                oppfolgingsgrunner = oppfolgingsgrunn,
-            )
-            connection.commit()
-        }
-    }
-
     fun create(huskelapp: Huskelapp) {
         database.connection.use { connection ->
             val huskelappId = connection.createHuskelapp(huskelapp)
@@ -52,43 +39,45 @@ class HuskelappRepository(
         }
     }
 
+    private fun Connection.createHuskelappVersjon(
+        huskelappId: Int,
+        createdBy: String,
+        oppfolgingsgrunner: List<String>,
+    ): Int {
+        val idList = this.prepareStatement(CREATE_HUSKELAPP_VERSJON_QUERY).use {
+            it.setString(1, UUID.randomUUID().toString())
+            it.setInt(2, huskelappId)
+            it.setObject(3, nowUTC())
+            it.setString(4, createdBy)
+            it.setString(5, oppfolgingsgrunner.joinToString(","))
+            it.executeQuery().toList { getInt("id") }
+        }
+
+        if (idList.size != 1) {
+            throw NoElementInsertedException("Creating HUSKELAPP_VERSJON failed, no rows affected.")
+        }
+
+        return idList.first()
+    }
+
     fun getUnpublished(): List<PHuskelapp> = database.getUnpublishedHuskelapper()
     fun setPublished(huskelapp: Huskelapp) = database.setPublished(huskelapp = huskelapp)
     fun updateRemovedHuskelapp(huskelapp: Huskelapp) = database.updateRemovedHuskelapp(huskelapp = huskelapp)
-}
 
-private const val queryCreateHuskelappVersjon =
-    """
-    INSERT INTO HUSKELAPP_VERSJON (
-        id,
-        uuid,
-        huskelapp_id,
-        created_at,
-        created_by,
-        oppfolgingsgrunner
-    ) values (DEFAULT, ?, ?, ?, ?, ?)
-    RETURNING id
-    """
-
-private fun Connection.createHuskelappVersjon(
-    huskelappId: Int,
-    createdBy: String,
-    oppfolgingsgrunner: List<String>,
-): Int {
-    val idList = this.prepareStatement(queryCreateHuskelappVersjon).use {
-        it.setString(1, UUID.randomUUID().toString())
-        it.setInt(2, huskelappId)
-        it.setObject(3, nowUTC())
-        it.setString(4, createdBy)
-        it.setString(5, Json.encodeToString(oppfolgingsgrunner))
-        it.executeQuery().toList { getInt("id") }
+    companion object {
+        private const val CREATE_HUSKELAPP_VERSJON_QUERY =
+            """
+            INSERT INTO HUSKELAPP_VERSJON (
+                id,
+                uuid,
+                huskelapp_id,
+                created_at,
+                created_by,
+                oppfolgingsgrunner
+            ) values (DEFAULT, ?, ?, ?, ?, ?)
+            RETURNING id
+            """
     }
-
-    if (idList.size != 1) {
-        throw NoElementInsertedException("Creating HUSKELAPP_VERSJON failed, no rows affected.")
-    }
-
-    return idList.first()
 }
 
 private const val queryCreateHuskelapp =
@@ -249,5 +238,5 @@ private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(
     createdAt = getObject("created_at", OffsetDateTime::class.java),
     createdBy = getString("created_by"),
     tekst = getString("tekst"),
-    oppfolgingsgrunner = Json.decodeFromString(getString("oppfolgingsgrunner"))
+    oppfolgingsgrunner = getString("oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty)
 )
