@@ -21,6 +21,7 @@ data class Huskelapp private constructor(
         fun create(
             personIdent: PersonIdent,
             veilederIdent: String,
+            tekst: String?,
             oppfolgingsgrunner: List<String>,
         ): Huskelapp {
             val now = nowUTC()
@@ -28,7 +29,7 @@ data class Huskelapp private constructor(
                 uuid = UUID.randomUUID(),
                 personIdent = personIdent,
                 createdBy = veilederIdent,
-                tekst = null,
+                tekst = tekst,
                 oppfolgingsgrunner = oppfolgingsgrunner,
                 isActive = true,
                 createdAt = now,

@@ -9,6 +9,7 @@ import no.nav.syfo.util.nowUTC
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
+import java.sql.Types
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -33,7 +34,20 @@ class HuskelappRepository(
             connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
                 createdBy = huskelapp.createdBy,
+                tekst = huskelapp.tekst,
                 oppfolgingsgrunner = huskelapp.oppfolgingsgrunner,
+            )
+            connection.commit()
+        }
+    }
+
+    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String) {
+        database.connection.use { connection ->
+            connection.createHuskelappVersjon(
+                huskelappId = huskelappId,
+                createdBy = veilederIdent,
+                tekst = tekst,
+                oppfolgingsgrunner = emptyList(),
             )
             connection.commit()
         }
@@ -42,6 +56,7 @@ class HuskelappRepository(
     private fun Connection.createHuskelappVersjon(
         huskelappId: Int,
         createdBy: String,
+        tekst: String?,
         oppfolgingsgrunner: List<String>,
     ): Int {
         val idList = this.prepareStatement(CREATE_HUSKELAPP_VERSJON_QUERY).use {
@@ -49,7 +64,12 @@ class HuskelappRepository(
             it.setInt(2, huskelappId)
             it.setObject(3, nowUTC())
             it.setString(4, createdBy)
-            it.setString(5, oppfolgingsgrunner.joinToString(","))
+            tekst?.let { tekst -> it.setString(5, tekst) } ?: it.setNull(5, Types.LONGVARCHAR)
+            if (oppfolgingsgrunner.isEmpty()) {
+                it.setNull(6, Types.LONGVARCHAR)
+            } else {
+                it.setString(6, oppfolgingsgrunner.joinToString(","))
+            }
             it.executeQuery().toList { getInt("id") }
         }
 
@@ -73,8 +93,9 @@ class HuskelappRepository(
                 huskelapp_id,
                 created_at,
                 created_by,
+                tekst,
                 oppfolgingsgrunner
-            ) values (DEFAULT, ?, ?, ?, ?, ?)
+            ) values (DEFAULT, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """
     }
@@ -238,5 +259,6 @@ private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(
     createdAt = getObject("created_at", OffsetDateTime::class.java),
     createdBy = getString("created_by"),
     tekst = getString("tekst"),
-    oppfolgingsgrunner = getString("oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty)
+    oppfolgingsgrunner = getString("oppfolgingsgrunner")?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)
+        ?: emptyList()
 )

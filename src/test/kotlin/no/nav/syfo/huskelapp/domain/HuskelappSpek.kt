@@ -13,6 +13,7 @@ class HuskelappSpek : Spek({
     val huskelapp = Huskelapp.create(
         personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
         veilederIdent = UserConstants.VEILEDER_IDENT,
+        tekst = "En huskelapp",
         oppfolgingsgrunner = listOf("En veldig god grunn")
     )
 

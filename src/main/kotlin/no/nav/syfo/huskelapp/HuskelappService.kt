@@ -4,7 +4,6 @@ import no.nav.syfo.application.metric.COUNT_HUSKELAPP_CREATED
 import no.nav.syfo.application.metric.COUNT_HUSKELAPP_REMOVED
 import no.nav.syfo.application.metric.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
-import no.nav.syfo.huskelapp.api.HuskelappRequestDTO
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.database.PHuskelapp
 import no.nav.syfo.huskelapp.domain.Huskelapp
@@ -22,12 +21,54 @@ class HuskelappService(
     fun createHuskelapp(
         personIdent: PersonIdent,
         veilederIdent: String,
-        huskelapp: HuskelappRequestDTO,
+        oppfolgingsgrunn: String,
     ) {
         val newHuskelapp = Huskelapp.create(
             personIdent = personIdent,
             veilederIdent = veilederIdent,
-            oppfolgingsgrunner = listOf(huskelapp.oppfolgingsgrunn)
+            tekst = null,
+            oppfolgingsgrunner = listOf(oppfolgingsgrunn),
+        )
+        huskelappRepository.create(huskelapp = newHuskelapp)
+        COUNT_HUSKELAPP_CREATED.increment()
+        COUNT_HUSKELAPP_VERSJON_CREATED.increment()
+    }
+
+    @Deprecated("Remove when possibility to fill out tekst in syfomodiaperson is removed")
+    fun createHuskelappDeprecated(
+        personIdent: PersonIdent,
+        veilederIdent: String,
+        tekst: String,
+    ) {
+        val huskelapp = huskelappRepository.getHuskelapper(personIdent).firstOrNull()
+
+        if (huskelapp?.isActive == true) {
+            val huskelappVersjon = huskelappRepository.getHuskelappVersjoner(huskelapp.id).first()
+            if (!tekst.equals(huskelappVersjon.tekst)) {
+                huskelappRepository.createVersjon(
+                    huskelappId = huskelapp.id,
+                    veilederIdent = veilederIdent,
+                    tekst = tekst,
+                )
+                COUNT_HUSKELAPP_VERSJON_CREATED.increment()
+            }
+        } else {
+            huskelappRepository.create(
+                huskelapp = Huskelapp.create(
+                    personIdent = personIdent,
+                    veilederIdent = veilederIdent,
+                    tekst = tekst,
+                    oppfolgingsgrunner = emptyList()
+                )
+            )
+            COUNT_HUSKELAPP_CREATED.increment()
+            COUNT_HUSKELAPP_VERSJON_CREATED.increment()
+        }
+        val newHuskelapp = Huskelapp.create(
+            personIdent = personIdent,
+            veilederIdent = veilederIdent,
+            tekst = tekst,
+            oppfolgingsgrunner = emptyList()
         )
         huskelappRepository.create(huskelapp = newHuskelapp)
         COUNT_HUSKELAPP_CREATED.increment()
