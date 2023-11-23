@@ -1,5 +1,6 @@
 package no.nav.syfo.huskelapp.kafka
 
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -8,6 +9,7 @@ data class KafkaHuskelapp(
     val personIdent: String,
     val veilederIdent: String,
     val tekst: String,
+    val frist: LocalDate?,
     val isActive: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,

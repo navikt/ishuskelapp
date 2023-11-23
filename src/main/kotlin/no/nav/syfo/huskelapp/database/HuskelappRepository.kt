@@ -7,8 +7,10 @@ import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.domain.Huskelapp
 import no.nav.syfo.util.nowUTC
 import java.sql.Connection
+import java.sql.Date
 import java.sql.ResultSet
 import java.sql.SQLException
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -27,12 +29,13 @@ class HuskelappRepository(
         return database.getHuskelappVersjoner(huskelappId)
     }
 
-    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String) {
+    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String, frist: LocalDate?) {
         database.connection.use { connection ->
             connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
                 createdBy = veilederIdent,
                 tekst = tekst,
+                frist = frist,
             )
             connection.commit()
         }
@@ -45,6 +48,7 @@ class HuskelappRepository(
                 huskelappId = huskelappId,
                 createdBy = huskelapp.createdBy,
                 tekst = huskelapp.tekst,
+                frist = huskelapp.frist,
             )
             connection.commit()
         }
@@ -63,8 +67,9 @@ private const val queryCreateHuskelappVersjon =
         huskelapp_id,
         created_at,
         created_by,
-        tekst
-    ) values (DEFAULT, ?, ?, ?, ?, ?)
+        tekst,
+        frist
+    ) values (DEFAULT, ?, ?, ?, ?, ?, ?)
     RETURNING id
     """
 
@@ -72,6 +77,7 @@ private fun Connection.createHuskelappVersjon(
     huskelappId: Int,
     createdBy: String,
     tekst: String,
+    frist: LocalDate?,
 ): Int {
     val idList = this.prepareStatement(queryCreateHuskelappVersjon).use {
         it.setString(1, UUID.randomUUID().toString())
@@ -79,6 +85,7 @@ private fun Connection.createHuskelappVersjon(
         it.setObject(3, nowUTC())
         it.setString(4, createdBy)
         it.setString(5, tekst)
+        it.setDate(6, frist?.let { frist -> Date.valueOf(frist) })
         it.executeQuery().toList { getInt("id") }
     }
 
@@ -247,4 +254,5 @@ private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(
     createdAt = getObject("created_at", OffsetDateTime::class.java),
     createdBy = getString("created_by"),
     tekst = getString("tekst"),
+    frist = getDate("frist")?.toLocalDate(),
 )

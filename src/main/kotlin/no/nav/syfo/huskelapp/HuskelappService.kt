@@ -7,6 +7,7 @@ import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.database.PHuskelapp
 import no.nav.syfo.huskelapp.domain.Huskelapp
+import java.time.LocalDate
 import java.util.*
 
 class HuskelappService(
@@ -22,16 +23,18 @@ class HuskelappService(
         personIdent: PersonIdent,
         veilederIdent: String,
         tekst: String,
+        frist: LocalDate?,
     ) {
         val huskelapp = huskelappRepository.getHuskelapper(personIdent).firstOrNull()
 
         if (huskelapp?.isActive == true) {
             val huskelappVersjon = huskelappRepository.getHuskelappVersjoner(huskelapp.id).first()
-            if (!tekst.equals(huskelappVersjon.tekst)) {
+            if (tekst != huskelappVersjon.tekst) {
                 huskelappRepository.createVersjon(
                     huskelappId = huskelapp.id,
                     veilederIdent = veilederIdent,
                     tekst = tekst,
+                    frist = frist,
                 )
                 COUNT_HUSKELAPP_VERSJON_CREATED.increment()
             }
@@ -39,6 +42,7 @@ class HuskelappService(
             huskelappRepository.create(
                 huskelapp = Huskelapp.create(
                     tekst = tekst,
+                    frist = frist,
                     personIdent = personIdent,
                     veilederIdent = veilederIdent,
                 )

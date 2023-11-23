@@ -41,6 +41,7 @@ fun Route.registerHuskelappApi(
                     createdBy = huskelapp.createdBy,
                     updatedAt = huskelapp.updatedAt,
                     tekst = huskelapp.tekst,
+                    frist = huskelapp.frist,
                 )
 
                 call.respond(responseDTO)
@@ -55,6 +56,7 @@ fun Route.registerHuskelappApi(
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
                 tekst = requestDTO.tekst,
+                frist = requestDTO.frist,
             )
 
             call.respond(HttpStatusCode.Created)

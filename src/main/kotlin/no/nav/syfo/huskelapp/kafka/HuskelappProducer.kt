@@ -22,6 +22,7 @@ class HuskelappProducer(
             isActive = huskelapp.isActive,
             createdAt = huskelapp.createdAt,
             updatedAt = huskelapp.updatedAt,
+            frist = huskelapp.frist,
         )
         val key = UUID.nameUUIDFromBytes(kafkaHuskelapp.personIdent.toByteArray()).toString()
         try {
