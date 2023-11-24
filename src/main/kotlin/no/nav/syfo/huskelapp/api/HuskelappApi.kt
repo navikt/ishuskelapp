@@ -42,6 +42,7 @@ fun Route.registerHuskelappApi(
                     updatedAt = huskelapp.updatedAt,
                     tekst = huskelapp.tekst,
                     oppfolgingsgrunn = huskelapp.oppfolgingsgrunner.firstOrNull(),
+                    frist = huskelapp.frist,
                 )
 
                 call.respond(responseDTO)
@@ -57,6 +58,7 @@ fun Route.registerHuskelappApi(
                     personIdent = personIdent,
                     veilederIdent = veilederIdent,
                     tekst = requestDTO.tekst,
+                    frist = requestDTO.frist,
                 )
                 call.respond(HttpStatusCode.Created)
             } else if (requestDTO.oppfolgingsgrunn != null) {
@@ -64,6 +66,7 @@ fun Route.registerHuskelappApi(
                     personIdent = personIdent,
                     veilederIdent = veilederIdent,
                     oppfolgingsgrunn = requestDTO.oppfolgingsgrunn,
+                    frist = requestDTO.frist,
                 )
                 call.respond(HttpStatusCode.Created)
             } else {

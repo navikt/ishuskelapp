@@ -13,6 +13,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.time.LocalDate
 import java.util.concurrent.Future
 
 class PublishHuskelappCronjobSpek : Spek({
@@ -60,7 +61,8 @@ class PublishHuskelappCronjobSpek : Spek({
                 personIdent,
                 veilederIdent,
                 tekst = null,
-                oppfolgingsgrunner = listOf("En annen veldig god grunn")
+                oppfolgingsgrunner = listOf("En annen veldig god grunn"),
+                frist = LocalDate.now().plusWeeks(1),
             )
             listOf(enHuskelapp, annenHuskelapp).forEach {
                 huskelappRepository.create(it)
@@ -85,6 +87,10 @@ class PublishHuskelappCronjobSpek : Spek({
             enKafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
             enKafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
             enKafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
+            enKafkaHuskelapp.frist.shouldBeNull()
+
+            val annenKafkaHuskelapp = kafkaRecordSlot2.captured.value()
+            annenKafkaHuskelapp.frist shouldBeEqualTo annenHuskelapp.frist
 
             huskelappRepository.getHuskelapper(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
         }

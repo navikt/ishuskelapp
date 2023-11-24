@@ -2,6 +2,7 @@ package no.nav.syfo.huskelapp.domain
 
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.util.nowUTC
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -11,6 +12,7 @@ data class Huskelapp private constructor(
     val createdBy: String,
     val tekst: String?,
     val oppfolgingsgrunner: List<String>,
+    val frist: LocalDate?,
     val isActive: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
@@ -23,6 +25,7 @@ data class Huskelapp private constructor(
             veilederIdent: String,
             tekst: String?,
             oppfolgingsgrunner: List<String>,
+            frist: LocalDate? = null,
         ): Huskelapp {
             val now = nowUTC()
             return Huskelapp(
@@ -31,6 +34,7 @@ data class Huskelapp private constructor(
                 createdBy = veilederIdent,
                 tekst = tekst,
                 oppfolgingsgrunner = oppfolgingsgrunner,
+                frist = frist,
                 isActive = true,
                 createdAt = now,
                 updatedAt = now,
@@ -45,6 +49,7 @@ data class Huskelapp private constructor(
             veilederIdent: String,
             tekst: String?,
             oppfolgingsgrunner: List<String>,
+            frist: LocalDate?,
             isActive: Boolean,
             createdAt: OffsetDateTime,
             updatedAt: OffsetDateTime,
@@ -56,6 +61,7 @@ data class Huskelapp private constructor(
             createdBy = veilederIdent,
             tekst = tekst,
             oppfolgingsgrunner = oppfolgingsgrunner,
+            frist = frist,
             isActive = isActive,
             createdAt = createdAt,
             updatedAt = updatedAt,

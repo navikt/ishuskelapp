@@ -1,5 +1,6 @@
 package no.nav.syfo.huskelapp.database
 
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -11,4 +12,5 @@ data class PHuskelappVersjon(
     val createdBy: String,
     val tekst: String?,
     val oppfolgingsgrunner: List<String>,
+    val frist: LocalDate?,
 )

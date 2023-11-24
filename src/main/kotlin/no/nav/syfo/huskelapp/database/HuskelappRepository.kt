@@ -7,9 +7,11 @@ import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.domain.Huskelapp
 import no.nav.syfo.util.nowUTC
 import java.sql.Connection
+import java.sql.Date
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.sql.Types
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -36,18 +38,20 @@ class HuskelappRepository(
                 createdBy = huskelapp.createdBy,
                 tekst = huskelapp.tekst,
                 oppfolgingsgrunner = huskelapp.oppfolgingsgrunner,
+                frist = huskelapp.frist,
             )
             connection.commit()
         }
     }
 
-    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String) {
+    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String, frist: LocalDate?) {
         database.connection.use { connection ->
             connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
                 createdBy = veilederIdent,
                 tekst = tekst,
                 oppfolgingsgrunner = emptyList(),
+                frist = frist,
             )
             connection.commit()
         }
@@ -58,6 +62,7 @@ class HuskelappRepository(
         createdBy: String,
         tekst: String?,
         oppfolgingsgrunner: List<String>,
+        frist: LocalDate?,
     ): Int {
         val idList = this.prepareStatement(CREATE_HUSKELAPP_VERSJON_QUERY).use {
             it.setString(1, UUID.randomUUID().toString())
@@ -70,6 +75,7 @@ class HuskelappRepository(
             } else {
                 it.setString(6, oppfolgingsgrunner.joinToString(","))
             }
+            it.setDate(7, frist?.let { frist -> Date.valueOf(frist) })
             it.executeQuery().toList { getInt("id") }
         }
 
@@ -94,8 +100,9 @@ class HuskelappRepository(
                 created_at,
                 created_by,
                 tekst,
-                oppfolgingsgrunner
-            ) values (DEFAULT, ?, ?, ?, ?, ?, ?)
+                oppfolgingsgrunner,
+                frist
+            ) values (DEFAULT, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """
     }
@@ -260,5 +267,6 @@ private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(
     createdBy = getString("created_by"),
     tekst = getString("tekst"),
     oppfolgingsgrunner = getString("oppfolgingsgrunner")?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)
-        ?: emptyList()
+        ?: emptyList(),
+    frist = getDate("frist")?.toLocalDate(),
 )

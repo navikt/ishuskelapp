@@ -14,6 +14,7 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldBeFalse
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.time.LocalDate
 import java.util.*
 
 class HuskelappApiSpek : Spek({
@@ -109,12 +110,13 @@ class HuskelappApiSpek : Spek({
                 describe("Happy path") {
                     val requestDTO = HuskelappRequestDTO(
                         tekst = "En tekst",
-                        oppfolgingsgrunn = "En veldig god grunn"
+                        oppfolgingsgrunn = "En veldig god grunn",
+                        frist = LocalDate.now().plusDays(1),
                     )
                     it("OK with tekst") {
                         val requestDTOWithTekst = HuskelappRequestDTO(
                             tekst = "En tekst",
-                            oppfolgingsgrunn = null
+                            oppfolgingsgrunn = null,
                         )
                         with(
                             handleRequest(HttpMethod.Post, huskelappApiBasePath) {
@@ -169,6 +171,7 @@ class HuskelappApiSpek : Spek({
 
                             responseDTO.tekst shouldBeEqualTo requestDTOWithOppfolgingsgrunn.tekst
                             responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTOWithOppfolgingsgrunn.oppfolgingsgrunn
+                            responseDTO.frist shouldBeEqualTo requestDTOWithOppfolgingsgrunn.frist
                             responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
                         }
                     }
