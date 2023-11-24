@@ -26,6 +26,7 @@ data class PHuskelapp(
             updatedAt = pHuskelappVersjon.createdAt,
             publishedAt = publishedAt,
             removedBy = removedBy,
+            frist = pHuskelappVersjon.frist,
         )
     }
 }

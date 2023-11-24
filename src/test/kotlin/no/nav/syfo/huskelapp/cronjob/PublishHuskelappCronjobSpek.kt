@@ -13,6 +13,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.time.LocalDate
 import java.util.concurrent.Future
 
 class PublishHuskelappCronjobSpek : Spek({
@@ -50,8 +51,17 @@ class PublishHuskelappCronjobSpek : Spek({
         }
 
         it("publishes unpublished huskelapper oldest first") {
-            val enHuskelapp = Huskelapp.create("En huskelapp", personIdent, veilederIdent)
-            val annenHuskelapp = Huskelapp.create("Annen huskelapp", personIdent, veilederIdent)
+            val enHuskelapp = Huskelapp.create(
+                tekst = "En huskelapp",
+                personIdent = personIdent,
+                veilederIdent = veilederIdent,
+            )
+            val annenHuskelapp = Huskelapp.create(
+                tekst = "Annen huskelapp",
+                personIdent = personIdent,
+                veilederIdent = veilederIdent,
+                frist = LocalDate.now().plusWeeks(1)
+            )
             listOf(enHuskelapp, annenHuskelapp).forEach {
                 huskelappRepository.create(it)
             }
@@ -74,6 +84,10 @@ class PublishHuskelappCronjobSpek : Spek({
             enKafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
             enKafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
             enKafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
+            enKafkaHuskelapp.frist.shouldBeNull()
+
+            val annenKafkaHuskelapp = kafkaRecordSlot2.captured.value()
+            annenKafkaHuskelapp.frist shouldBeEqualTo annenHuskelapp.frist
 
             huskelappRepository.getHuskelapper(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
         }
