@@ -96,8 +96,8 @@ class PublishHuskelappCronjobSpek : Spek({
         }
         it("does not publish published huskelapp") {
             val enHuskelapp = Huskelapp.create(
-                personIdent,
-                veilederIdent,
+                personIdent = personIdent,
+                veilederIdent = veilederIdent,
                 tekst = "En huskelapp",
                 oppfolgingsgrunner = listOf("En veldig god grunn")
             )
