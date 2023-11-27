@@ -11,9 +11,10 @@ import org.spekframework.spek2.style.specification.describe
 class HuskelappSpek : Spek({
 
     val huskelapp = Huskelapp.create(
-        tekst = "En huskelapp",
         personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
-        veilederIdent = UserConstants.VEILEDER_IDENT
+        veilederIdent = UserConstants.VEILEDER_IDENT,
+        tekst = "En huskelapp",
+        oppfolgingsgrunner = listOf("En veldig god grunn")
     )
 
     describe("Remove") {

@@ -41,6 +41,7 @@ fun Route.registerHuskelappApi(
                     createdBy = huskelapp.createdBy,
                     updatedAt = huskelapp.updatedAt,
                     tekst = huskelapp.tekst,
+                    oppfolgingsgrunn = huskelapp.oppfolgingsgrunner.firstOrNull(),
                     frist = huskelapp.frist,
                 )
 
@@ -52,14 +53,28 @@ fun Route.registerHuskelappApi(
             val requestDTO = call.receive<HuskelappRequestDTO>()
             val veilederIdent = call.getNAVIdent()
 
-            huskelappService.createHuskelapp(
-                personIdent = personIdent,
-                veilederIdent = veilederIdent,
-                tekst = requestDTO.tekst,
-                frist = requestDTO.frist,
-            )
-
-            call.respond(HttpStatusCode.Created)
+            if (requestDTO.tekst != null) {
+                huskelappService.createHuskelappDeprecated(
+                    personIdent = personIdent,
+                    veilederIdent = veilederIdent,
+                    tekst = requestDTO.tekst,
+                    frist = requestDTO.frist,
+                )
+                call.respond(HttpStatusCode.Created)
+            } else if (requestDTO.oppfolgingsgrunn != null) {
+                huskelappService.createHuskelapp(
+                    personIdent = personIdent,
+                    veilederIdent = veilederIdent,
+                    oppfolgingsgrunn = requestDTO.oppfolgingsgrunn,
+                    frist = requestDTO.frist,
+                )
+                call.respond(HttpStatusCode.Created)
+            } else {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    "Invalid request. Either specify `tekst` or specify `oppfolgingsgrunn`"
+                )
+            }
         }
         delete("/{$huskelappParam}") {
             val huskelappUuid = UUID.fromString(call.parameters[huskelappParam])

@@ -44,9 +44,10 @@ class HuskelappApiSpek : Spek({
 
             describe("Get huskelapp for person") {
                 val huskelapp = Huskelapp.create(
-                    tekst = "En huskelapp",
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
-                    veilederIdent = UserConstants.VEILEDER_IDENT
+                    veilederIdent = UserConstants.VEILEDER_IDENT,
+                    tekst = "En huskelapp",
+                    oppfolgingsgrunner = listOf("En veldig god grunn")
                 )
                 val inactiveHuskelapp = huskelapp.copy(
                     uuid = UUID.randomUUID(),
@@ -108,16 +109,51 @@ class HuskelappApiSpek : Spek({
             describe("Post huskelapp") {
                 describe("Happy path") {
                     val requestDTO = HuskelappRequestDTO(
-                        tekst = "Hei",
-                        frist = LocalDate.now().plusDays(1)
+                        tekst = "En tekst",
+                        oppfolgingsgrunn = "En veldig god grunn",
+                        frist = LocalDate.now().plusDays(1),
                     )
-                    it("OK") {
+                    it("OK with tekst") {
+                        val requestDTOWithTekst = HuskelappRequestDTO(
+                            tekst = "En tekst",
+                            oppfolgingsgrunn = null,
+                        )
                         with(
                             handleRequest(HttpMethod.Post, huskelappApiBasePath) {
                                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
-                                setBody(objectMapper.writeValueAsString(requestDTO))
+                                setBody(objectMapper.writeValueAsString(requestDTOWithTekst))
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.Created
+                        }
+
+                        with(
+                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.OK
+                            val responseDTO =
+                                objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
+                            responseDTO.tekst shouldBeEqualTo requestDTOWithTekst.tekst
+                            responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTOWithTekst.oppfolgingsgrunn
+                            responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
+                        }
+                    }
+                    it("OK with oppfolgingsgrunn") {
+                        val requestDTOWithOppfolgingsgrunn = HuskelappRequestDTO(
+                            tekst = null,
+                            oppfolgingsgrunn = "En veldig god grunn"
+                        )
+                        with(
+                            handleRequest(HttpMethod.Post, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                                setBody(objectMapper.writeValueAsString(requestDTOWithOppfolgingsgrunn))
                             }
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.Created
@@ -133,8 +169,9 @@ class HuskelappApiSpek : Spek({
                             val responseDTO =
                                 objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
 
-                            responseDTO.tekst shouldBeEqualTo requestDTO.tekst
-                            responseDTO.frist shouldBeEqualTo requestDTO.frist
+                            responseDTO.tekst shouldBeEqualTo requestDTOWithOppfolgingsgrunn.tekst
+                            responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTOWithOppfolgingsgrunn.oppfolgingsgrunn
+                            responseDTO.frist shouldBeEqualTo requestDTOWithOppfolgingsgrunn.frist
                             responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
                         }
                     }
@@ -159,7 +196,8 @@ class HuskelappApiSpek : Spek({
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.Created
                         }
-                        val huskelapp = huskelappRepository.getHuskelapper(UserConstants.ARBEIDSTAKER_PERSONIDENT).first()
+                        val huskelapp =
+                            huskelappRepository.getHuskelapper(UserConstants.ARBEIDSTAKER_PERSONIDENT).first()
                         huskelappRepository.getHuskelappVersjoner(huskelapp.id).size shouldBeEqualTo 1
                     }
                 }
@@ -180,9 +218,10 @@ class HuskelappApiSpek : Spek({
             }
             describe("Delete huskelapp") {
                 val huskelapp = Huskelapp.create(
-                    tekst = "En huskelapp",
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
-                    veilederIdent = UserConstants.VEILEDER_IDENT
+                    veilederIdent = UserConstants.VEILEDER_IDENT,
+                    tekst = "En huskelapp",
+                    oppfolgingsgrunner = listOf("En veldig god grunn"),
                 )
                 val inactiveHuskelapp = huskelapp.copy(
                     uuid = UUID.randomUUID(),

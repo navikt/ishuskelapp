@@ -10,6 +10,7 @@ import java.sql.Connection
 import java.sql.Date
 import java.sql.ResultSet
 import java.sql.SQLException
+import java.sql.Types
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
@@ -29,18 +30,6 @@ class HuskelappRepository(
         return database.getHuskelappVersjoner(huskelappId)
     }
 
-    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String, frist: LocalDate?) {
-        database.connection.use { connection ->
-            connection.createHuskelappVersjon(
-                huskelappId = huskelappId,
-                createdBy = veilederIdent,
-                tekst = tekst,
-                frist = frist,
-            )
-            connection.commit()
-        }
-    }
-
     fun create(huskelapp: Huskelapp) {
         database.connection.use { connection ->
             val huskelappId = connection.createHuskelapp(huskelapp)
@@ -48,52 +37,75 @@ class HuskelappRepository(
                 huskelappId = huskelappId,
                 createdBy = huskelapp.createdBy,
                 tekst = huskelapp.tekst,
+                oppfolgingsgrunner = huskelapp.oppfolgingsgrunner,
                 frist = huskelapp.frist,
             )
             connection.commit()
         }
     }
 
+    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String, frist: LocalDate?) {
+        database.connection.use { connection ->
+            connection.createHuskelappVersjon(
+                huskelappId = huskelappId,
+                createdBy = veilederIdent,
+                tekst = tekst,
+                oppfolgingsgrunner = emptyList(),
+                frist = frist,
+            )
+            connection.commit()
+        }
+    }
+
+    private fun Connection.createHuskelappVersjon(
+        huskelappId: Int,
+        createdBy: String,
+        tekst: String?,
+        oppfolgingsgrunner: List<String>,
+        frist: LocalDate?,
+    ): Int {
+        val idList = this.prepareStatement(CREATE_HUSKELAPP_VERSJON_QUERY).use {
+            it.setString(1, UUID.randomUUID().toString())
+            it.setInt(2, huskelappId)
+            it.setObject(3, nowUTC())
+            it.setString(4, createdBy)
+            tekst?.let { tekst -> it.setString(5, tekst) } ?: it.setNull(5, Types.LONGVARCHAR)
+            if (oppfolgingsgrunner.isEmpty()) {
+                it.setNull(6, Types.LONGVARCHAR)
+            } else {
+                it.setString(6, oppfolgingsgrunner.joinToString(","))
+            }
+            it.setDate(7, frist?.let { frist -> Date.valueOf(frist) })
+            it.executeQuery().toList { getInt("id") }
+        }
+
+        if (idList.size != 1) {
+            throw NoElementInsertedException("Creating HUSKELAPP_VERSJON failed, no rows affected.")
+        }
+
+        return idList.first()
+    }
+
     fun getUnpublished(): List<PHuskelapp> = database.getUnpublishedHuskelapper()
     fun setPublished(huskelapp: Huskelapp) = database.setPublished(huskelapp = huskelapp)
     fun updateRemovedHuskelapp(huskelapp: Huskelapp) = database.updateRemovedHuskelapp(huskelapp = huskelapp)
-}
 
-private const val queryCreateHuskelappVersjon =
-    """
-    INSERT INTO HUSKELAPP_VERSJON (
-        id,
-        uuid,
-        huskelapp_id,
-        created_at,
-        created_by,
-        tekst,
-        frist
-    ) values (DEFAULT, ?, ?, ?, ?, ?, ?)
-    RETURNING id
-    """
-
-private fun Connection.createHuskelappVersjon(
-    huskelappId: Int,
-    createdBy: String,
-    tekst: String,
-    frist: LocalDate?,
-): Int {
-    val idList = this.prepareStatement(queryCreateHuskelappVersjon).use {
-        it.setString(1, UUID.randomUUID().toString())
-        it.setInt(2, huskelappId)
-        it.setObject(3, nowUTC())
-        it.setString(4, createdBy)
-        it.setString(5, tekst)
-        it.setDate(6, frist?.let { frist -> Date.valueOf(frist) })
-        it.executeQuery().toList { getInt("id") }
+    companion object {
+        private const val CREATE_HUSKELAPP_VERSJON_QUERY =
+            """
+            INSERT INTO HUSKELAPP_VERSJON (
+                id,
+                uuid,
+                huskelapp_id,
+                created_at,
+                created_by,
+                tekst,
+                oppfolgingsgrunner,
+                frist
+            ) values (DEFAULT, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING id
+            """
     }
-
-    if (idList.size != 1) {
-        throw NoElementInsertedException("Creating HUSKELAPP_VERSJON failed, no rows affected.")
-    }
-
-    return idList.first()
 }
 
 private const val queryCreateHuskelapp =
@@ -254,5 +266,7 @@ private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(
     createdAt = getObject("created_at", OffsetDateTime::class.java),
     createdBy = getString("created_by"),
     tekst = getString("tekst"),
+    oppfolgingsgrunner = getString("oppfolgingsgrunner")?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)
+        ?: emptyList(),
     frist = getDate("frist")?.toLocalDate(),
 )

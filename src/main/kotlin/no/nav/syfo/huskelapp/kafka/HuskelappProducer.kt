@@ -19,6 +19,7 @@ class HuskelappProducer(
             personIdent = huskelapp.personIdent.value,
             veilederIdent = huskelapp.createdBy,
             tekst = huskelapp.tekst,
+            oppfolgingsgrunner = huskelapp.oppfolgingsgrunner,
             isActive = huskelapp.isActive,
             createdAt = huskelapp.createdAt,
             updatedAt = huskelapp.updatedAt,

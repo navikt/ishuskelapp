@@ -52,15 +52,17 @@ class PublishHuskelappCronjobSpek : Spek({
 
         it("publishes unpublished huskelapper oldest first") {
             val enHuskelapp = Huskelapp.create(
+                personIdent,
+                veilederIdent,
                 tekst = "En huskelapp",
-                personIdent = personIdent,
-                veilederIdent = veilederIdent,
+                oppfolgingsgrunner = listOf("En veldig god grunn")
             )
             val annenHuskelapp = Huskelapp.create(
-                tekst = "Annen huskelapp",
-                personIdent = personIdent,
-                veilederIdent = veilederIdent,
-                frist = LocalDate.now().plusWeeks(1)
+                personIdent,
+                veilederIdent,
+                tekst = null,
+                oppfolgingsgrunner = listOf("En annen veldig god grunn"),
+                frist = LocalDate.now().plusWeeks(1),
             )
             listOf(enHuskelapp, annenHuskelapp).forEach {
                 huskelappRepository.create(it)
@@ -81,6 +83,7 @@ class PublishHuskelappCronjobSpek : Spek({
             val enKafkaHuskelapp = kafkaRecordSlot1.captured.value()
 
             enKafkaHuskelapp.tekst shouldBeEqualTo enHuskelapp.tekst
+            enKafkaHuskelapp.oppfolgingsgrunner shouldBeEqualTo enHuskelapp.oppfolgingsgrunner
             enKafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
             enKafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
             enKafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
@@ -92,7 +95,12 @@ class PublishHuskelappCronjobSpek : Spek({
             huskelappRepository.getHuskelapper(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
         }
         it("does not publish published huskelapp") {
-            val enHuskelapp = Huskelapp.create("En huskelapp", personIdent, veilederIdent)
+            val enHuskelapp = Huskelapp.create(
+                personIdent = personIdent,
+                veilederIdent = veilederIdent,
+                tekst = "En huskelapp",
+                oppfolgingsgrunner = listOf("En veldig god grunn")
+            )
             huskelappRepository.create(enHuskelapp)
             huskelappRepository.setPublished(enHuskelapp)
 

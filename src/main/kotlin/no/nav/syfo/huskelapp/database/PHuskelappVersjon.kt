@@ -10,6 +10,7 @@ data class PHuskelappVersjon(
     val huskelappId: Int,
     val createdAt: OffsetDateTime,
     val createdBy: String,
-    val tekst: String,
+    val tekst: String?,
+    val oppfolgingsgrunner: List<String>,
     val frist: LocalDate?,
 )

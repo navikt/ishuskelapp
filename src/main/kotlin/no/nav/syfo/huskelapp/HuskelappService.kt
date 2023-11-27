@@ -22,6 +22,25 @@ class HuskelappService(
     fun createHuskelapp(
         personIdent: PersonIdent,
         veilederIdent: String,
+        oppfolgingsgrunn: String,
+        frist: LocalDate?,
+    ) {
+        val newHuskelapp = Huskelapp.create(
+            personIdent = personIdent,
+            veilederIdent = veilederIdent,
+            tekst = null,
+            oppfolgingsgrunner = listOf(oppfolgingsgrunn),
+            frist = frist,
+        )
+        huskelappRepository.create(huskelapp = newHuskelapp)
+        COUNT_HUSKELAPP_CREATED.increment()
+        COUNT_HUSKELAPP_VERSJON_CREATED.increment()
+    }
+
+    @Deprecated("Remove when possibility to fill out tekst in syfomodiaperson is removed")
+    fun createHuskelappDeprecated(
+        personIdent: PersonIdent,
+        veilederIdent: String,
         tekst: String,
         frist: LocalDate?,
     ) {
@@ -41,10 +60,11 @@ class HuskelappService(
         } else {
             huskelappRepository.create(
                 huskelapp = Huskelapp.create(
-                    tekst = tekst,
-                    frist = frist,
                     personIdent = personIdent,
                     veilederIdent = veilederIdent,
+                    tekst = tekst,
+                    oppfolgingsgrunner = emptyList(),
+                    frist = frist,
                 )
             )
             COUNT_HUSKELAPP_CREATED.increment()
