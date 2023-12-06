@@ -39,7 +39,8 @@ fun Route.registerHuskelappApi(
                 val responseDTO = HuskelappResponseDTO(
                     uuid = huskelapp.uuid.toString(),
                     createdBy = huskelapp.createdBy,
-                    updatedAt = huskelapp.updatedAt,
+                    updatedAt = huskelapp.updatedAt.toLocalDateTime(),
+                    createdAt = huskelapp.createdAt.toLocalDateTime(),
                     tekst = huskelapp.tekst,
                     oppfolgingsgrunn = huskelapp.oppfolgingsgrunner.firstOrNull(),
                     frist = huskelapp.frist,
