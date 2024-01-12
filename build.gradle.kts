@@ -7,16 +7,16 @@ version = "0.0.1"
 object Versions {
     const val confluent = "7.5.1"
     const val flyway = "9.22.3"
-    const val hikari = "5.0.1"
-    const val jacksonDataType = "2.16.0"
-    const val kafka = "3.6.0"
+    const val hikari = "5.1.0"
+    const val jacksonDataType = "2.16.1"
+    const val kafka = "3.6.1"
     const val kluent = "1.73"
     const val ktor = "2.3.7"
     const val logback = "1.4.14"
     const val logstashEncoder = "7.4"
-    const val micrometerRegistry = "1.12.0"
-    const val mockk = "1.13.8"
-    const val nimbusJoseJwt = "9.37.2"
+    const val micrometerRegistry = "1.12.2"
+    const val mockk = "1.13.9"
+    const val nimbusJoseJwt = "9.37.3"
     const val postgres = "42.6.0"
     val postgresEmbedded = if (Os.isFamily(Os.FAMILY_MAC)) "1.0.0" else "0.13.4"
     const val scala = "2.13.12"
@@ -24,7 +24,7 @@ object Versions {
 }
 
 plugins {
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm") version "1.9.22"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.0"
 }
