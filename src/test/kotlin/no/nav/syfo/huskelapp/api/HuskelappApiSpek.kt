@@ -145,8 +145,9 @@ class HuskelappApiSpek : Spek({
                     }
                     it("OK with oppfolgingsgrunn") {
                         val requestDTOWithOppfolgingsgrunn = HuskelappRequestDTO(
+                            oppfolgingsgrunn = "En veldig god grunn",
                             tekst = null,
-                            oppfolgingsgrunn = "En veldig god grunn"
+                            frist = null,
                         )
                         with(
                             handleRequest(HttpMethod.Post, huskelappApiBasePath) {

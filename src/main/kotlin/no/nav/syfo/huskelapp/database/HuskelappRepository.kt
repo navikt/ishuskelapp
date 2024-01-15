@@ -32,9 +32,9 @@ class HuskelappRepository(
 
     fun create(huskelapp: Huskelapp) {
         database.connection.use { connection ->
-            val huskelappId = connection.createHuskelapp(huskelapp)
+            val createdHuskelapp = connection.createHuskelapp(huskelapp)
             connection.createHuskelappVersjon(
-                huskelappId = huskelappId,
+                huskelappId = createdHuskelapp.id,
                 createdBy = huskelapp.createdBy,
                 tekst = huskelapp.tekst,
                 oppfolgingsgrunner = huskelapp.oppfolgingsgrunner,
@@ -44,9 +44,9 @@ class HuskelappRepository(
         }
     }
 
-    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String, frist: LocalDate?) {
+    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String?, frist: LocalDate?): PHuskelappVersjon =
         database.connection.use { connection ->
-            connection.createHuskelappVersjon(
+            val huskelappVersjon = connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
                 createdBy = veilederIdent,
                 tekst = tekst,
@@ -54,8 +54,8 @@ class HuskelappRepository(
                 frist = frist,
             )
             connection.commit()
+            return huskelappVersjon
         }
-    }
 
     private fun Connection.createHuskelappVersjon(
         huskelappId: Int,
@@ -63,7 +63,7 @@ class HuskelappRepository(
         tekst: String?,
         oppfolgingsgrunner: List<String>,
         frist: LocalDate?,
-    ): Int {
+    ): PHuskelappVersjon {
         val idList = this.prepareStatement(CREATE_HUSKELAPP_VERSJON_QUERY).use {
             it.setString(1, UUID.randomUUID().toString())
             it.setInt(2, huskelappId)
@@ -76,7 +76,7 @@ class HuskelappRepository(
                 it.setString(6, oppfolgingsgrunner.joinToString(","))
             }
             it.setDate(7, frist?.let { frist -> Date.valueOf(frist) })
-            it.executeQuery().toList { getInt("id") }
+            it.executeQuery().toList { toPHuskelappVersjon() }
         }
 
         if (idList.size != 1) {
@@ -103,7 +103,7 @@ class HuskelappRepository(
                 oppfolgingsgrunner,
                 frist
             ) values (DEFAULT, ?, ?, ?, ?, ?, ?, ?)
-            RETURNING id
+            RETURNING *
             """
     }
 }
@@ -118,12 +118,12 @@ private const val queryCreateHuskelapp =
         updated_at,
         is_active
     ) values (DEFAULT, ?, ?, ?, ?, ?)
-    RETURNING id
+    RETURNING *
     """
 
 private fun Connection.createHuskelapp(
     huskelapp: Huskelapp,
-): Int {
+): PHuskelapp {
     val now = nowUTC()
     val idList = this.prepareStatement(queryCreateHuskelapp).use {
         it.setString(1, huskelapp.uuid.toString())
@@ -131,7 +131,7 @@ private fun Connection.createHuskelapp(
         it.setObject(3, now)
         it.setObject(4, now)
         it.setObject(5, huskelapp.isActive)
-        it.executeQuery().toList { getInt("id") }
+        it.executeQuery().toList { toPHuskelapp() }
     }
 
     if (idList.size != 1) {
