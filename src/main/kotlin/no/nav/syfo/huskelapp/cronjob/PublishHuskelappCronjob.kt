@@ -12,7 +12,7 @@ class PublishHuskelappCronjob(
     private val huskelappProducer: HuskelappProducer
 ) : Cronjob {
     override val initialDelayMinutes: Long = 2
-    override val intervalDelayMinutes: Long = 2
+    override val intervalDelaySeconds: Long = 20
 
     override suspend fun run() {
         val result = runJob()
