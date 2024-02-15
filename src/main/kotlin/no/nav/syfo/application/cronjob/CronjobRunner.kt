@@ -47,7 +47,7 @@ class CronjobRunner(
 
     private fun delays(cronjob: Cronjob): Pair<Long, Long> {
         val initialDelay = Duration.ofMinutes(cronjob.initialDelayMinutes).toMillis()
-        val intervalDelay = Duration.ofMinutes(cronjob.intervalDelayMinutes).toMillis()
+        val intervalDelay = Duration.ofSeconds(cronjob.intervalDelaySeconds).toMillis()
         return Pair(initialDelay, intervalDelay)
     }
 }
