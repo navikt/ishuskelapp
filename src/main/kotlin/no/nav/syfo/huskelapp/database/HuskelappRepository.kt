@@ -6,12 +6,8 @@ import no.nav.syfo.application.database.toList
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.domain.Huskelapp
 import no.nav.syfo.util.nowUTC
-import java.sql.Connection
+import java.sql.*
 import java.sql.Date
-import java.sql.ResultSet
-import java.sql.SQLException
-import java.sql.Types
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -30,28 +26,26 @@ class HuskelappRepository(
         return database.getHuskelappVersjoner(huskelappId)
     }
 
-    fun create(huskelapp: Huskelapp) {
+    fun create(huskelapp: Huskelapp): Huskelapp {
         database.connection.use { connection ->
             val createdHuskelapp = connection.createHuskelapp(huskelapp)
-            connection.createHuskelappVersjon(
+            val createdVersion = connection.createHuskelappVersjon(
                 huskelappId = createdHuskelapp.id,
-                createdBy = huskelapp.createdBy,
-                tekst = huskelapp.tekst,
-                oppfolgingsgrunner = huskelapp.oppfolgingsgrunner,
-                frist = huskelapp.frist,
+                newOppfolgingsoppgaveVersion = huskelapp,
             )
             connection.commit()
+            return createdHuskelapp.toHuskelapp(createdVersion)
         }
     }
 
-    fun createVersjon(huskelappId: Int, veilederIdent: String, tekst: String?, frist: LocalDate?): PHuskelappVersjon =
+    fun createVersion(
+        huskelappId: Int,
+        newOppfolgingsoppgaveVersion: Huskelapp,
+    ): PHuskelappVersjon =
         database.connection.use { connection ->
             val huskelappVersjon = connection.createHuskelappVersjon(
                 huskelappId = huskelappId,
-                createdBy = veilederIdent,
-                tekst = tekst,
-                oppfolgingsgrunner = emptyList(),
-                frist = frist,
+                newOppfolgingsoppgaveVersion = newOppfolgingsoppgaveVersion,
             )
             connection.commit()
             return huskelappVersjon
@@ -59,23 +53,22 @@ class HuskelappRepository(
 
     private fun Connection.createHuskelappVersjon(
         huskelappId: Int,
-        createdBy: String,
-        tekst: String?,
-        oppfolgingsgrunner: List<String>,
-        frist: LocalDate?,
+        newOppfolgingsoppgaveVersion: Huskelapp,
     ): PHuskelappVersjon {
         val idList = this.prepareStatement(CREATE_HUSKELAPP_VERSJON_QUERY).use {
             it.setString(1, UUID.randomUUID().toString())
             it.setInt(2, huskelappId)
             it.setObject(3, nowUTC())
-            it.setString(4, createdBy)
-            tekst?.let { tekst -> it.setString(5, tekst) } ?: it.setNull(5, Types.LONGVARCHAR)
-            if (oppfolgingsgrunner.isEmpty()) {
+            it.setString(4, newOppfolgingsoppgaveVersion.createdBy)
+            newOppfolgingsoppgaveVersion.tekst
+                ?.let { tekst -> it.setString(5, tekst) }
+                ?: it.setNull(5, Types.LONGVARCHAR)
+            if (newOppfolgingsoppgaveVersion.oppfolgingsgrunner.isEmpty()) {
                 it.setNull(6, Types.LONGVARCHAR)
             } else {
-                it.setString(6, oppfolgingsgrunner.joinToString(","))
+                it.setString(6, newOppfolgingsoppgaveVersion.oppfolgingsgrunner.joinToString(","))
             }
-            it.setDate(7, frist?.let { frist -> Date.valueOf(frist) })
+            it.setDate(7, newOppfolgingsoppgaveVersion.frist?.let { frist -> Date.valueOf(frist) })
             it.executeQuery().toList { toPHuskelappVersjon() }
         }
 

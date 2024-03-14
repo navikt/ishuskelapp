@@ -36,16 +36,7 @@ fun Route.registerHuskelappApi(
             if (huskelapp == null) {
                 call.respond(HttpStatusCode.NoContent)
             } else {
-                val responseDTO = HuskelappResponseDTO(
-                    uuid = huskelapp.uuid.toString(),
-                    createdBy = huskelapp.createdBy,
-                    updatedAt = huskelapp.updatedAt.toLocalDateTime(),
-                    createdAt = huskelapp.createdAt.toLocalDateTime(),
-                    tekst = huskelapp.tekst,
-                    oppfolgingsgrunn = huskelapp.oppfolgingsgrunner.firstOrNull(),
-                    frist = huskelapp.frist,
-                )
-
+                val responseDTO = HuskelappResponseDTO.fromOppfolgingsoppgave(huskelapp)
                 call.respond(responseDTO)
             }
         }
@@ -60,6 +51,22 @@ fun Route.registerHuskelappApi(
                 newHuskelapp = requestDTO,
             )
             call.respond(HttpStatusCode.Created)
+        }
+        post("/{$huskelappParam}") {
+            val uuid = UUID.fromString(call.parameters[huskelappParam])
+            val requestDTO = call.receive<EditedOppfolgingsoppgaveDTO>()
+
+            huskelappService.addVersion(
+                existingOppfolgingsoppgaveUuid = uuid,
+                newVersion = requestDTO
+            )
+                ?.let { createdHuskelappVersjon ->
+                    call.respond(
+                        HttpStatusCode.Created,
+                        HuskelappResponseDTO.fromOppfolgingsoppgave(createdHuskelappVersjon)
+                    )
+                }
+                ?: call.respond(HttpStatusCode.NotFound, "Could not find existing oppfolgingsoppgave with uuid: $uuid")
         }
         delete("/{$huskelappParam}") {
             val huskelappUuid = UUID.fromString(call.parameters[huskelappParam])

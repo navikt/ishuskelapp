@@ -5,6 +5,7 @@ import no.nav.syfo.application.metric.COUNT_HUSKELAPP_REMOVED
 import no.nav.syfo.application.metric.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.api.HuskelappRequestDTO
+import no.nav.syfo.huskelapp.api.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.database.PHuskelapp
 import no.nav.syfo.huskelapp.domain.Huskelapp
@@ -29,13 +30,29 @@ class HuskelappService(
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
                 tekst = newHuskelapp.tekst,
-                oppfolgingsgrunner = newHuskelapp.oppfolgingsgrunn?.let { listOf(it) } ?: emptyList(),
+                oppfolgingsgrunner = listOf(newHuskelapp.oppfolgingsgrunn),
                 frist = newHuskelapp.frist,
             )
         )
         COUNT_HUSKELAPP_CREATED.increment()
         COUNT_HUSKELAPP_VERSJON_CREATED.increment()
     }
+
+    fun addVersion(
+        existingOppfolgingsoppgaveUuid: UUID,
+        newVersion: EditedOppfolgingsoppgaveDTO
+    ): Huskelapp? =
+        huskelappRepository.getHuskelapp(existingOppfolgingsoppgaveUuid)
+            ?.let { pExistingOppfolgingsoppgave ->
+                val existingOppfolgingsoppgave = pExistingOppfolgingsoppgave.toHuskelapp()
+                val newOppfolgingsoppgaveVersion = existingOppfolgingsoppgave.edit(newVersion.frist)
+                val savedNewVersion = huskelappRepository.createVersion(
+                    huskelappId = pExistingOppfolgingsoppgave.id,
+                    newOppfolgingsoppgaveVersion = newOppfolgingsoppgaveVersion,
+                )
+                COUNT_HUSKELAPP_VERSJON_CREATED.increment()
+                return pExistingOppfolgingsoppgave.toHuskelapp(savedNewVersion)
+            }
 
     fun getUnpublishedHuskelapper(): List<Huskelapp> = huskelappRepository.getUnpublished().map { it.toHuskelapp() }
 

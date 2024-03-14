@@ -1,11 +1,12 @@
 package no.nav.syfo.huskelapp.api
 
+import no.nav.syfo.huskelapp.domain.Huskelapp
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class HuskelappRequestDTO(
     val tekst: String?,
-    val oppfolgingsgrunn: String?,
+    val oppfolgingsgrunn: String,
     val frist: LocalDate? = null,
 )
 
@@ -17,4 +18,17 @@ data class HuskelappResponseDTO(
     val tekst: String?,
     val oppfolgingsgrunn: String?,
     val frist: LocalDate?,
-)
+) {
+    companion object {
+        fun fromOppfolgingsoppgave(oppfolgingsoppgave: Huskelapp) =
+            HuskelappResponseDTO(
+                uuid = oppfolgingsoppgave.uuid.toString(),
+                createdBy = oppfolgingsoppgave.createdBy,
+                updatedAt = oppfolgingsoppgave.updatedAt.toLocalDateTime(),
+                createdAt = oppfolgingsoppgave.createdAt.toLocalDateTime(),
+                tekst = oppfolgingsoppgave.tekst,
+                oppfolgingsgrunn = oppfolgingsoppgave.oppfolgingsgrunner.first(),
+                frist = oppfolgingsoppgave.frist,
+            )
+    }
+}

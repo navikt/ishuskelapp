@@ -19,6 +19,10 @@ data class Huskelapp private constructor(
     val publishedAt: OffsetDateTime?,
     val removedBy: String?,
 ) {
+
+    fun edit(frist: LocalDate): Huskelapp =
+        this.copy(frist = frist, updatedAt = nowUTC())
+
     companion object {
         fun create(
             personIdent: PersonIdent,

@@ -29,7 +29,7 @@ class HuskelappApiSpek : Spek({
                 externalMockEnvironment = externalMockEnvironment,
             )
             val huskelappRepository = HuskelappRepository(
-                database = externalMockEnvironment.database,
+                database = database,
             )
 
             afterEachTest {
@@ -116,7 +116,7 @@ class HuskelappApiSpek : Spek({
                     it("OK with tekst") {
                         val requestDTOWithTekst = HuskelappRequestDTO(
                             tekst = "En tekst",
-                            oppfolgingsgrunn = null,
+                            oppfolgingsgrunn = "TA_KONTAKT_SYKEMELDT",
                         )
                         with(
                             handleRequest(HttpMethod.Post, huskelappApiBasePath) {
@@ -214,6 +214,71 @@ class HuskelappApiSpek : Spek({
                     }
                     it("returns status BadRequest if $NAV_PERSONIDENT_HEADER with invalid PersonIdent is supplied") {
                         testInvalidPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Post)
+                    }
+                }
+            }
+            describe("Post new version of oppfolgingsoppgave") {
+                describe("Happy path") {
+                    it("OK with new date") {
+                        val huskelapp = Huskelapp.create(
+                            personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
+                            veilederIdent = UserConstants.VEILEDER_IDENT,
+                            tekst = "En huskelapp",
+                            oppfolgingsgrunner = listOf("En veldig god grunn"),
+                            frist = LocalDate.now().minusDays(1)
+                        )
+                        val existingOppfolgingsoppgave = huskelappRepository.create(huskelapp = huskelapp)
+                        val requestDTO = HuskelappRequestDTO(
+                            tekst = existingOppfolgingsoppgave.tekst,
+                            oppfolgingsgrunn = existingOppfolgingsoppgave.oppfolgingsgrunner.first(),
+                            frist = LocalDate.now().plusDays(1),
+                        )
+
+                        with(
+                            handleRequest(HttpMethod.Post, "$huskelappApiBasePath/${existingOppfolgingsoppgave.uuid}") {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                                setBody(objectMapper.writeValueAsString(requestDTO))
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.Created
+                        }
+
+                        with(
+                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.OK
+                            val responseDTO =
+                                objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
+
+                            responseDTO.tekst shouldBeEqualTo requestDTO.tekst
+                            responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTO.oppfolgingsgrunn
+                            responseDTO.frist shouldBeEqualTo requestDTO.frist
+                            responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
+                        }
+                    }
+                }
+                describe("Unhappy path") {
+                    it("Returns status NotFound if oppfolgingsoppgave does not exist") {
+                        val requestDTO = HuskelappRequestDTO(
+                            tekst = null,
+                            oppfolgingsgrunn = "TA_KONTAKT_SYKEMELDT",
+                            frist = LocalDate.now().plusDays(1),
+                        )
+                        with(
+                            handleRequest(HttpMethod.Post, "$huskelappApiBasePath/${UUID.randomUUID()}") {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
+                                setBody(objectMapper.writeValueAsString(requestDTO))
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.NotFound
+                        }
                     }
                 }
             }
