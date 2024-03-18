@@ -6,6 +6,7 @@ import io.ktor.http.*
 import io.ktor.server.testing.*
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.domain.Huskelapp
+import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.*
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
 import no.nav.syfo.util.bearerHeader
@@ -47,7 +48,7 @@ class HuskelappApiSpek : Spek({
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                     veilederIdent = UserConstants.VEILEDER_IDENT,
                     tekst = "En huskelapp",
-                    oppfolgingsgrunner = listOf("En veldig god grunn")
+                    oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
                 )
                 val inactiveHuskelapp = huskelapp.copy(
                     uuid = UUID.randomUUID(),
@@ -110,13 +111,13 @@ class HuskelappApiSpek : Spek({
                 describe("Happy path") {
                     val requestDTO = HuskelappRequestDTO(
                         tekst = "En tekst",
-                        oppfolgingsgrunn = "En veldig god grunn",
+                        oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                         frist = LocalDate.now().plusDays(1),
                     )
                     it("OK with tekst") {
                         val requestDTOWithTekst = HuskelappRequestDTO(
                             tekst = "En tekst",
-                            oppfolgingsgrunn = "TA_KONTAKT_SYKEMELDT",
+                            oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
                         )
                         with(
                             handleRequest(HttpMethod.Post, huskelappApiBasePath) {
@@ -145,7 +146,7 @@ class HuskelappApiSpek : Spek({
                     }
                     it("OK with oppfolgingsgrunn") {
                         val requestDTOWithOppfolgingsgrunn = HuskelappRequestDTO(
-                            oppfolgingsgrunn = "En veldig god grunn",
+                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                             tekst = null,
                             frist = null,
                         )
@@ -224,7 +225,7 @@ class HuskelappApiSpek : Spek({
                             personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                             veilederIdent = UserConstants.VEILEDER_IDENT,
                             tekst = "En huskelapp",
-                            oppfolgingsgrunner = listOf("En veldig god grunn"),
+                            oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
                             frist = LocalDate.now().minusDays(1)
                         )
                         val existingOppfolgingsoppgave = huskelappRepository.create(huskelapp = huskelapp)
@@ -266,7 +267,7 @@ class HuskelappApiSpek : Spek({
                     it("Returns status NotFound if oppfolgingsoppgave does not exist") {
                         val requestDTO = HuskelappRequestDTO(
                             tekst = null,
-                            oppfolgingsgrunn = "TA_KONTAKT_SYKEMELDT",
+                            oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
                             frist = LocalDate.now().plusDays(1),
                         )
                         with(
@@ -287,7 +288,7 @@ class HuskelappApiSpek : Spek({
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                     veilederIdent = UserConstants.VEILEDER_IDENT,
                     tekst = "En huskelapp",
-                    oppfolgingsgrunner = listOf("En veldig god grunn"),
+                    oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
                 )
                 val inactiveHuskelapp = huskelapp.copy(
                     uuid = UUID.randomUUID(),

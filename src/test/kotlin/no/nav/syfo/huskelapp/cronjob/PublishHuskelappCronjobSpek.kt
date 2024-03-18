@@ -4,6 +4,7 @@ import io.mockk.*
 import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.domain.Huskelapp
+import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
 import no.nav.syfo.huskelapp.kafka.HuskelappProducer
 import no.nav.syfo.huskelapp.kafka.KafkaHuskelapp
 import no.nav.syfo.testhelper.*
@@ -55,13 +56,13 @@ class PublishHuskelappCronjobSpek : Spek({
                 personIdent,
                 veilederIdent,
                 tekst = "En huskelapp",
-                oppfolgingsgrunner = listOf("En veldig god grunn")
+                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
             )
             val annenHuskelapp = Huskelapp.create(
                 personIdent,
                 veilederIdent,
                 tekst = null,
-                oppfolgingsgrunner = listOf("En annen veldig god grunn"),
+                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT),
                 frist = LocalDate.now().plusWeeks(1),
             )
             listOf(enHuskelapp, annenHuskelapp).forEach {
@@ -99,7 +100,7 @@ class PublishHuskelappCronjobSpek : Spek({
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
                 tekst = "En huskelapp",
-                oppfolgingsgrunner = listOf("En veldig god grunn")
+                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
             )
             huskelappRepository.create(enHuskelapp)
             huskelappRepository.setPublished(enHuskelapp)
