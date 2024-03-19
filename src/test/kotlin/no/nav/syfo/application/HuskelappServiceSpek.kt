@@ -9,6 +9,8 @@ import no.nav.syfo.testhelper.ExternalMockEnvironment
 import no.nav.syfo.testhelper.UserConstants
 import no.nav.syfo.testhelper.dropData
 import org.amshove.kluent.shouldBeEqualTo
+import org.amshove.kluent.shouldBeGreaterThan
+import org.amshove.kluent.shouldBeNull
 import org.amshove.kluent.shouldNotBeEqualTo
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -40,6 +42,9 @@ class HuskelappServiceSpek : Spek({
             it("adds a new version of oppfolgingsoppgave with only edited frist") {
                 val newFrist = oppfolgingsoppgave.frist!!.plusWeeks(1)
                 val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
+                val publishedOppfolgingsoppgave = createdOppfolgingsoppgave.publish()
+                oppfolgingsoppgaveRepository.updatePublished(publishedOppfolgingsoppgave)
+
                 val newOppfolgingsoppgaveVersion = EditedOppfolgingsoppgaveDTO(
                     tekst = oppfolgingsoppgave.tekst,
                     frist = newFrist,
@@ -56,7 +61,6 @@ class HuskelappServiceSpek : Spek({
                 newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo createdOppfolgingsoppgave.oppfolgingsgrunner
                 newOppfolgingsoppgave?.isActive shouldBeEqualTo createdOppfolgingsoppgave.isActive
                 newOppfolgingsoppgave?.createdAt shouldBeEqualTo createdOppfolgingsoppgave.createdAt
-                newOppfolgingsoppgave?.publishedAt shouldBeEqualTo createdOppfolgingsoppgave.publishedAt
                 newOppfolgingsoppgave?.removedBy shouldBeEqualTo createdOppfolgingsoppgave.removedBy
 
                 newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
@@ -65,12 +69,15 @@ class HuskelappServiceSpek : Spek({
                 newOppfolgingsoppgave?.tekst shouldBeEqualTo oppfolgingsoppgave.tekst
                 newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
                 newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
-                newOppfolgingsoppgave?.publishedAt shouldBeEqualTo oppfolgingsoppgave.publishedAt
                 newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
 
                 newOppfolgingsoppgave?.frist shouldNotBeEqualTo createdOppfolgingsoppgave.frist
                 createdOppfolgingsoppgave.frist shouldBeEqualTo oppfolgingsoppgave.frist
                 newOppfolgingsoppgave?.frist shouldBeEqualTo newFrist
+
+                newOppfolgingsoppgave?.publishedAt shouldNotBeEqualTo publishedOppfolgingsoppgave.publishedAt
+                newOppfolgingsoppgave?.publishedAt.shouldBeNull()
+                newOppfolgingsoppgave?.updatedAt!! shouldBeGreaterThan createdOppfolgingsoppgave.updatedAt
             }
         }
     }

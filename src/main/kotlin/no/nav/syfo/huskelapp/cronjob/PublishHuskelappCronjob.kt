@@ -30,7 +30,8 @@ class PublishHuskelappCronjob(
         unpublishedHuskelapper.forEach {
             try {
                 huskelappProducer.sendHuskelapp(it)
-                huskelappService.setPublished(it)
+                val publishedHuskelapp = it.publish()
+                huskelappService.updatePublished(publishedHuskelapp)
                 result.updated++
             } catch (e: Exception) {
                 log.error("Caught exception in publish huskelapp job", e)

@@ -21,7 +21,12 @@ data class Huskelapp private constructor(
 ) {
 
     fun edit(frist: LocalDate): Huskelapp =
-        this.copy(frist = frist, updatedAt = nowUTC())
+        this.copy(frist = frist, updatedAt = nowUTC(), publishedAt = null)
+
+    fun publish(): Huskelapp {
+        val now = nowUTC()
+        return this.copy(updatedAt = now, publishedAt = now)
+    }
 
     companion object {
         fun create(
