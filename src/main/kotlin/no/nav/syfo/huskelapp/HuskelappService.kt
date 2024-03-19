@@ -45,7 +45,7 @@ class HuskelappService(
         huskelappRepository.getHuskelapp(existingOppfolgingsoppgaveUuid)
             ?.let { pExistingOppfolgingsoppgave ->
                 val existingOppfolgingsoppgave = pExistingOppfolgingsoppgave.toHuskelapp()
-                val newOppfolgingsoppgaveVersion = existingOppfolgingsoppgave.edit(newVersion.frist)
+                val newOppfolgingsoppgaveVersion = existingOppfolgingsoppgave.edit(newVersion.tekst, newVersion.frist)
                 val savedNewVersion = huskelappRepository.createVersion(
                     huskelappId = pExistingOppfolgingsoppgave.id,
                     newOppfolgingsoppgaveVersion = newOppfolgingsoppgaveVersion,

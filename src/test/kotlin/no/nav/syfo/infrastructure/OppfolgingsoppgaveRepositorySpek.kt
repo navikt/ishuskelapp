@@ -51,7 +51,7 @@ class OppfolgingsoppgaveRepositorySpek : Spek({
                 val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
                 val createdOppfolgingsoppgaveId =
                     oppfolgingsoppgaveRepository.getHuskelapp(createdOppfolgingsoppgave.uuid)!!.id
-                val newVersion = oppfolgingsoppgave.edit(newFrist)
+                val newVersion = oppfolgingsoppgave.edit(oppfolgingsoppgave.tekst, newFrist)
                 oppfolgingsoppgaveRepository.createVersion(
                     createdOppfolgingsoppgaveId,
                     newOppfolgingsoppgaveVersion = newVersion,
