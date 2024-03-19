@@ -46,17 +46,17 @@ class HuskelappService(
             ?.let { pExistingOppfolgingsoppgave ->
                 val existingOppfolgingsoppgave = pExistingOppfolgingsoppgave.toHuskelapp()
                 val newOppfolgingsoppgaveVersion = existingOppfolgingsoppgave.edit(newVersion.frist)
-                val savedNewVersion = huskelappRepository.createVersion(
+                huskelappRepository.createVersion(
                     huskelappId = pExistingOppfolgingsoppgave.id,
                     newOppfolgingsoppgaveVersion = newOppfolgingsoppgaveVersion,
                 )
                 COUNT_HUSKELAPP_VERSJON_CREATED.increment()
-                return pExistingOppfolgingsoppgave.toHuskelapp(savedNewVersion)
+                return newOppfolgingsoppgaveVersion
             }
 
     fun getUnpublishedHuskelapper(): List<Huskelapp> = huskelappRepository.getUnpublished().map { it.toHuskelapp() }
 
-    fun setPublished(huskelapp: Huskelapp) = huskelappRepository.setPublished(huskelapp = huskelapp)
+    fun updatePublished(huskelapp: Huskelapp) = huskelappRepository.updatePublished(huskelapp = huskelapp)
 
     fun getHuskelapp(uuid: UUID): Huskelapp? =
         huskelappRepository.getHuskelapp(uuid)
