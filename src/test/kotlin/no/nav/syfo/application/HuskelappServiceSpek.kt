@@ -4,6 +4,7 @@ import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.huskelapp.api.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.domain.Huskelapp
+import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.ExternalMockEnvironment
 import no.nav.syfo.testhelper.UserConstants
 import no.nav.syfo.testhelper.dropData
@@ -27,7 +28,7 @@ class HuskelappServiceSpek : Spek({
             personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
             veilederIdent = UserConstants.VEILEDER_IDENT,
             tekst = "En god tekst for en oppfolgingsoppgave",
-            oppfolgingsgrunner = listOf("TA_KONTAKT_SYKEMELDT"),
+            oppfolgingsgrunner = listOf(Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT),
             frist = LocalDate.now().plusDays(1),
         )
 

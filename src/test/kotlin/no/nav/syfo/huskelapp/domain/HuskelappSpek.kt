@@ -14,7 +14,7 @@ class HuskelappSpek : Spek({
         personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
         veilederIdent = UserConstants.VEILEDER_IDENT,
         tekst = "En huskelapp",
-        oppfolgingsgrunner = listOf("En veldig god grunn")
+        oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
     )
 
     describe("Remove") {
