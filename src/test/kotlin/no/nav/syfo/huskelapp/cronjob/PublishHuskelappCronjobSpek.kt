@@ -2,8 +2,10 @@ package no.nav.syfo.huskelapp.cronjob
 
 import io.mockk.*
 import no.nav.syfo.huskelapp.HuskelappService
+import no.nav.syfo.huskelapp.api.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.huskelapp.database.HuskelappRepository
 import no.nav.syfo.huskelapp.domain.Huskelapp
+import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
 import no.nav.syfo.huskelapp.kafka.HuskelappProducer
 import no.nav.syfo.huskelapp.kafka.KafkaHuskelapp
 import no.nav.syfo.testhelper.*
@@ -55,13 +57,13 @@ class PublishHuskelappCronjobSpek : Spek({
                 personIdent,
                 veilederIdent,
                 tekst = "En huskelapp",
-                oppfolgingsgrunner = listOf("En veldig god grunn")
+                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
             )
             val annenHuskelapp = Huskelapp.create(
                 personIdent,
                 veilederIdent,
                 tekst = null,
-                oppfolgingsgrunner = listOf("En annen veldig god grunn"),
+                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT),
                 frist = LocalDate.now().plusWeeks(1),
             )
             listOf(enHuskelapp, annenHuskelapp).forEach {
@@ -99,10 +101,11 @@ class PublishHuskelappCronjobSpek : Spek({
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
                 tekst = "En huskelapp",
-                oppfolgingsgrunner = listOf("En veldig god grunn")
+                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
             )
             huskelappRepository.create(enHuskelapp)
-            huskelappRepository.setPublished(enHuskelapp)
+            val publishedHuskelapp = enHuskelapp.publish()
+            huskelappRepository.updatePublished(publishedHuskelapp)
 
             val result = publishHuskelappCronjob.runJob()
 
@@ -122,6 +125,48 @@ class PublishHuskelappCronjobSpek : Spek({
             verify(exactly = 0) {
                 kafkaProducer.send(any())
             }
+        }
+        it("publishes edited huskelapp") {
+            val enHuskelapp = Huskelapp.create(
+                personIdent,
+                veilederIdent,
+                tekst = "En huskelapp",
+                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
+            )
+            huskelappRepository.create(enHuskelapp)
+
+            var result = publishHuskelappCronjob.runJob()
+
+            result.failed shouldBeEqualTo 0
+            result.updated shouldBeEqualTo 1
+
+            verify(exactly = 1) {
+                kafkaProducer.send(any())
+            }
+
+            val editedOppfolgingsoppgaveDTO = EditedOppfolgingsoppgaveDTO(tekst = "En huskelapp", frist = LocalDate.now().plusDays(3))
+            huskelappService.addVersion(existingOppfolgingsoppgaveUuid = enHuskelapp.uuid, newVersion = editedOppfolgingsoppgaveDTO)
+
+            result = publishHuskelappCronjob.runJob()
+
+            result.failed shouldBeEqualTo 0
+            result.updated shouldBeEqualTo 1
+
+            val kafkaRecordSlot = slot<ProducerRecord<String, KafkaHuskelapp>>()
+            verifyOrder {
+                kafkaProducer.send(capture(kafkaRecordSlot))
+            }
+
+            val kafkaHuskelapp = kafkaRecordSlot.captured.value()
+
+            kafkaHuskelapp.tekst shouldBeEqualTo editedOppfolgingsoppgaveDTO.tekst
+            kafkaHuskelapp.frist shouldBeEqualTo editedOppfolgingsoppgaveDTO.frist
+            kafkaHuskelapp.oppfolgingsgrunner shouldBeEqualTo enHuskelapp.oppfolgingsgrunner
+            kafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
+            kafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
+            kafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
+
+            huskelappRepository.getHuskelapper(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
         }
     }
 })

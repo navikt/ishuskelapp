@@ -11,7 +11,7 @@ data class Huskelapp private constructor(
     val personIdent: PersonIdent,
     val createdBy: String,
     val tekst: String?,
-    val oppfolgingsgrunner: List<String>,
+    val oppfolgingsgrunner: List<Oppfolgingsgrunn>,
     val frist: LocalDate?,
     val isActive: Boolean,
     val createdAt: OffsetDateTime,
@@ -27,8 +27,14 @@ data class Huskelapp private constructor(
         return this.copy(
             tekst = tekst,
             frist = frist,
-            updatedAt = nowUTC()
+            updatedAt = nowUTC(),
+            publishedAt = null,
         )
+    }
+
+    fun publish(): Huskelapp {
+        val now = nowUTC()
+        return this.copy(updatedAt = now, publishedAt = now)
     }
 
     fun remove(veilederIdent: String): Huskelapp {
@@ -45,7 +51,7 @@ data class Huskelapp private constructor(
             personIdent: PersonIdent,
             veilederIdent: String,
             tekst: String?,
-            oppfolgingsgrunner: List<String>,
+            oppfolgingsgrunner: List<Oppfolgingsgrunn>,
             frist: LocalDate? = null,
         ): Huskelapp {
             val now = nowUTC()
@@ -81,7 +87,7 @@ data class Huskelapp private constructor(
             personIdent = personIdent,
             createdBy = veilederIdent,
             tekst = tekst,
-            oppfolgingsgrunner = oppfolgingsgrunner,
+            oppfolgingsgrunner = oppfolgingsgrunner.map { Oppfolgingsgrunn.valueOf(it) },
             frist = frist,
             isActive = isActive,
             createdAt = createdAt,

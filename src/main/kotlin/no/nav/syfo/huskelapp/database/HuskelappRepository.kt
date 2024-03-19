@@ -47,6 +47,7 @@ class HuskelappRepository(
                 huskelappId = huskelappId,
                 newOppfolgingsoppgaveVersion = newOppfolgingsoppgaveVersion,
             )
+            connection.updatePublished(huskelapp = newOppfolgingsoppgaveVersion)
             connection.commit()
             return huskelappVersjon
         }
@@ -80,7 +81,7 @@ class HuskelappRepository(
     }
 
     fun getUnpublished(): List<PHuskelapp> = database.getUnpublishedHuskelapper()
-    fun setPublished(huskelapp: Huskelapp) = database.setPublished(huskelapp = huskelapp)
+    fun updatePublished(huskelapp: Huskelapp) = database.updatePublished(huskelapp = huskelapp)
     fun updateRemovedHuskelapp(huskelapp: Huskelapp) = database.updateRemovedHuskelapp(huskelapp = huskelapp)
 
     companion object {
@@ -202,19 +203,20 @@ private const val querySetPublished = """
     WHERE uuid = ?
 """
 
-private fun DatabaseInterface.setPublished(huskelapp: Huskelapp) {
-    val now = nowUTC()
-    this.connection.use { connection ->
-        connection.prepareStatement(querySetPublished).use {
-            it.setObject(1, now)
-            it.setObject(2, now)
-            it.setString(3, huskelapp.uuid.toString())
-            val updated = it.executeUpdate()
-            if (updated != 1) {
-                throw SQLException("Expected a single row to be updated, got update count $updated")
-            }
+private fun DatabaseInterface.updatePublished(huskelapp: Huskelapp) = this.connection.use { connection ->
+    connection.updatePublished(huskelapp)
+    connection.commit()
+}
+
+private fun Connection.updatePublished(huskelapp: Huskelapp) {
+    this.prepareStatement(querySetPublished).use {
+        it.setObject(1, huskelapp.publishedAt)
+        it.setObject(2, huskelapp.updatedAt)
+        it.setString(3, huskelapp.uuid.toString())
+        val updated = it.executeUpdate()
+        if (updated != 1) {
+            throw SQLException("Expected a single row to be updated, got update count $updated")
         }
-        connection.commit()
     }
 }
 
@@ -259,7 +261,6 @@ private fun ResultSet.toPHuskelappVersjon() = PHuskelappVersjon(
     createdAt = getObject("created_at", OffsetDateTime::class.java),
     createdBy = getString("created_by"),
     tekst = getString("tekst"),
-    oppfolgingsgrunner = getString("oppfolgingsgrunner")?.split(",")?.map(String::trim)?.filter(String::isNotEmpty)
-        ?: emptyList(),
+    oppfolgingsgrunner = getString("oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty),
     frist = getDate("frist")?.toLocalDate(),
 )
