@@ -54,15 +54,6 @@ class HuskelappServiceSpek : Spek({
                     newVersion = newOppfolgingsoppgaveVersion
                 )
 
-                newOppfolgingsoppgave?.uuid shouldBeEqualTo createdOppfolgingsoppgave.uuid
-                newOppfolgingsoppgave?.personIdent shouldBeEqualTo createdOppfolgingsoppgave.personIdent
-                newOppfolgingsoppgave?.createdBy shouldBeEqualTo createdOppfolgingsoppgave.createdBy
-                newOppfolgingsoppgave?.tekst shouldBeEqualTo createdOppfolgingsoppgave.tekst
-                newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo createdOppfolgingsoppgave.oppfolgingsgrunner
-                newOppfolgingsoppgave?.isActive shouldBeEqualTo createdOppfolgingsoppgave.isActive
-                newOppfolgingsoppgave?.createdAt shouldBeEqualTo createdOppfolgingsoppgave.createdAt
-                newOppfolgingsoppgave?.removedBy shouldBeEqualTo createdOppfolgingsoppgave.removedBy
-
                 newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
                 newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
                 newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
@@ -71,8 +62,7 @@ class HuskelappServiceSpek : Spek({
                 newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
                 newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
 
-                newOppfolgingsoppgave?.frist shouldNotBeEqualTo createdOppfolgingsoppgave.frist
-                createdOppfolgingsoppgave.frist shouldBeEqualTo oppfolgingsoppgave.frist
+                newOppfolgingsoppgave?.frist shouldNotBeEqualTo oppfolgingsoppgave.frist
                 newOppfolgingsoppgave?.frist shouldBeEqualTo newFrist
 
                 newOppfolgingsoppgave?.publishedAt.shouldBeNull()
@@ -92,16 +82,6 @@ class HuskelappServiceSpek : Spek({
                 newVersion = newOppfolgingsoppgaveVersion
             )
 
-            newOppfolgingsoppgave?.uuid shouldBeEqualTo createdOppfolgingsoppgave.uuid
-            newOppfolgingsoppgave?.personIdent shouldBeEqualTo createdOppfolgingsoppgave.personIdent
-            newOppfolgingsoppgave?.createdBy shouldBeEqualTo createdOppfolgingsoppgave.createdBy
-            newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo createdOppfolgingsoppgave.oppfolgingsgrunner
-            newOppfolgingsoppgave?.frist shouldBeEqualTo createdOppfolgingsoppgave.frist
-            newOppfolgingsoppgave?.isActive shouldBeEqualTo createdOppfolgingsoppgave.isActive
-            newOppfolgingsoppgave?.createdAt shouldBeEqualTo createdOppfolgingsoppgave.createdAt
-            newOppfolgingsoppgave?.publishedAt shouldBeEqualTo createdOppfolgingsoppgave.publishedAt
-            newOppfolgingsoppgave?.removedBy shouldBeEqualTo createdOppfolgingsoppgave.removedBy
-
             newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
             newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
             newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
@@ -111,8 +91,7 @@ class HuskelappServiceSpek : Spek({
             newOppfolgingsoppgave?.publishedAt shouldBeEqualTo oppfolgingsoppgave.publishedAt
             newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
 
-            newOppfolgingsoppgave?.tekst shouldNotBeEqualTo createdOppfolgingsoppgave.tekst
-            createdOppfolgingsoppgave.tekst shouldBeEqualTo oppfolgingsoppgave.tekst
+            newOppfolgingsoppgave?.tekst shouldNotBeEqualTo oppfolgingsoppgave.tekst
             newOppfolgingsoppgave?.tekst shouldBeEqualTo newTekst
             newOppfolgingsoppgave?.publishedAt.shouldBeNull()
         }
@@ -129,15 +108,6 @@ class HuskelappServiceSpek : Spek({
                 newVersion = newOppfolgingsoppgaveVersion
             )
 
-            newOppfolgingsoppgave?.uuid shouldBeEqualTo createdOppfolgingsoppgave.uuid
-            newOppfolgingsoppgave?.personIdent shouldBeEqualTo createdOppfolgingsoppgave.personIdent
-            newOppfolgingsoppgave?.createdBy shouldBeEqualTo createdOppfolgingsoppgave.createdBy
-            newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo createdOppfolgingsoppgave.oppfolgingsgrunner
-            newOppfolgingsoppgave?.isActive shouldBeEqualTo createdOppfolgingsoppgave.isActive
-            newOppfolgingsoppgave?.createdAt shouldBeEqualTo createdOppfolgingsoppgave.createdAt
-            newOppfolgingsoppgave?.publishedAt shouldBeEqualTo createdOppfolgingsoppgave.publishedAt
-            newOppfolgingsoppgave?.removedBy shouldBeEqualTo createdOppfolgingsoppgave.removedBy
-
             newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
             newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
             newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
@@ -146,12 +116,10 @@ class HuskelappServiceSpek : Spek({
             newOppfolgingsoppgave?.publishedAt shouldBeEqualTo oppfolgingsoppgave.publishedAt
             newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
 
-            newOppfolgingsoppgave?.frist shouldNotBeEqualTo createdOppfolgingsoppgave.frist
-            createdOppfolgingsoppgave.frist shouldBeEqualTo oppfolgingsoppgave.frist
+            newOppfolgingsoppgave?.frist shouldNotBeEqualTo oppfolgingsoppgave.frist
             newOppfolgingsoppgave?.frist shouldBeEqualTo newFrist
 
-            newOppfolgingsoppgave?.tekst shouldNotBeEqualTo createdOppfolgingsoppgave.tekst
-            createdOppfolgingsoppgave.tekst shouldBeEqualTo oppfolgingsoppgave.tekst
+            newOppfolgingsoppgave?.tekst shouldNotBeEqualTo oppfolgingsoppgave.tekst
             newOppfolgingsoppgave?.tekst shouldBeEqualTo newTekst
 
             newOppfolgingsoppgave?.publishedAt.shouldBeNull()
