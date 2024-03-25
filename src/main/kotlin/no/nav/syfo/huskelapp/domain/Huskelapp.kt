@@ -20,12 +20,30 @@ data class Huskelapp private constructor(
     val removedBy: String?,
 ) {
 
-    fun edit(frist: LocalDate): Huskelapp =
-        this.copy(frist = frist, updatedAt = nowUTC(), publishedAt = null)
+    fun edit(tekst: String?, frist: LocalDate?): Huskelapp {
+        if (this.tekst == tekst && this.frist == frist) {
+            throw IllegalArgumentException("No changes detected, not updating oppfolgingsoppgave")
+        }
+        return this.copy(
+            tekst = tekst,
+            frist = frist,
+            updatedAt = nowUTC(),
+            publishedAt = null,
+        )
+    }
 
     fun publish(): Huskelapp {
         val now = nowUTC()
         return this.copy(updatedAt = now, publishedAt = now)
+    }
+
+    fun remove(veilederIdent: String): Huskelapp {
+        return this.copy(
+            isActive = false,
+            publishedAt = null,
+            updatedAt = nowUTC(),
+            removedBy = veilederIdent,
+        )
     }
 
     companion object {
@@ -76,15 +94,6 @@ data class Huskelapp private constructor(
             updatedAt = updatedAt,
             publishedAt = publishedAt,
             removedBy = removedBy,
-        )
-    }
-
-    fun remove(veilederIdent: String): Huskelapp {
-        return this.copy(
-            isActive = false,
-            publishedAt = null,
-            updatedAt = nowUTC(),
-            removedBy = veilederIdent,
         )
     }
 }

@@ -54,15 +54,6 @@ class HuskelappServiceSpek : Spek({
                     newVersion = newOppfolgingsoppgaveVersion
                 )
 
-                newOppfolgingsoppgave?.uuid shouldBeEqualTo createdOppfolgingsoppgave.uuid
-                newOppfolgingsoppgave?.personIdent shouldBeEqualTo createdOppfolgingsoppgave.personIdent
-                newOppfolgingsoppgave?.createdBy shouldBeEqualTo createdOppfolgingsoppgave.createdBy
-                newOppfolgingsoppgave?.tekst shouldBeEqualTo createdOppfolgingsoppgave.tekst
-                newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo createdOppfolgingsoppgave.oppfolgingsgrunner
-                newOppfolgingsoppgave?.isActive shouldBeEqualTo createdOppfolgingsoppgave.isActive
-                newOppfolgingsoppgave?.createdAt shouldBeEqualTo createdOppfolgingsoppgave.createdAt
-                newOppfolgingsoppgave?.removedBy shouldBeEqualTo createdOppfolgingsoppgave.removedBy
-
                 newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
                 newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
                 newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
@@ -71,14 +62,67 @@ class HuskelappServiceSpek : Spek({
                 newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
                 newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
 
-                newOppfolgingsoppgave?.frist shouldNotBeEqualTo createdOppfolgingsoppgave.frist
-                createdOppfolgingsoppgave.frist shouldBeEqualTo oppfolgingsoppgave.frist
+                newOppfolgingsoppgave?.frist shouldNotBeEqualTo oppfolgingsoppgave.frist
                 newOppfolgingsoppgave?.frist shouldBeEqualTo newFrist
 
-                newOppfolgingsoppgave?.publishedAt shouldNotBeEqualTo publishedOppfolgingsoppgave.publishedAt
                 newOppfolgingsoppgave?.publishedAt.shouldBeNull()
                 newOppfolgingsoppgave?.updatedAt!! shouldBeGreaterThan createdOppfolgingsoppgave.updatedAt
             }
+        }
+
+        it("adds a new version of oppfolgingsoppgave with only edited tekst") {
+            val newTekst = oppfolgingsoppgave.tekst + " - enda mer informasjon her"
+            val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
+            val newOppfolgingsoppgaveVersion = EditedOppfolgingsoppgaveDTO(
+                tekst = newTekst,
+                frist = oppfolgingsoppgave.frist,
+            )
+            val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
+                existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
+                newVersion = newOppfolgingsoppgaveVersion
+            )
+
+            newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
+            newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
+            newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
+            newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
+            newOppfolgingsoppgave?.frist shouldBeEqualTo oppfolgingsoppgave.frist
+            newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
+            newOppfolgingsoppgave?.publishedAt shouldBeEqualTo oppfolgingsoppgave.publishedAt
+            newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
+
+            newOppfolgingsoppgave?.tekst shouldNotBeEqualTo oppfolgingsoppgave.tekst
+            newOppfolgingsoppgave?.tekst shouldBeEqualTo newTekst
+            newOppfolgingsoppgave?.publishedAt.shouldBeNull()
+        }
+        it("adds a new version of oppfolgingsoppgave with edited frist and tekst") {
+            val newTekst = oppfolgingsoppgave.tekst + " - enda mer informasjon her"
+            val newFrist = oppfolgingsoppgave.frist!!.plusWeeks(1)
+            val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
+            val newOppfolgingsoppgaveVersion = EditedOppfolgingsoppgaveDTO(
+                tekst = newTekst,
+                frist = newFrist,
+            )
+            val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
+                existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
+                newVersion = newOppfolgingsoppgaveVersion
+            )
+
+            newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
+            newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
+            newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
+            newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
+            newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
+            newOppfolgingsoppgave?.publishedAt shouldBeEqualTo oppfolgingsoppgave.publishedAt
+            newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
+
+            newOppfolgingsoppgave?.frist shouldNotBeEqualTo oppfolgingsoppgave.frist
+            newOppfolgingsoppgave?.frist shouldBeEqualTo newFrist
+
+            newOppfolgingsoppgave?.tekst shouldNotBeEqualTo oppfolgingsoppgave.tekst
+            newOppfolgingsoppgave?.tekst shouldBeEqualTo newTekst
+
+            newOppfolgingsoppgave?.publishedAt.shouldBeNull()
         }
     }
 })
