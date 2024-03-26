@@ -1,11 +1,11 @@
 package no.nav.syfo.application
 
 import io.ktor.server.application.*
-import no.nav.syfo.application.database.DatabaseEnvironment
-import no.nav.syfo.application.kafka.KafkaEnvironment
-import no.nav.syfo.client.ClientEnvironment
-import no.nav.syfo.client.ClientsEnvironment
-import no.nav.syfo.client.azuread.AzureEnvironment
+import no.nav.syfo.infrastructure.database.DatabaseEnvironment
+import no.nav.syfo.infrastructure.kafka.KafkaEnvironment
+import no.nav.syfo.infrastructure.client.ClientEnvironment
+import no.nav.syfo.infrastructure.client.ClientsEnvironment
+import no.nav.syfo.infrastructure.client.azuread.AzureEnvironment
 
 const val NAIS_DATABASE_ENV_PREFIX = "NAIS_DATABASE_ISHUSKELAPP_ISHUSKELAPP_DB"
 

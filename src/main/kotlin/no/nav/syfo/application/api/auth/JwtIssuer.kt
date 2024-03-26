@@ -1,6 +1,6 @@
 package no.nav.syfo.application.api.auth
 
-import no.nav.syfo.client.wellknown.WellKnown
+import no.nav.syfo.infrastructure.client.wellknown.WellKnown
 
 data class JwtIssuer(
     val acceptedAudienceList: List<String>,

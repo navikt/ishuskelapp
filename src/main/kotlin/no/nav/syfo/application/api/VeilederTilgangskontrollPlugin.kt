@@ -3,7 +3,7 @@ package no.nav.syfo.application.api
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import no.nav.syfo.application.exception.ForbiddenAccessVeilederException
-import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
+import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.util.*
 
 class VeilederTilgangskontrollPluginConfig {

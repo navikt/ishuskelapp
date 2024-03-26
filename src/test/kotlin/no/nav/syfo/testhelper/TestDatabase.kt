@@ -1,7 +1,7 @@
 package no.nav.syfo.testhelper
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
-import no.nav.syfo.application.database.DatabaseInterface
+import no.nav.syfo.infrastructure.database.DatabaseInterface
 import org.flywaydb.core.Flyway
 import java.sql.Connection
 

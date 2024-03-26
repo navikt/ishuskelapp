@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import no.nav.syfo.huskelapp.database.HuskelappRepository
+import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
 import no.nav.syfo.huskelapp.domain.Huskelapp
 import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.*

@@ -6,8 +6,8 @@ import no.nav.syfo.application.metric.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.api.HuskelappRequestDTO
 import no.nav.syfo.huskelapp.api.EditedOppfolgingsoppgaveDTO
-import no.nav.syfo.huskelapp.database.HuskelappRepository
-import no.nav.syfo.huskelapp.database.PHuskelapp
+import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
+import no.nav.syfo.infrastructure.database.repository.PHuskelapp
 import no.nav.syfo.huskelapp.domain.Huskelapp
 import java.util.*
 

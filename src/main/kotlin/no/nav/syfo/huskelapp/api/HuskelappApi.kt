@@ -6,7 +6,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.syfo.application.api.VeilederTilgangskontrollPlugin
-import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
+import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER

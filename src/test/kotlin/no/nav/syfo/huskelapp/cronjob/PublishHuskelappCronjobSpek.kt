@@ -3,11 +3,12 @@ package no.nav.syfo.huskelapp.cronjob
 import io.mockk.*
 import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.huskelapp.api.EditedOppfolgingsoppgaveDTO
-import no.nav.syfo.huskelapp.database.HuskelappRepository
+import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
 import no.nav.syfo.huskelapp.domain.Huskelapp
 import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
-import no.nav.syfo.huskelapp.kafka.HuskelappProducer
-import no.nav.syfo.huskelapp.kafka.KafkaHuskelapp
+import no.nav.syfo.infrastructure.cronjob.PublishHuskelappCronjob
+import no.nav.syfo.infrastructure.kafka.HuskelappProducer
+import no.nav.syfo.infrastructure.kafka.KafkaHuskelapp
 import no.nav.syfo.testhelper.*
 import org.amshove.kluent.*
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -144,8 +145,12 @@ class PublishHuskelappCronjobSpek : Spek({
                 kafkaProducer.send(any())
             }
 
-            val editedOppfolgingsoppgaveDTO = EditedOppfolgingsoppgaveDTO(tekst = "En huskelapp", frist = LocalDate.now().plusDays(3))
-            huskelappService.addVersion(existingOppfolgingsoppgaveUuid = enHuskelapp.uuid, newVersion = editedOppfolgingsoppgaveDTO)
+            val editedOppfolgingsoppgaveDTO =
+                EditedOppfolgingsoppgaveDTO(tekst = "En huskelapp", frist = LocalDate.now().plusDays(3))
+            huskelappService.addVersion(
+                existingOppfolgingsoppgaveUuid = enHuskelapp.uuid,
+                newVersion = editedOppfolgingsoppgaveDTO
+            )
 
             result = publishHuskelappCronjob.runJob()
 
