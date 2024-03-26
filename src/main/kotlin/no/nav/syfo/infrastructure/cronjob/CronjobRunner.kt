@@ -2,7 +2,7 @@ package no.nav.syfo.infrastructure.cronjob
 
 import kotlinx.coroutines.*
 import net.logstash.logback.argument.StructuredArguments
-import no.nav.syfo.application.ApplicationState
+import no.nav.syfo.ApplicationState
 import no.nav.syfo.infrastructure.client.leaderelection.LeaderPodClient
 import org.slf4j.LoggerFactory
 import java.time.Duration

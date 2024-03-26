@@ -1,8 +1,7 @@
-package no.nav.syfo.application.api
+package no.nav.syfo.api
 
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import no.nav.syfo.application.exception.ForbiddenAccessVeilederException
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.util.*
 
@@ -45,3 +44,8 @@ val VeilederTilgangskontrollPlugin = createRouteScopedPlugin(
         }
     }
 }
+
+class ForbiddenAccessVeilederException(
+    action: String,
+    message: String = "Denied NAVIdent access to personIdent: $action",
+) : RuntimeException(message)

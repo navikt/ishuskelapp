@@ -1,7 +1,7 @@
 package no.nav.syfo.testhelper
 
-import no.nav.syfo.application.ApplicationState
-import no.nav.syfo.application.Environment
+import no.nav.syfo.ApplicationState
+import no.nav.syfo.Environment
 import no.nav.syfo.infrastructure.database.DatabaseEnvironment
 import no.nav.syfo.infrastructure.kafka.KafkaEnvironment
 import no.nav.syfo.infrastructure.client.ClientEnvironment

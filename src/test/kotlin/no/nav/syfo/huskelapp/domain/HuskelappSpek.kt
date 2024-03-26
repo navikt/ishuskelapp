@@ -1,5 +1,7 @@
 package no.nav.syfo.huskelapp.domain
 
+import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.UserConstants
 import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldBeFalse

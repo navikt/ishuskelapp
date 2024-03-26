@@ -1,14 +1,17 @@
-package no.nav.syfo.huskelapp.api
+package no.nav.syfo.api.endpoints
 
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import no.nav.syfo.application.api.VeilederTilgangskontrollPlugin
+import no.nav.syfo.api.VeilederTilgangskontrollPlugin
+import no.nav.syfo.application.EditedOppfolgingsoppgaveDTO
+import no.nav.syfo.application.HuskelappRequestDTO
+import no.nav.syfo.application.HuskelappResponseDTO
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.domain.PersonIdent
-import no.nav.syfo.huskelapp.HuskelappService
+import no.nav.syfo.application.HuskelappService
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
 import no.nav.syfo.util.getNAVIdent
 import no.nav.syfo.util.getPersonIdent

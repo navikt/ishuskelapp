@@ -1,4 +1,4 @@
-package no.nav.syfo.huskelapp.api
+package no.nav.syfo.application
 
 import java.time.LocalDate
 

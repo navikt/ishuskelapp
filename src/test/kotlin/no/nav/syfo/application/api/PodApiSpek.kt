@@ -3,7 +3,8 @@ package no.nav.syfo.application.api
 import io.ktor.http.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
-import no.nav.syfo.application.ApplicationState
+import no.nav.syfo.ApplicationState
+import no.nav.syfo.api.endpoints.registerPodApi
 import no.nav.syfo.testhelper.TestDatabase
 import no.nav.syfo.testhelper.TestDatabaseNotResponding
 import org.amshove.kluent.shouldBeEqualTo

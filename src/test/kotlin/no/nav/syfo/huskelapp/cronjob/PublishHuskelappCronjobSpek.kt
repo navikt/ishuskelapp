@@ -1,11 +1,11 @@
 package no.nav.syfo.huskelapp.cronjob
 
 import io.mockk.*
-import no.nav.syfo.huskelapp.HuskelappService
-import no.nav.syfo.huskelapp.api.EditedOppfolgingsoppgaveDTO
+import no.nav.syfo.application.HuskelappService
+import no.nav.syfo.application.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
-import no.nav.syfo.huskelapp.domain.Huskelapp
-import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
+import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.infrastructure.cronjob.PublishHuskelappCronjob
 import no.nav.syfo.infrastructure.kafka.HuskelappProducer
 import no.nav.syfo.infrastructure.kafka.KafkaHuskelapp

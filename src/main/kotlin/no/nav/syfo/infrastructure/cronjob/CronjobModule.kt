@@ -1,10 +1,13 @@
 package no.nav.syfo.infrastructure.cronjob
 
 import io.ktor.server.application.*
+import no.nav.syfo.ApplicationState
+import no.nav.syfo.Environment
 import no.nav.syfo.application.*
 import no.nav.syfo.infrastructure.client.leaderelection.LeaderPodClient
-import no.nav.syfo.huskelapp.HuskelappService
+import no.nav.syfo.application.HuskelappService
 import no.nav.syfo.infrastructure.kafka.HuskelappProducer
+import no.nav.syfo.launchBackgroundTask
 
 fun Application.cronjobModule(
     applicationState: ApplicationState,

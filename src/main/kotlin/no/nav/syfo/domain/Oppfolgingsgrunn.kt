@@ -1,4 +1,4 @@
-package no.nav.syfo.huskelapp.domain
+package no.nav.syfo.domain
 
 enum class Oppfolgingsgrunn {
     TA_KONTAKT_SYKEMELDT,
