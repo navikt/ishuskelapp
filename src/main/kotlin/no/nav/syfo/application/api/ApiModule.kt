@@ -8,10 +8,10 @@ import no.nav.syfo.application.Environment
 import no.nav.syfo.application.api.auth.JwtIssuer
 import no.nav.syfo.application.api.auth.JwtIssuerType
 import no.nav.syfo.application.api.auth.installJwtAuthentication
-import no.nav.syfo.application.database.DatabaseInterface
+import no.nav.syfo.infrastructure.database.DatabaseInterface
 import no.nav.syfo.application.metric.registerMetricApi
-import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
-import no.nav.syfo.client.wellknown.WellKnown
+import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
+import no.nav.syfo.infrastructure.client.wellknown.WellKnown
 import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.huskelapp.api.registerHuskelappApi
 

@@ -2,9 +2,9 @@ package no.nav.syfo.testhelper
 
 import io.ktor.server.application.*
 import no.nav.syfo.application.api.apiModule
-import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
+import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.huskelapp.HuskelappService
-import no.nav.syfo.huskelapp.database.HuskelappRepository
+import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
 
 fun Application.testApiModule(
     externalMockEnvironment: ExternalMockEnvironment,

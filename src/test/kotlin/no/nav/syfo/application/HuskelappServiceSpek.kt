@@ -2,7 +2,7 @@ package no.nav.syfo.application
 
 import no.nav.syfo.huskelapp.HuskelappService
 import no.nav.syfo.huskelapp.api.EditedOppfolgingsoppgaveDTO
-import no.nav.syfo.huskelapp.database.HuskelappRepository
+import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
 import no.nav.syfo.huskelapp.domain.Huskelapp
 import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.ExternalMockEnvironment

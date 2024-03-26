@@ -8,16 +8,16 @@ import io.ktor.server.netty.*
 import no.nav.syfo.application.ApplicationState
 import no.nav.syfo.application.Environment
 import no.nav.syfo.application.api.apiModule
-import no.nav.syfo.application.cronjob.cronjobModule
-import no.nav.syfo.application.database.applicationDatabase
-import no.nav.syfo.application.database.databaseModule
-import no.nav.syfo.client.azuread.AzureAdClient
-import no.nav.syfo.client.veiledertilgang.VeilederTilgangskontrollClient
-import no.nav.syfo.client.wellknown.getWellKnown
+import no.nav.syfo.infrastructure.cronjob.cronjobModule
+import no.nav.syfo.infrastructure.database.applicationDatabase
+import no.nav.syfo.infrastructure.database.databaseModule
+import no.nav.syfo.infrastructure.client.azuread.AzureAdClient
+import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
+import no.nav.syfo.infrastructure.client.wellknown.getWellKnown
 import no.nav.syfo.huskelapp.HuskelappService
-import no.nav.syfo.huskelapp.database.HuskelappRepository
-import no.nav.syfo.huskelapp.kafka.HuskelappProducer
-import no.nav.syfo.huskelapp.kafka.huskelappKafkaProducer
+import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
+import no.nav.syfo.infrastructure.kafka.HuskelappProducer
+import no.nav.syfo.infrastructure.kafka.huskelappKafkaProducer
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
