@@ -5,16 +5,14 @@ import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import no.nav.syfo.application.ApplicationState
-import no.nav.syfo.application.Environment
-import no.nav.syfo.application.api.apiModule
+import no.nav.syfo.api.apiModule
 import no.nav.syfo.infrastructure.cronjob.cronjobModule
 import no.nav.syfo.infrastructure.database.applicationDatabase
 import no.nav.syfo.infrastructure.database.databaseModule
 import no.nav.syfo.infrastructure.client.azuread.AzureAdClient
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.infrastructure.client.wellknown.getWellKnown
-import no.nav.syfo.huskelapp.HuskelappService
+import no.nav.syfo.application.HuskelappService
 import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
 import no.nav.syfo.infrastructure.kafka.HuskelappProducer
 import no.nav.syfo.infrastructure.kafka.huskelappKafkaProducer
@@ -94,3 +92,8 @@ fun main() {
 
     server.start(wait = true)
 }
+
+data class ApplicationState(
+    var alive: Boolean = true,
+    var ready: Boolean = false
+)

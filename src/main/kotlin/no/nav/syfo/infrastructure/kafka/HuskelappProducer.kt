@@ -1,6 +1,6 @@
 package no.nav.syfo.infrastructure.kafka
 
-import no.nav.syfo.huskelapp.domain.Huskelapp
+import no.nav.syfo.domain.Huskelapp
 import no.nav.syfo.util.configuredJacksonMapper
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord

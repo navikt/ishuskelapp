@@ -1,8 +1,8 @@
 package no.nav.syfo.infrastructure
 
 import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
-import no.nav.syfo.huskelapp.domain.Huskelapp
-import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
+import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.ExternalMockEnvironment
 import no.nav.syfo.testhelper.UserConstants
 import no.nav.syfo.testhelper.dropData

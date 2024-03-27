@@ -1,14 +1,12 @@
-package no.nav.syfo.huskelapp
+package no.nav.syfo.application
 
-import no.nav.syfo.application.metric.COUNT_HUSKELAPP_CREATED
-import no.nav.syfo.application.metric.COUNT_HUSKELAPP_REMOVED
-import no.nav.syfo.application.metric.COUNT_HUSKELAPP_VERSJON_CREATED
+import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_CREATED
+import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_REMOVED
+import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
-import no.nav.syfo.huskelapp.api.HuskelappRequestDTO
-import no.nav.syfo.huskelapp.api.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
 import no.nav.syfo.infrastructure.database.repository.PHuskelapp
-import no.nav.syfo.huskelapp.domain.Huskelapp
+import no.nav.syfo.domain.Huskelapp
 import java.util.*
 
 class HuskelappService(

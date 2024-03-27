@@ -1,7 +1,7 @@
 package no.nav.syfo.infrastructure.cronjob
 
 import net.logstash.logback.argument.StructuredArguments
-import no.nav.syfo.huskelapp.HuskelappService
+import no.nav.syfo.application.HuskelappService
 import no.nav.syfo.infrastructure.kafka.HuskelappProducer
 import org.slf4j.LoggerFactory
 

@@ -1,4 +1,4 @@
-package no.nav.syfo.application.metric
+package no.nav.syfo.infrastructure
 
 import io.micrometer.core.instrument.Counter
 import io.micrometer.prometheus.PrometheusConfig

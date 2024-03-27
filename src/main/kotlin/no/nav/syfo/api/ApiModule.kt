@@ -1,28 +1,81 @@
-package no.nav.syfo.application.api
+package no.nav.syfo.api
 
 import io.ktor.client.plugins.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.metrics.micrometer.*
 import io.ktor.server.plugins.callid.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
-import no.nav.syfo.application.exception.ForbiddenAccessVeilederException
-import no.nav.syfo.application.metric.METRICS_REGISTRY
-import no.nav.syfo.util.*
+import no.nav.syfo.ApplicationState
+import no.nav.syfo.Environment
+import no.nav.syfo.api.auth.JwtIssuer
+import no.nav.syfo.api.auth.JwtIssuerType
+import no.nav.syfo.api.auth.installJwtAuthentication
+import no.nav.syfo.api.endpoints.registerHuskelappApi
+import no.nav.syfo.api.endpoints.registerMetricApi
+import no.nav.syfo.api.endpoints.registerPodApi
+import no.nav.syfo.infrastructure.database.DatabaseInterface
+import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
+import no.nav.syfo.infrastructure.client.wellknown.WellKnown
+import no.nav.syfo.application.HuskelappService
+import no.nav.syfo.infrastructure.METRICS_REGISTRY
+import no.nav.syfo.util.NAV_CALL_ID_HEADER
+import no.nav.syfo.util.configure
+import no.nav.syfo.util.getCallId
+import no.nav.syfo.util.getConsumerClientId
 import java.time.Duration
 import java.util.*
 
-fun Application.installContentNegotiation() {
+fun Application.apiModule(
+    applicationState: ApplicationState,
+    database: DatabaseInterface,
+    environment: Environment,
+    wellKnownInternalAzureAD: WellKnown,
+    veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
+    huskelappService: HuskelappService,
+) {
+    installMetrics()
+    installCallId()
+    installContentNegotiation()
+    installStatusPages()
+    installJwtAuthentication(
+        jwtIssuerList = listOf(
+            JwtIssuer(
+                acceptedAudienceList = listOf(environment.azure.appClientId),
+                jwtIssuerType = JwtIssuerType.INTERNAL_AZUREAD,
+                wellKnown = wellKnownInternalAzureAD,
+            ),
+        )
+    )
+
+    routing {
+        registerPodApi(
+            applicationState = applicationState,
+            database = database,
+        )
+        registerMetricApi()
+        authenticate(JwtIssuerType.INTERNAL_AZUREAD.name) {
+            registerHuskelappApi(
+                veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+                huskelappService = huskelappService,
+            )
+        }
+    }
+}
+
+private fun Application.installContentNegotiation() {
     install(ContentNegotiation) {
         jackson { configure() }
     }
 }
 
-fun Application.installMetrics() {
+private fun Application.installMetrics() {
     install(MicrometerMetrics) {
         registry = METRICS_REGISTRY
         distributionStatisticConfig = DistributionStatisticConfig.Builder()
@@ -32,7 +85,7 @@ fun Application.installMetrics() {
     }
 }
 
-fun Application.installCallId() {
+private fun Application.installCallId() {
     install(CallId) {
         retrieve { it.request.headers[NAV_CALL_ID_HEADER] }
         generate { UUID.randomUUID().toString() }
@@ -41,7 +94,7 @@ fun Application.installCallId() {
     }
 }
 
-fun Application.installStatusPages() {
+private fun Application.installStatusPages() {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             val callId = call.getCallId()
@@ -52,6 +105,7 @@ fun Application.installStatusPages() {
                 is ForbiddenAccessVeilederException -> {
                     log.warn(logExceptionMessage, cause)
                 }
+
                 else -> {
                     log.error(logExceptionMessage, cause)
                 }
@@ -63,12 +117,15 @@ fun Application.installStatusPages() {
                 is ResponseException -> {
                     cause.response.status
                 }
+
                 is IllegalArgumentException -> {
                     HttpStatusCode.BadRequest
                 }
+
                 is ForbiddenAccessVeilederException -> {
                     HttpStatusCode.Forbidden
                 }
+
                 else -> {
                     isUnexpectedException = true
                     HttpStatusCode.InternalServerError

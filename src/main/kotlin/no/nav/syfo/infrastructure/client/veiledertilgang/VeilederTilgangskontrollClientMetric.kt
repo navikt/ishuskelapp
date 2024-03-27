@@ -1,8 +1,8 @@
 package no.nav.syfo.infrastructure.client.veiledertilgang
 
 import io.micrometer.core.instrument.Counter
-import no.nav.syfo.application.metric.METRICS_NS
-import no.nav.syfo.application.metric.METRICS_REGISTRY
+import no.nav.syfo.infrastructure.METRICS_NS
+import no.nav.syfo.infrastructure.METRICS_REGISTRY
 
 const val CALL_TILGANGSKONTROLL_PERSON_BASE = "${METRICS_NS}_call_tilgangskontroll_person"
 const val CALL_TILGANGSKONTROLL_PERSON_SUCCESS = "${CALL_TILGANGSKONTROLL_PERSON_BASE}_success_count"

@@ -1,7 +1,8 @@
 package no.nav.syfo.infrastructure.database
 
 import io.ktor.server.application.*
-import no.nav.syfo.application.*
+import no.nav.syfo.isDev
+import no.nav.syfo.isProd
 
 lateinit var applicationDatabase: DatabaseInterface
 fun Application.databaseModule(

@@ -1,6 +1,5 @@
-package no.nav.syfo.huskelapp.domain
+package no.nav.syfo.domain
 
-import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.util.nowUTC
 import java.time.LocalDate
 import java.time.OffsetDateTime

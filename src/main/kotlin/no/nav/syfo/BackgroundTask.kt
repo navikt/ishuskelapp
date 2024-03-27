@@ -1,4 +1,4 @@
-package no.nav.syfo.application
+package no.nav.syfo
 
 import kotlinx.coroutines.*
 import org.slf4j.Logger

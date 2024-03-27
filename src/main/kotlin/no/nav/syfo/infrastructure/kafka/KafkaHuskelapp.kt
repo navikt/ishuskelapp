@@ -1,6 +1,6 @@
 package no.nav.syfo.infrastructure.kafka
 
-import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
+import no.nav.syfo.domain.Oppfolgingsgrunn
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID

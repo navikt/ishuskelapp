@@ -1,7 +1,7 @@
-package no.nav.syfo.huskelapp.api
+package no.nav.syfo.application
 
-import no.nav.syfo.huskelapp.domain.Huskelapp
-import no.nav.syfo.huskelapp.domain.Oppfolgingsgrunn
+import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.domain.Oppfolgingsgrunn
 import java.time.LocalDate
 import java.time.LocalDateTime
 

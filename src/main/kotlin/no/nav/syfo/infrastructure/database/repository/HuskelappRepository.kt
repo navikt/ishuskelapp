@@ -1,7 +1,7 @@
 package no.nav.syfo.infrastructure.database.repository
 
 import no.nav.syfo.domain.PersonIdent
-import no.nav.syfo.huskelapp.domain.Huskelapp
+import no.nav.syfo.domain.Huskelapp
 import no.nav.syfo.infrastructure.database.*
 import no.nav.syfo.util.nowUTC
 import java.sql.*
