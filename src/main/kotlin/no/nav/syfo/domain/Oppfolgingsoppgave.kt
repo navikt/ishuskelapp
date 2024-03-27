@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
-data class Huskelapp private constructor(
+data class Oppfolgingsoppgave private constructor(
     val uuid: UUID,
     val personIdent: PersonIdent,
     val createdBy: String,
@@ -19,7 +19,7 @@ data class Huskelapp private constructor(
     val removedBy: String?,
 ) {
 
-    fun edit(tekst: String?, frist: LocalDate?): Huskelapp {
+    fun edit(tekst: String?, frist: LocalDate?): Oppfolgingsoppgave {
         if (this.tekst == tekst && this.frist == frist) {
             throw IllegalArgumentException("No changes detected, not updating oppfolgingsoppgave")
         }
@@ -31,12 +31,12 @@ data class Huskelapp private constructor(
         )
     }
 
-    fun publish(): Huskelapp {
+    fun publish(): Oppfolgingsoppgave {
         val now = nowUTC()
         return this.copy(updatedAt = now, publishedAt = now)
     }
 
-    fun remove(veilederIdent: String): Huskelapp {
+    fun remove(veilederIdent: String): Oppfolgingsoppgave {
         return this.copy(
             isActive = false,
             publishedAt = null,
@@ -52,9 +52,9 @@ data class Huskelapp private constructor(
             tekst: String?,
             oppfolgingsgrunner: List<Oppfolgingsgrunn>,
             frist: LocalDate? = null,
-        ): Huskelapp {
+        ): Oppfolgingsoppgave {
             val now = nowUTC()
-            return Huskelapp(
+            return Oppfolgingsoppgave(
                 uuid = UUID.randomUUID(),
                 personIdent = personIdent,
                 createdBy = veilederIdent,
@@ -81,7 +81,7 @@ data class Huskelapp private constructor(
             updatedAt: OffsetDateTime,
             publishedAt: OffsetDateTime?,
             removedBy: String?,
-        ) = Huskelapp(
+        ) = Oppfolgingsoppgave(
             uuid = uuid,
             personIdent = personIdent,
             createdBy = veilederIdent,

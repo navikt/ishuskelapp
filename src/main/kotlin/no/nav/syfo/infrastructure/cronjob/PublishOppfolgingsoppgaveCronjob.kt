@@ -1,12 +1,12 @@
 package no.nav.syfo.infrastructure.cronjob
 
 import net.logstash.logback.argument.StructuredArguments
-import no.nav.syfo.application.HuskelappService
+import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.infrastructure.kafka.HuskelappProducer
 import org.slf4j.LoggerFactory
 
-class PublishHuskelappCronjob(
-    private val huskelappService: HuskelappService,
+class PublishOppfolgingsoppgaveCronjob(
+    private val oppfolgingsoppgaveService: OppfolgingsoppgaveService,
     private val huskelappProducer: HuskelappProducer
 ) : Cronjob {
     override val initialDelayMinutes: Long = 2
@@ -23,13 +23,13 @@ class PublishHuskelappCronjob(
 
     fun runJob(): CronjobResult {
         val result = CronjobResult()
-        val unpublishedHuskelapper = huskelappService.getUnpublishedHuskelapper()
+        val unpublishedOppfolgingsoppgaver = oppfolgingsoppgaveService.getUnpublishedOppfolgingsoppgaver()
 
-        unpublishedHuskelapper.forEach {
+        unpublishedOppfolgingsoppgaver.forEach {
             try {
                 huskelappProducer.sendHuskelapp(it)
                 val publishedHuskelapp = it.publish()
-                huskelappService.updatePublished(publishedHuskelapp)
+                oppfolgingsoppgaveService.updatePublished(publishedHuskelapp)
                 result.updated++
             } catch (e: Exception) {
                 log.error("Caught exception in publish huskelapp job", e)

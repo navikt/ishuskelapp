@@ -1,7 +1,7 @@
 package no.nav.syfo.infrastructure
 
-import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
-import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.ExternalMockEnvironment
 import no.nav.syfo.testhelper.UserConstants
@@ -14,12 +14,12 @@ import java.time.LocalDate
 
 class OppfolgingsoppgaveRepositorySpek : Spek({
 
-    describe(HuskelappRepository::class.java.simpleName) {
+    describe(OppfolgingsoppgaveRepository::class.java.simpleName) {
 
         val database = ExternalMockEnvironment.instance.database
-        val oppfolgingsoppgaveRepository = HuskelappRepository(database = database)
+        val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(database = database)
 
-        val oppfolgingsoppgave = Huskelapp.create(
+        val oppfolgingsoppgave = Oppfolgingsoppgave.create(
             personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
             veilederIdent = UserConstants.VEILEDER_IDENT,
             tekst = "En god tekst for en oppfolgingsoppgave",
@@ -35,7 +35,7 @@ class OppfolgingsoppgaveRepositorySpek : Spek({
             it("creates an oppfolgingsoppgave") {
                 val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
                 val retrievedOppfolgingsoppgave =
-                    oppfolgingsoppgaveRepository.getHuskelapp(createdOppfolgingsoppgave.uuid)
+                    oppfolgingsoppgaveRepository.getOppfolgingsoppgave(createdOppfolgingsoppgave.uuid)
 
                 createdOppfolgingsoppgave.uuid shouldBeEqualTo retrievedOppfolgingsoppgave?.uuid
                 createdOppfolgingsoppgave.personIdent shouldBeEqualTo retrievedOppfolgingsoppgave?.personIdent
@@ -51,7 +51,7 @@ class OppfolgingsoppgaveRepositorySpek : Spek({
                 val newFrist = LocalDate.now().plusWeeks(1)
                 val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
                 val createdOppfolgingsoppgaveId =
-                    oppfolgingsoppgaveRepository.getHuskelapp(createdOppfolgingsoppgave.uuid)!!.id
+                    oppfolgingsoppgaveRepository.getOppfolgingsoppgave(createdOppfolgingsoppgave.uuid)!!.id
                 val newVersion = oppfolgingsoppgave.edit(oppfolgingsoppgave.tekst, newFrist)
                 oppfolgingsoppgaveRepository.createVersion(
                     createdOppfolgingsoppgaveId,
@@ -59,7 +59,7 @@ class OppfolgingsoppgaveRepositorySpek : Spek({
                 )
 
                 val oppfolgingsoppgaveVersions =
-                    oppfolgingsoppgaveRepository.getHuskelappVersjoner(createdOppfolgingsoppgaveId)
+                    oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(createdOppfolgingsoppgaveId)
 
                 oppfolgingsoppgaveVersions.size shouldBe 2
                 oppfolgingsoppgaveVersions[1].frist shouldBeEqualTo oppfolgingsoppgave.frist

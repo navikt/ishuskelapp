@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import no.nav.syfo.application.HuskelappRequestDTO
+import no.nav.syfo.application.OppfolgingsoppgaveRequestDTO
 import no.nav.syfo.application.HuskelappResponseDTO
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
-import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
-import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.*
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
@@ -32,7 +32,7 @@ class HuskelappApiSpek : Spek({
             application.testApiModule(
                 externalMockEnvironment = externalMockEnvironment,
             )
-            val huskelappRepository = HuskelappRepository(
+            val huskelappRepository = OppfolgingsoppgaveRepository(
                 database = database,
             )
 
@@ -47,7 +47,7 @@ class HuskelappApiSpek : Spek({
             )
 
             describe("Get huskelapp for person") {
-                val huskelapp = Huskelapp.create(
+                val huskelapp = Oppfolgingsoppgave.create(
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                     veilederIdent = UserConstants.VEILEDER_IDENT,
                     tekst = "En huskelapp",
@@ -60,7 +60,7 @@ class HuskelappApiSpek : Spek({
 
                 describe("Happy path") {
                     it("Returns OK if active huskelapp exists") {
-                        huskelappRepository.create(huskelapp = huskelapp)
+                        huskelappRepository.create(oppfolgingsoppgave = huskelapp)
 
                         with(
                             handleRequest(HttpMethod.Get, huskelappApiBasePath) {
@@ -82,7 +82,7 @@ class HuskelappApiSpek : Spek({
                         }
                     }
                     it("Returns no content if no active huskelapp exists") {
-                        huskelappRepository.create(huskelapp = inactiveHuskelapp)
+                        huskelappRepository.create(oppfolgingsoppgave = inactiveHuskelapp)
 
                         with(
                             handleRequest(HttpMethod.Get, huskelappApiBasePath) {
@@ -112,13 +112,13 @@ class HuskelappApiSpek : Spek({
             }
             describe("Post huskelapp") {
                 describe("Happy path") {
-                    val requestDTO = HuskelappRequestDTO(
+                    val requestDTO = OppfolgingsoppgaveRequestDTO(
                         tekst = "En tekst",
                         oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                         frist = LocalDate.now().plusDays(1),
                     )
                     it("OK with tekst") {
-                        val requestDTOWithTekst = HuskelappRequestDTO(
+                        val requestDTOWithTekst = OppfolgingsoppgaveRequestDTO(
                             tekst = "En tekst",
                             oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
                         )
@@ -148,7 +148,7 @@ class HuskelappApiSpek : Spek({
                         }
                     }
                     it("OK with oppfolgingsgrunn") {
-                        val requestDTOWithOppfolgingsgrunn = HuskelappRequestDTO(
+                        val requestDTOWithOppfolgingsgrunn = OppfolgingsoppgaveRequestDTO(
                             oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                             tekst = null,
                             frist = null,
@@ -202,8 +202,8 @@ class HuskelappApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.Created
                         }
                         val huskelapp =
-                            huskelappRepository.getHuskelapper(UserConstants.ARBEIDSTAKER_PERSONIDENT).first()
-                        huskelappRepository.getHuskelappVersjoner(huskelapp.id).size shouldBeEqualTo 1
+                            huskelappRepository.getOppfolgingsoppgaver(UserConstants.ARBEIDSTAKER_PERSONIDENT).first()
+                        huskelappRepository.getOppfolgingsoppgaveVersjoner(huskelapp.id).size shouldBeEqualTo 1
                     }
                 }
                 describe("Unhappy path") {
@@ -224,15 +224,15 @@ class HuskelappApiSpek : Spek({
             describe("Post new version of oppfolgingsoppgave") {
                 describe("Happy path") {
                     it("OK with new date") {
-                        val huskelapp = Huskelapp.create(
+                        val huskelapp = Oppfolgingsoppgave.create(
                             personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                             veilederIdent = UserConstants.VEILEDER_IDENT,
                             tekst = "En huskelapp",
                             oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
                             frist = LocalDate.now().minusDays(1)
                         )
-                        val existingOppfolgingsoppgave = huskelappRepository.create(huskelapp = huskelapp)
-                        val requestDTO = HuskelappRequestDTO(
+                        val existingOppfolgingsoppgave = huskelappRepository.create(oppfolgingsoppgave = huskelapp)
+                        val requestDTO = OppfolgingsoppgaveRequestDTO(
                             tekst = existingOppfolgingsoppgave.tekst,
                             oppfolgingsgrunn = existingOppfolgingsoppgave.oppfolgingsgrunner.first(),
                             frist = LocalDate.now().plusDays(1),
@@ -268,7 +268,7 @@ class HuskelappApiSpek : Spek({
                 }
                 describe("Unhappy path") {
                     it("Returns status NotFound if oppfolgingsoppgave does not exist") {
-                        val requestDTO = HuskelappRequestDTO(
+                        val requestDTO = OppfolgingsoppgaveRequestDTO(
                             tekst = null,
                             oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
                             frist = LocalDate.now().plusDays(1),
@@ -287,7 +287,7 @@ class HuskelappApiSpek : Spek({
                 }
             }
             describe("Delete huskelapp") {
-                val huskelapp = Huskelapp.create(
+                val huskelapp = Oppfolgingsoppgave.create(
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                     veilederIdent = UserConstants.VEILEDER_IDENT,
                     tekst = "En huskelapp",
@@ -302,7 +302,7 @@ class HuskelappApiSpek : Spek({
 
                 describe("Happy path") {
                     it("returns NoContent and sets huskelapp inactive") {
-                        huskelappRepository.create(huskelapp = huskelapp)
+                        huskelappRepository.create(oppfolgingsoppgave = huskelapp)
 
                         with(
                             handleRequest(HttpMethod.Delete, deleteHuskelappUrl) {
@@ -314,7 +314,8 @@ class HuskelappApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.NoContent
                         }
 
-                        val huskelapper = huskelappRepository.getHuskelapper(UserConstants.ARBEIDSTAKER_PERSONIDENT)
+                        val huskelapper =
+                            huskelappRepository.getOppfolgingsoppgaver(UserConstants.ARBEIDSTAKER_PERSONIDENT)
                         huskelapper.size shouldBeEqualTo 1
                         huskelapper.first().isActive.shouldBeFalse()
                     }
@@ -332,7 +333,7 @@ class HuskelappApiSpek : Spek({
                         }
                     }
                     it("returns status NotFound if no active huskelapp exists for given uuid") {
-                        huskelappRepository.create(huskelapp = inactiveHuskelapp)
+                        huskelappRepository.create(oppfolgingsoppgave = inactiveHuskelapp)
 
                         with(
                             handleRequest(HttpMethod.Delete, "$huskelappApiBasePath/${inactiveHuskelapp.uuid}") {

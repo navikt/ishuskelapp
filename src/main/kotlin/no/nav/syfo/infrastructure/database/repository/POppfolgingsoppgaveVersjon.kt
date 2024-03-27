@@ -4,10 +4,10 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
 
-data class PHuskelappVersjon(
+data class POppfolgingsoppgaveVersjon(
     val id: Int,
     val uuid: UUID,
-    val huskelappId: Int,
+    val oppfolgingsoppgaveId: Int,
     val createdAt: OffsetDateTime,
     val createdBy: String,
     val tekst: String?,

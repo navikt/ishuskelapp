@@ -1,11 +1,11 @@
 package no.nav.syfo.infrastructure.database.repository
 
 import no.nav.syfo.domain.PersonIdent
-import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import java.time.OffsetDateTime
 import java.util.*
 
-data class PHuskelapp(
+data class POppfolgingsoppgave(
     val id: Int,
     val uuid: UUID,
     val personIdent: PersonIdent,
@@ -15,19 +15,19 @@ data class PHuskelapp(
     val publishedAt: OffsetDateTime?,
     val removedBy: String?,
 ) {
-    fun toHuskelapp(pHuskelappVersjon: PHuskelappVersjon): Huskelapp {
-        return Huskelapp.createFromDatabase(
+    fun toOppfolgingsoppgave(pOppfolgingsoppgaveVersjon: POppfolgingsoppgaveVersjon): Oppfolgingsoppgave {
+        return Oppfolgingsoppgave.createFromDatabase(
             uuid = uuid,
             personIdent = personIdent,
-            veilederIdent = pHuskelappVersjon.createdBy,
-            tekst = pHuskelappVersjon.tekst,
-            oppfolgingsgrunner = pHuskelappVersjon.oppfolgingsgrunner,
+            veilederIdent = pOppfolgingsoppgaveVersjon.createdBy,
+            tekst = pOppfolgingsoppgaveVersjon.tekst,
+            oppfolgingsgrunner = pOppfolgingsoppgaveVersjon.oppfolgingsgrunner,
             isActive = isActive,
             createdAt = createdAt,
-            updatedAt = pHuskelappVersjon.createdAt,
+            updatedAt = pOppfolgingsoppgaveVersjon.createdAt,
             publishedAt = publishedAt,
             removedBy = removedBy,
-            frist = pHuskelappVersjon.frist,
+            frist = pOppfolgingsoppgaveVersjon.frist,
         )
     }
 }

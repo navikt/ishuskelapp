@@ -1,12 +1,12 @@
 package no.nav.syfo.huskelapp.cronjob
 
 import io.mockk.*
-import no.nav.syfo.application.HuskelappService
+import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.application.EditedOppfolgingsoppgaveDTO
-import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
-import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
-import no.nav.syfo.infrastructure.cronjob.PublishHuskelappCronjob
+import no.nav.syfo.infrastructure.cronjob.PublishOppfolgingsoppgaveCronjob
 import no.nav.syfo.infrastructure.kafka.HuskelappProducer
 import no.nav.syfo.infrastructure.kafka.KafkaHuskelapp
 import no.nav.syfo.testhelper.*
@@ -24,7 +24,7 @@ class PublishHuskelappCronjobSpek : Spek({
     val personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT
     val veilederIdent = UserConstants.VEILEDER_IDENT
 
-    describe(PublishHuskelappCronjob::class.java.simpleName) {
+    describe(PublishOppfolgingsoppgaveCronjob::class.java.simpleName) {
         val externalMockEnvironment = ExternalMockEnvironment.instance
         val database = externalMockEnvironment.database
         val kafkaProducer = mockk<KafkaProducer<String, KafkaHuskelapp>>()
@@ -32,14 +32,14 @@ class PublishHuskelappCronjobSpek : Spek({
         val huskelappProducer = HuskelappProducer(
             kafkaProducer = kafkaProducer,
         )
-        val huskelappRepository = HuskelappRepository(
+        val huskelappRepository = OppfolgingsoppgaveRepository(
             database = database,
         )
-        val huskelappService = HuskelappService(
-            huskelappRepository = huskelappRepository,
+        val huskelappService = OppfolgingsoppgaveService(
+            oppfolgingsoppgaveRepository = huskelappRepository,
         )
-        val publishHuskelappCronjob = PublishHuskelappCronjob(
-            huskelappService = huskelappService,
+        val publishOppfolgingsoppgaveCronjob = PublishOppfolgingsoppgaveCronjob(
+            oppfolgingsoppgaveService = huskelappService,
             huskelappProducer = huskelappProducer,
         )
 
@@ -54,13 +54,13 @@ class PublishHuskelappCronjobSpek : Spek({
         }
 
         it("publishes unpublished huskelapper oldest first") {
-            val enHuskelapp = Huskelapp.create(
+            val enHuskelapp = Oppfolgingsoppgave.create(
                 personIdent,
                 veilederIdent,
                 tekst = "En huskelapp",
                 oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
             )
-            val annenHuskelapp = Huskelapp.create(
+            val annenHuskelapp = Oppfolgingsoppgave.create(
                 personIdent,
                 veilederIdent,
                 tekst = null,
@@ -71,7 +71,7 @@ class PublishHuskelappCronjobSpek : Spek({
                 huskelappRepository.create(it)
             }
 
-            val result = publishHuskelappCronjob.runJob()
+            val result = publishOppfolgingsoppgaveCronjob.runJob()
 
             result.failed shouldBeEqualTo 0
             result.updated shouldBeEqualTo 2
@@ -95,10 +95,10 @@ class PublishHuskelappCronjobSpek : Spek({
             val annenKafkaHuskelapp = kafkaRecordSlot2.captured.value()
             annenKafkaHuskelapp.frist shouldBeEqualTo annenHuskelapp.frist
 
-            huskelappRepository.getHuskelapper(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
+            huskelappRepository.getOppfolgingsoppgaver(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
         }
         it("does not publish published huskelapp") {
-            val enHuskelapp = Huskelapp.create(
+            val enHuskelapp = Oppfolgingsoppgave.create(
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
                 tekst = "En huskelapp",
@@ -108,7 +108,7 @@ class PublishHuskelappCronjobSpek : Spek({
             val publishedHuskelapp = enHuskelapp.publish()
             huskelappRepository.updatePublished(publishedHuskelapp)
 
-            val result = publishHuskelappCronjob.runJob()
+            val result = publishOppfolgingsoppgaveCronjob.runJob()
 
             result.failed shouldBeEqualTo 0
             result.updated shouldBeEqualTo 0
@@ -118,7 +118,7 @@ class PublishHuskelappCronjobSpek : Spek({
             }
         }
         it("publishes nothing if no huskelapper") {
-            val result = publishHuskelappCronjob.runJob()
+            val result = publishOppfolgingsoppgaveCronjob.runJob()
 
             result.failed shouldBeEqualTo 0
             result.updated shouldBeEqualTo 0
@@ -128,7 +128,7 @@ class PublishHuskelappCronjobSpek : Spek({
             }
         }
         it("publishes edited huskelapp") {
-            val enHuskelapp = Huskelapp.create(
+            val enHuskelapp = Oppfolgingsoppgave.create(
                 personIdent,
                 veilederIdent,
                 tekst = "En huskelapp",
@@ -136,7 +136,7 @@ class PublishHuskelappCronjobSpek : Spek({
             )
             huskelappRepository.create(enHuskelapp)
 
-            var result = publishHuskelappCronjob.runJob()
+            var result = publishOppfolgingsoppgaveCronjob.runJob()
 
             result.failed shouldBeEqualTo 0
             result.updated shouldBeEqualTo 1
@@ -152,7 +152,7 @@ class PublishHuskelappCronjobSpek : Spek({
                 newVersion = editedOppfolgingsoppgaveDTO
             )
 
-            result = publishHuskelappCronjob.runJob()
+            result = publishOppfolgingsoppgaveCronjob.runJob()
 
             result.failed shouldBeEqualTo 0
             result.updated shouldBeEqualTo 1
@@ -171,7 +171,7 @@ class PublishHuskelappCronjobSpek : Spek({
             kafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
             kafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
 
-            huskelappRepository.getHuskelapper(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
+            huskelappRepository.getOppfolgingsoppgaver(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
         }
     }
 })

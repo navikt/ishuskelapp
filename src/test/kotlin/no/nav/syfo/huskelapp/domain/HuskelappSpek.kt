@@ -1,6 +1,6 @@
 package no.nav.syfo.huskelapp.domain
 
-import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.UserConstants
 import org.amshove.kluent.shouldBeEqualTo
@@ -12,7 +12,7 @@ import org.spekframework.spek2.style.specification.describe
 
 class HuskelappSpek : Spek({
 
-    val huskelapp = Huskelapp.create(
+    val huskelapp = Oppfolgingsoppgave.create(
         personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
         veilederIdent = UserConstants.VEILEDER_IDENT,
         tekst = "En huskelapp",
