@@ -14,8 +14,8 @@ import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrol
 import no.nav.syfo.infrastructure.client.wellknown.getWellKnown
 import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
-import no.nav.syfo.infrastructure.kafka.HuskelappProducer
-import no.nav.syfo.infrastructure.kafka.huskelappKafkaProducer
+import no.nav.syfo.infrastructure.kafka.OppfolgingsoppgaveProducer
+import no.nav.syfo.infrastructure.kafka.oppfolgingsoppgaveKafkaProducer
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
@@ -35,8 +35,8 @@ fun main() {
         azureAdClient = azureAdClient,
         clientEnvironment = environment.clients.istilgangskontroll,
     )
-    val huskelappProducer = HuskelappProducer(
-        kafkaProducer = huskelappKafkaProducer(
+    val oppfolgingsoppgaveProducer = OppfolgingsoppgaveProducer(
+        producer = oppfolgingsoppgaveKafkaProducer(
             kafkaEnvironment = environment.kafka,
         )
     )
@@ -54,7 +54,7 @@ fun main() {
             val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(
                 database = applicationDatabase,
             )
-            val huskelappService = OppfolgingsoppgaveService(
+            val oppfolgingsoppgaveService = OppfolgingsoppgaveService(
                 oppfolgingsoppgaveRepository = oppfolgingsoppgaveRepository,
             )
             apiModule(
@@ -63,13 +63,13 @@ fun main() {
                 environment = environment,
                 wellKnownInternalAzureAD = wellKnownInternalAzureAD,
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
-                huskelappService = huskelappService,
+                oppfolgingsoppgaveService = oppfolgingsoppgaveService,
             )
             cronjobModule(
                 applicationState = applicationState,
                 environment = environment,
-                huskelappService = huskelappService,
-                huskelappProducer = huskelappProducer,
+                oppfolgingsoppgaveService = oppfolgingsoppgaveService,
+                oppfolgingsoppgaveProducer = oppfolgingsoppgaveProducer,
             )
         }
     }

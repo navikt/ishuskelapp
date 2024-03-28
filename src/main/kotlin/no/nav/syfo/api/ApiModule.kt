@@ -17,7 +17,7 @@ import no.nav.syfo.Environment
 import no.nav.syfo.api.auth.JwtIssuer
 import no.nav.syfo.api.auth.JwtIssuerType
 import no.nav.syfo.api.auth.installJwtAuthentication
-import no.nav.syfo.api.endpoints.registerHuskelappApi
+import no.nav.syfo.api.endpoints.registerOppfolgingsoppgaveApi
 import no.nav.syfo.api.endpoints.registerMetricApi
 import no.nav.syfo.api.endpoints.registerPodApi
 import no.nav.syfo.infrastructure.database.DatabaseInterface
@@ -38,7 +38,7 @@ fun Application.apiModule(
     environment: Environment,
     wellKnownInternalAzureAD: WellKnown,
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
-    huskelappService: OppfolgingsoppgaveService,
+    oppfolgingsoppgaveService: OppfolgingsoppgaveService,
 ) {
     installMetrics()
     installCallId()
@@ -61,9 +61,9 @@ fun Application.apiModule(
         )
         registerMetricApi()
         authenticate(JwtIssuerType.INTERNAL_AZUREAD.name) {
-            registerHuskelappApi(
+            registerOppfolgingsoppgaveApi(
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
-                huskelappService = huskelappService,
+                oppfolgingsoppgaveService = oppfolgingsoppgaveService,
             )
         }
     }

@@ -11,7 +11,7 @@ data class OppfolgingsoppgaveRequestDTO(
     val frist: LocalDate? = null,
 )
 
-data class HuskelappResponseDTO(
+data class OppfolgingsoppgaveResponseDTO(
     val uuid: String,
     val createdBy: String,
     val updatedAt: LocalDateTime,
@@ -22,7 +22,7 @@ data class HuskelappResponseDTO(
 ) {
     companion object {
         fun fromOppfolgingsoppgave(oppfolgingsoppgave: Oppfolgingsoppgave) =
-            HuskelappResponseDTO(
+            OppfolgingsoppgaveResponseDTO(
                 uuid = oppfolgingsoppgave.uuid.toString(),
                 createdBy = oppfolgingsoppgave.createdBy,
                 updatedAt = oppfolgingsoppgave.updatedAt.toLocalDateTime(),

@@ -8,7 +8,7 @@ import io.ktor.server.routing.*
 import no.nav.syfo.api.VeilederTilgangskontrollPlugin
 import no.nav.syfo.application.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.application.OppfolgingsoppgaveRequestDTO
-import no.nav.syfo.application.HuskelappResponseDTO
+import no.nav.syfo.application.OppfolgingsoppgaveResponseDTO
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.application.OppfolgingsoppgaveService
@@ -20,11 +20,11 @@ import java.util.*
 const val huskelappApiBasePath = "/api/internad/v1/huskelapp"
 const val huskelappParam = "huskelappUuid"
 
-private const val API_ACTION = "access huskelapp for person"
+private const val API_ACTION = "access oppfolgingsoppgave for person"
 
-fun Route.registerHuskelappApi(
+fun Route.registerOppfolgingsoppgaveApi(
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
-    huskelappService: OppfolgingsoppgaveService,
+    oppfolgingsoppgaveService: OppfolgingsoppgaveService,
 ) {
     route(huskelappApiBasePath) {
         install(VeilederTilgangskontrollPlugin) {
@@ -34,12 +34,12 @@ fun Route.registerHuskelappApi(
         get {
             val personIdent = call.personIdent()
 
-            val huskelapp = huskelappService.getOppfolgingsoppgave(personIdent)
+            val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
 
-            if (huskelapp == null) {
+            if (oppfolgingsoppgave == null) {
                 call.respond(HttpStatusCode.NoContent)
             } else {
-                val responseDTO = HuskelappResponseDTO.fromOppfolgingsoppgave(huskelapp)
+                val responseDTO = OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(oppfolgingsoppgave)
                 call.respond(responseDTO)
             }
         }
@@ -48,7 +48,7 @@ fun Route.registerHuskelappApi(
             val requestDTO = call.receive<OppfolgingsoppgaveRequestDTO>()
             val veilederIdent = call.getNAVIdent()
 
-            huskelappService.createOppfolgingsoppgave(
+            oppfolgingsoppgaveService.createOppfolgingsoppgave(
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
                 newOppfolgingsoppgave = requestDTO,
@@ -59,27 +59,30 @@ fun Route.registerHuskelappApi(
             val uuid = UUID.fromString(call.parameters[huskelappParam])
             val requestDTO = call.receive<EditedOppfolgingsoppgaveDTO>()
 
-            huskelappService.addVersion(
+            oppfolgingsoppgaveService.addVersion(
                 existingOppfolgingsoppgaveUuid = uuid,
                 newVersion = requestDTO
             )
-                ?.let { createdHuskelappVersjon ->
+                ?.let { createdOppfolgingsoppgaveVersjon ->
                     call.respond(
                         HttpStatusCode.Created,
-                        HuskelappResponseDTO.fromOppfolgingsoppgave(createdHuskelappVersjon)
+                        OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(createdOppfolgingsoppgaveVersjon)
                     )
                 }
                 ?: call.respond(HttpStatusCode.NotFound, "Could not find existing oppfolgingsoppgave with uuid: $uuid")
         }
         delete("/{$huskelappParam}") {
-            val huskelappUuid = UUID.fromString(call.parameters[huskelappParam])
+            val oppfolgingsoppgaveUuid = UUID.fromString(call.parameters[huskelappParam])
             val veilederIdent = call.getNAVIdent()
 
-            val huskelapp = huskelappService.getOppfolgingsoppgave(uuid = huskelappUuid)
-            if (huskelapp == null) {
+            val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(uuid = oppfolgingsoppgaveUuid)
+            if (oppfolgingsoppgave == null) {
                 call.respond(HttpStatusCode.NotFound)
             } else {
-                huskelappService.removeOppfolgingsoppgave(oppfolgingsoppgave = huskelapp, veilederIdent = veilederIdent)
+                oppfolgingsoppgaveService.removeOppfolgingsoppgave(
+                    oppfolgingsoppgave = oppfolgingsoppgave,
+                    veilederIdent = veilederIdent
+                )
                 call.respond(HttpStatusCode.NoContent)
             }
         }

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import no.nav.syfo.application.OppfolgingsoppgaveRequestDTO
-import no.nav.syfo.application.HuskelappResponseDTO
+import no.nav.syfo.application.OppfolgingsoppgaveResponseDTO
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.domain.Oppfolgingsoppgave
@@ -21,10 +21,10 @@ import org.spekframework.spek2.style.specification.describe
 import java.time.LocalDate
 import java.util.*
 
-class HuskelappApiSpek : Spek({
+class OppfolgingsoppgaveApiSpek : Spek({
     val objectMapper: ObjectMapper = configuredJacksonMapper()
 
-    describe(HuskelappApiSpek::class.java.simpleName) {
+    describe(OppfolgingsoppgaveApiSpek::class.java.simpleName) {
         with(TestApplicationEngine()) {
             start()
             val externalMockEnvironment = ExternalMockEnvironment.instance
@@ -32,7 +32,7 @@ class HuskelappApiSpek : Spek({
             application.testApiModule(
                 externalMockEnvironment = externalMockEnvironment,
             )
-            val huskelappRepository = OppfolgingsoppgaveRepository(
+            val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(
                 database = database,
             )
 
@@ -46,21 +46,21 @@ class HuskelappApiSpek : Spek({
                 navIdent = UserConstants.VEILEDER_IDENT,
             )
 
-            describe("Get huskelapp for person") {
-                val huskelapp = Oppfolgingsoppgave.create(
+            describe("Get oppfolgingsoppgave for person") {
+                val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                     veilederIdent = UserConstants.VEILEDER_IDENT,
-                    tekst = "En huskelapp",
+                    tekst = "En oppfolgingsoppgave",
                     oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
                 )
-                val inactiveHuskelapp = huskelapp.copy(
+                val inactiveOppfolgingsoppgave = oppfolgingsoppgave.copy(
                     uuid = UUID.randomUUID(),
                     isActive = false
                 )
 
                 describe("Happy path") {
-                    it("Returns OK if active huskelapp exists") {
-                        huskelappRepository.create(oppfolgingsoppgave = huskelapp)
+                    it("Returns OK if active oppfolgingsoppgave exists") {
+                        oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
 
                         with(
                             handleRequest(HttpMethod.Get, huskelappApiBasePath) {
@@ -71,7 +71,7 @@ class HuskelappApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.OK
                         }
                     }
-                    it("Returns no content if no huskelapp exists") {
+                    it("Returns no content if no oppfolgingsoppgave exists") {
                         with(
                             handleRequest(HttpMethod.Get, huskelappApiBasePath) {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
@@ -81,8 +81,8 @@ class HuskelappApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.NoContent
                         }
                     }
-                    it("Returns no content if no active huskelapp exists") {
-                        huskelappRepository.create(oppfolgingsoppgave = inactiveHuskelapp)
+                    it("Returns no content if no active oppfolgingsoppgave exists") {
+                        oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = inactiveOppfolgingsoppgave)
 
                         with(
                             handleRequest(HttpMethod.Get, huskelappApiBasePath) {
@@ -110,7 +110,7 @@ class HuskelappApiSpek : Spek({
                     }
                 }
             }
-            describe("Post huskelapp") {
+            describe("Post oppfolgingsoppgave") {
                 describe("Happy path") {
                     val requestDTO = OppfolgingsoppgaveRequestDTO(
                         tekst = "En tekst",
@@ -141,7 +141,7 @@ class HuskelappApiSpek : Spek({
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.OK
                             val responseDTO =
-                                objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
+                                objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
                             responseDTO.tekst shouldBeEqualTo requestDTOWithTekst.tekst
                             responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTOWithTekst.oppfolgingsgrunn
                             responseDTO.createdBy shouldBeEqualTo UserConstants.VEILEDER_IDENT
@@ -172,7 +172,7 @@ class HuskelappApiSpek : Spek({
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.OK
                             val responseDTO =
-                                objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
+                                objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
 
                             responseDTO.tekst shouldBeEqualTo requestDTOWithOppfolgingsgrunn.tekst
                             responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTOWithOppfolgingsgrunn.oppfolgingsgrunn
@@ -201,9 +201,10 @@ class HuskelappApiSpek : Spek({
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.Created
                         }
-                        val huskelapp =
-                            huskelappRepository.getOppfolgingsoppgaver(UserConstants.ARBEIDSTAKER_PERSONIDENT).first()
-                        huskelappRepository.getOppfolgingsoppgaveVersjoner(huskelapp.id).size shouldBeEqualTo 1
+                        val oppfolgingsoppgave =
+                            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(UserConstants.ARBEIDSTAKER_PERSONIDENT)
+                                .first()
+                        oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgave.id).size shouldBeEqualTo 1
                     }
                 }
                 describe("Unhappy path") {
@@ -224,14 +225,15 @@ class HuskelappApiSpek : Spek({
             describe("Post new version of oppfolgingsoppgave") {
                 describe("Happy path") {
                     it("OK with new date") {
-                        val huskelapp = Oppfolgingsoppgave.create(
+                        val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                             personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                             veilederIdent = UserConstants.VEILEDER_IDENT,
-                            tekst = "En huskelapp",
+                            tekst = "En oppfolgingsoppgave",
                             oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
                             frist = LocalDate.now().minusDays(1)
                         )
-                        val existingOppfolgingsoppgave = huskelappRepository.create(oppfolgingsoppgave = huskelapp)
+                        val existingOppfolgingsoppgave =
+                            oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
                         val requestDTO = OppfolgingsoppgaveRequestDTO(
                             tekst = existingOppfolgingsoppgave.tekst,
                             oppfolgingsgrunn = existingOppfolgingsoppgave.oppfolgingsgrunner.first(),
@@ -257,7 +259,7 @@ class HuskelappApiSpek : Spek({
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.OK
                             val responseDTO =
-                                objectMapper.readValue<HuskelappResponseDTO>(response.content!!)
+                                objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
 
                             responseDTO.tekst shouldBeEqualTo requestDTO.tekst
                             responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTO.oppfolgingsgrunn
@@ -286,23 +288,23 @@ class HuskelappApiSpek : Spek({
                     }
                 }
             }
-            describe("Delete huskelapp") {
-                val huskelapp = Oppfolgingsoppgave.create(
+            describe("Delete oppfolgingsoppgave") {
+                val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                     personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
                     veilederIdent = UserConstants.VEILEDER_IDENT,
-                    tekst = "En huskelapp",
+                    tekst = "En oppfolgingsoppgave",
                     oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
                 )
-                val inactiveHuskelapp = huskelapp.copy(
+                val inactiveOppfolgingsoppgave = oppfolgingsoppgave.copy(
                     uuid = UUID.randomUUID(),
                     isActive = false
                 )
 
-                val deleteHuskelappUrl = "$huskelappApiBasePath/${huskelapp.uuid}"
+                val deleteHuskelappUrl = "$huskelappApiBasePath/${oppfolgingsoppgave.uuid}"
 
                 describe("Happy path") {
-                    it("returns NoContent and sets huskelapp inactive") {
-                        huskelappRepository.create(oppfolgingsoppgave = huskelapp)
+                    it("returns NoContent and sets oppfolgingsoppgave inactive") {
+                        oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
 
                         with(
                             handleRequest(HttpMethod.Delete, deleteHuskelappUrl) {
@@ -314,14 +316,14 @@ class HuskelappApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.NoContent
                         }
 
-                        val huskelapper =
-                            huskelappRepository.getOppfolgingsoppgaver(UserConstants.ARBEIDSTAKER_PERSONIDENT)
-                        huskelapper.size shouldBeEqualTo 1
-                        huskelapper.first().isActive.shouldBeFalse()
+                        val oppfolgingsoppgaver =
+                            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(UserConstants.ARBEIDSTAKER_PERSONIDENT)
+                        oppfolgingsoppgaver.size shouldBeEqualTo 1
+                        oppfolgingsoppgaver.first().isActive.shouldBeFalse()
                     }
                 }
                 describe("Unhappy path") {
-                    it("returns status NotFound if no huskelapp exists for given uuid") {
+                    it("returns status NotFound if no oppfolgingsoppgave exists for given uuid") {
                         with(
                             handleRequest(HttpMethod.Delete, "$huskelappApiBasePath/${UUID.randomUUID()}") {
                                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -332,11 +334,14 @@ class HuskelappApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.NotFound
                         }
                     }
-                    it("returns status NotFound if no active huskelapp exists for given uuid") {
-                        huskelappRepository.create(oppfolgingsoppgave = inactiveHuskelapp)
+                    it("returns status NotFound if no active oppfolgingsoppgave exists for given uuid") {
+                        oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = inactiveOppfolgingsoppgave)
 
                         with(
-                            handleRequest(HttpMethod.Delete, "$huskelappApiBasePath/${inactiveHuskelapp.uuid}") {
+                            handleRequest(
+                                HttpMethod.Delete,
+                                "$huskelappApiBasePath/${inactiveOppfolgingsoppgave.uuid}"
+                            ) {
                                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, UserConstants.ARBEIDSTAKER_PERSONIDENT.value)
