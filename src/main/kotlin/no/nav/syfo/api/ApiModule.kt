@@ -23,7 +23,7 @@ import no.nav.syfo.api.endpoints.registerPodApi
 import no.nav.syfo.infrastructure.database.DatabaseInterface
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.infrastructure.client.wellknown.WellKnown
-import no.nav.syfo.application.HuskelappService
+import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.infrastructure.METRICS_REGISTRY
 import no.nav.syfo.util.NAV_CALL_ID_HEADER
 import no.nav.syfo.util.configure
@@ -38,7 +38,7 @@ fun Application.apiModule(
     environment: Environment,
     wellKnownInternalAzureAD: WellKnown,
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
-    huskelappService: HuskelappService,
+    huskelappService: OppfolgingsoppgaveService,
 ) {
     installMetrics()
     installCallId()

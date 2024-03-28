@@ -1,6 +1,6 @@
 package no.nav.syfo.infrastructure.kafka
 
-import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.util.configuredJacksonMapper
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -11,7 +11,7 @@ import java.util.*
 class HuskelappProducer(
     private val kafkaProducer: KafkaProducer<String, KafkaHuskelapp>,
 ) {
-    fun sendHuskelapp(huskelapp: Huskelapp) {
+    fun sendHuskelapp(huskelapp: Oppfolgingsoppgave) {
         val kafkaHuskelapp = KafkaHuskelapp(
             uuid = huskelapp.uuid,
             personIdent = huskelapp.personIdent.value,

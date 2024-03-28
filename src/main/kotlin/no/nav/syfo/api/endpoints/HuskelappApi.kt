@@ -7,11 +7,11 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.syfo.api.VeilederTilgangskontrollPlugin
 import no.nav.syfo.application.EditedOppfolgingsoppgaveDTO
-import no.nav.syfo.application.HuskelappRequestDTO
+import no.nav.syfo.application.OppfolgingsoppgaveRequestDTO
 import no.nav.syfo.application.HuskelappResponseDTO
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.domain.PersonIdent
-import no.nav.syfo.application.HuskelappService
+import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
 import no.nav.syfo.util.getNAVIdent
 import no.nav.syfo.util.getPersonIdent
@@ -24,7 +24,7 @@ private const val API_ACTION = "access huskelapp for person"
 
 fun Route.registerHuskelappApi(
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
-    huskelappService: HuskelappService,
+    huskelappService: OppfolgingsoppgaveService,
 ) {
     route(huskelappApiBasePath) {
         install(VeilederTilgangskontrollPlugin) {
@@ -34,7 +34,7 @@ fun Route.registerHuskelappApi(
         get {
             val personIdent = call.personIdent()
 
-            val huskelapp = huskelappService.getHuskelapp(personIdent)
+            val huskelapp = huskelappService.getOppfolgingsoppgave(personIdent)
 
             if (huskelapp == null) {
                 call.respond(HttpStatusCode.NoContent)
@@ -45,13 +45,13 @@ fun Route.registerHuskelappApi(
         }
         post {
             val personIdent = call.personIdent()
-            val requestDTO = call.receive<HuskelappRequestDTO>()
+            val requestDTO = call.receive<OppfolgingsoppgaveRequestDTO>()
             val veilederIdent = call.getNAVIdent()
 
-            huskelappService.createHuskelapp(
+            huskelappService.createOppfolgingsoppgave(
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
-                newHuskelapp = requestDTO,
+                newOppfolgingsoppgave = requestDTO,
             )
             call.respond(HttpStatusCode.Created)
         }
@@ -75,11 +75,11 @@ fun Route.registerHuskelappApi(
             val huskelappUuid = UUID.fromString(call.parameters[huskelappParam])
             val veilederIdent = call.getNAVIdent()
 
-            val huskelapp = huskelappService.getHuskelapp(uuid = huskelappUuid)
+            val huskelapp = huskelappService.getOppfolgingsoppgave(uuid = huskelappUuid)
             if (huskelapp == null) {
                 call.respond(HttpStatusCode.NotFound)
             } else {
-                huskelappService.removeHuskelapp(huskelapp = huskelapp, veilederIdent = veilederIdent)
+                huskelappService.removeOppfolgingsoppgave(oppfolgingsoppgave = huskelapp, veilederIdent = veilederIdent)
                 call.respond(HttpStatusCode.NoContent)
             }
         }

@@ -1,11 +1,11 @@
 package no.nav.syfo.application
 
-import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-data class HuskelappRequestDTO(
+data class OppfolgingsoppgaveRequestDTO(
     val tekst: String?,
     val oppfolgingsgrunn: Oppfolgingsgrunn,
     val frist: LocalDate? = null,
@@ -21,7 +21,7 @@ data class HuskelappResponseDTO(
     val frist: LocalDate?,
 ) {
     companion object {
-        fun fromOppfolgingsoppgave(oppfolgingsoppgave: Huskelapp) =
+        fun fromOppfolgingsoppgave(oppfolgingsoppgave: Oppfolgingsoppgave) =
             HuskelappResponseDTO(
                 uuid = oppfolgingsoppgave.uuid.toString(),
                 createdBy = oppfolgingsoppgave.createdBy,

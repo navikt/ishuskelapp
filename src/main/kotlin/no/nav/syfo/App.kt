@@ -12,8 +12,8 @@ import no.nav.syfo.infrastructure.database.databaseModule
 import no.nav.syfo.infrastructure.client.azuread.AzureAdClient
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.infrastructure.client.wellknown.getWellKnown
-import no.nav.syfo.application.HuskelappService
-import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
+import no.nav.syfo.application.OppfolgingsoppgaveService
+import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.infrastructure.kafka.HuskelappProducer
 import no.nav.syfo.infrastructure.kafka.huskelappKafkaProducer
 import org.slf4j.LoggerFactory
@@ -51,11 +51,11 @@ fun main() {
             databaseModule(
                 databaseEnvironment = environment.database,
             )
-            val huskelappRepository = HuskelappRepository(
+            val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(
                 database = applicationDatabase,
             )
-            val huskelappService = HuskelappService(
-                huskelappRepository = huskelappRepository,
+            val huskelappService = OppfolgingsoppgaveService(
+                oppfolgingsoppgaveRepository = oppfolgingsoppgaveRepository,
             )
             apiModule(
                 applicationState = applicationState,

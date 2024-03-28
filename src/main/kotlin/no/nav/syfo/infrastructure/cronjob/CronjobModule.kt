@@ -3,16 +3,15 @@ package no.nav.syfo.infrastructure.cronjob
 import io.ktor.server.application.*
 import no.nav.syfo.ApplicationState
 import no.nav.syfo.Environment
-import no.nav.syfo.application.*
 import no.nav.syfo.infrastructure.client.leaderelection.LeaderPodClient
-import no.nav.syfo.application.HuskelappService
+import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.infrastructure.kafka.HuskelappProducer
 import no.nav.syfo.launchBackgroundTask
 
 fun Application.cronjobModule(
     applicationState: ApplicationState,
     environment: Environment,
-    huskelappService: HuskelappService,
+    huskelappService: OppfolgingsoppgaveService,
     huskelappProducer: HuskelappProducer,
 ) {
     val leaderPodClient = LeaderPodClient(
@@ -22,12 +21,12 @@ fun Application.cronjobModule(
         applicationState = applicationState,
         leaderPodClient = leaderPodClient
     )
-    val publishHuskelappCronjob = PublishHuskelappCronjob(
-        huskelappService = huskelappService,
+    val publishOppfolgingsoppgaveCronjob = PublishOppfolgingsoppgaveCronjob(
+        oppfolgingsoppgaveService = huskelappService,
         huskelappProducer = huskelappProducer,
     )
 
-    val allCronjobs = mutableListOf(publishHuskelappCronjob)
+    val allCronjobs = mutableListOf(publishOppfolgingsoppgaveCronjob)
     allCronjobs.forEach {
         launchBackgroundTask(
             applicationState = applicationState,

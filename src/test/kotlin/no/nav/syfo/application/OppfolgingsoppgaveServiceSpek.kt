@@ -1,7 +1,7 @@
 package no.nav.syfo.application
 
-import no.nav.syfo.infrastructure.database.repository.HuskelappRepository
-import no.nav.syfo.domain.Huskelapp
+import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.testhelper.ExternalMockEnvironment
 import no.nav.syfo.testhelper.UserConstants
@@ -14,17 +14,17 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.time.LocalDate
 
-class HuskelappServiceSpek : Spek({
+class OppfolgingsoppgaveServiceSpek : Spek({
 
-    describe(HuskelappService::class.java.simpleName) {
+    describe(OppfolgingsoppgaveService::class.java.simpleName) {
 
         val externalMockEnvironment = ExternalMockEnvironment.instance
         val database = externalMockEnvironment.database
 
-        val oppfolgingsoppgaveRepository = HuskelappRepository(database = database)
-        val oppfolgingsoppgaveService = HuskelappService(oppfolgingsoppgaveRepository)
+        val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(database = database)
+        val oppfolgingsoppgaveService = OppfolgingsoppgaveService(oppfolgingsoppgaveRepository)
 
-        val oppfolgingsoppgave = Huskelapp.create(
+        val oppfolgingsoppgave = Oppfolgingsoppgave.create(
             personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
             veilederIdent = UserConstants.VEILEDER_IDENT,
             tekst = "En god tekst for en oppfolgingsoppgave",

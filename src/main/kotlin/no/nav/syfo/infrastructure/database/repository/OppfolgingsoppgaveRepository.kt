@@ -1,0 +1,269 @@
+package no.nav.syfo.infrastructure.database.repository
+
+import IOppfolgingsoppgaveRepository
+import no.nav.syfo.domain.PersonIdent
+import no.nav.syfo.domain.Oppfolgingsoppgave
+import no.nav.syfo.infrastructure.database.*
+import no.nav.syfo.util.nowUTC
+import java.sql.*
+import java.sql.Date
+import java.time.OffsetDateTime
+import java.util.*
+
+class OppfolgingsoppgaveRepository(
+    private val database: DatabaseInterface,
+) : IOppfolgingsoppgaveRepository {
+    override fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave> {
+        return database.getOppfolgingsoppgaver(personIdent)
+    }
+
+    override fun getOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
+        return database.getOppfolgingsoppgave(uuid)
+    }
+
+    override fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon> {
+        return database.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId)
+    }
+
+    override fun create(oppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave {
+        database.connection.use { connection ->
+            val createdOppfolgingsoppgave = connection.createOppfolgingsoppgave(oppfolgingsoppgave)
+            val createdVersion = connection.createOppfolgingsoppgaveVersjon(
+                oppfolgingsoppgaveId = createdOppfolgingsoppgave.id,
+                newOppfolgingsoppgaveVersion = oppfolgingsoppgave,
+            )
+            connection.commit()
+            return createdOppfolgingsoppgave.toOppfolgingsoppgave(createdVersion)
+        }
+    }
+
+    override fun createVersion(
+        oppfolgingsoppgaveId: Int,
+        newOppfolgingsoppgaveVersion: Oppfolgingsoppgave,
+    ): POppfolgingsoppgaveVersjon =
+        database.connection.use { connection ->
+            val oppfolgingsoppgaveVersjon = connection.createOppfolgingsoppgaveVersjon(
+                oppfolgingsoppgaveId = oppfolgingsoppgaveId,
+                newOppfolgingsoppgaveVersion = newOppfolgingsoppgaveVersion,
+            )
+            connection.updatePublished(oppfolgingsoppgave = newOppfolgingsoppgaveVersion)
+            connection.commit()
+            return oppfolgingsoppgaveVersjon
+        }
+
+    private fun Connection.createOppfolgingsoppgaveVersjon(
+        oppfolgingsoppgaveId: Int,
+        newOppfolgingsoppgaveVersion: Oppfolgingsoppgave,
+    ): POppfolgingsoppgaveVersjon {
+        val idList = this.prepareStatement(CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY).use {
+            it.setString(1, UUID.randomUUID().toString())
+            it.setInt(2, oppfolgingsoppgaveId)
+            it.setObject(3, nowUTC())
+            it.setString(4, newOppfolgingsoppgaveVersion.createdBy)
+            newOppfolgingsoppgaveVersion.tekst
+                ?.let { tekst -> it.setString(5, tekst) }
+                ?: it.setNull(5, Types.LONGVARCHAR)
+            if (newOppfolgingsoppgaveVersion.oppfolgingsgrunner.isEmpty()) {
+                it.setNull(6, Types.LONGVARCHAR)
+            } else {
+                it.setString(6, newOppfolgingsoppgaveVersion.oppfolgingsgrunner.joinToString(","))
+            }
+            it.setDate(7, newOppfolgingsoppgaveVersion.frist?.let { frist -> Date.valueOf(frist) })
+            it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
+        }
+
+        if (idList.size != 1) {
+            throw NoElementInsertedException("Creating HUSKELAPP_VERSJON failed, no rows affected.")
+        }
+
+        return idList.first()
+    }
+
+    override fun getUnpublished(): List<POppfolgingsoppgave> = database.getUnpublishedOppfolgingsoppgaver()
+    override fun updatePublished(oppfolgingsoppgave: Oppfolgingsoppgave) =
+        database.updatePublished(oppfolgingsoppgave = oppfolgingsoppgave)
+
+    override fun updateRemovedOppfolgingsoppgave(oppfolgingsoppgave: Oppfolgingsoppgave) =
+        database.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave = oppfolgingsoppgave)
+
+    companion object {
+        private const val CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY =
+            """
+            INSERT INTO HUSKELAPP_VERSJON (
+                id,
+                uuid,
+                huskelapp_id,
+                created_at,
+                created_by,
+                tekst,
+                oppfolgingsgrunner,
+                frist
+            ) values (DEFAULT, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING *
+            """
+    }
+}
+
+private const val queryCreateOppfolgingsoppgave =
+    """
+    INSERT INTO HUSKELAPP (
+        id,
+        uuid,
+        personident,
+        created_at,
+        updated_at,
+        is_active
+    ) values (DEFAULT, ?, ?, ?, ?, ?)
+    RETURNING *
+    """
+
+private fun Connection.createOppfolgingsoppgave(
+    oppfolgingsoppgave: Oppfolgingsoppgave,
+): POppfolgingsoppgave {
+    val now = nowUTC()
+    val idList = this.prepareStatement(queryCreateOppfolgingsoppgave).use {
+        it.setString(1, oppfolgingsoppgave.uuid.toString())
+        it.setString(2, oppfolgingsoppgave.personIdent.value)
+        it.setObject(3, now)
+        it.setObject(4, now)
+        it.setObject(5, oppfolgingsoppgave.isActive)
+        it.executeQuery().toList { toPOppfolgingsoppgave() }
+    }
+
+    if (idList.size != 1) {
+        throw NoElementInsertedException("Creating HUSKELAPP failed, no rows affected.")
+    }
+
+    return idList.first()
+}
+
+private const val queryGetOppfolgingsoppgaveByPersonIdent = """
+    SELECT *
+    FROM HUSKELAPP
+    WHERE personident = ?
+    ORDER BY created_at DESC
+"""
+
+private fun DatabaseInterface.getOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave> {
+    return connection.use { connection ->
+        connection.prepareStatement(queryGetOppfolgingsoppgaveByPersonIdent).use {
+            it.setString(1, personIdent.value)
+            it.executeQuery().toList { toPOppfolgingsoppgave() }
+        }
+    }
+}
+
+private const val queryGetOppfolgingsoppgaveByUuid = """
+    SELECT *
+    FROM HUSKELAPP
+    WHERE uuid = ?
+"""
+
+private fun DatabaseInterface.getOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
+    return connection.use { connection ->
+        connection.prepareStatement(queryGetOppfolgingsoppgaveByUuid).use {
+            it.setString(1, uuid.toString())
+            it.executeQuery().toList { toPOppfolgingsoppgave() }.firstOrNull()
+        }
+    }
+}
+
+private const val queryGetOppfolgingsoppgaveVersjon = """
+    SELECT *
+    FROM HUSKELAPP_VERSJON
+    WHERE huskelapp_id = ?
+    ORDER BY created_at DESC
+"""
+
+private fun DatabaseInterface.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon> {
+    return connection.use { connection ->
+        connection.prepareStatement(queryGetOppfolgingsoppgaveVersjon).use {
+            it.setInt(1, oppfolgingsoppgaveId)
+            it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
+        }
+    }
+}
+
+private const val queryGetUnpublishedOppfolgingsoppgaver = """
+    SELECT * 
+    FROM huskelapp 
+    WHERE published_at IS NULL
+    ORDER BY created_at ASC
+"""
+
+private fun DatabaseInterface.getUnpublishedOppfolgingsoppgaver(): List<POppfolgingsoppgave> {
+    return this.connection.use { connection ->
+        connection.prepareStatement(queryGetUnpublishedOppfolgingsoppgaver).use {
+            it.executeQuery().toList { toPOppfolgingsoppgave() }
+        }
+    }
+}
+
+private const val querySetPublished = """
+    UPDATE huskelapp
+    SET published_at = ?, updated_at = ?
+    WHERE uuid = ?
+"""
+
+private fun DatabaseInterface.updatePublished(oppfolgingsoppgave: Oppfolgingsoppgave) =
+    this.connection.use { connection ->
+        connection.updatePublished(oppfolgingsoppgave)
+        connection.commit()
+    }
+
+private fun Connection.updatePublished(oppfolgingsoppgave: Oppfolgingsoppgave) {
+    this.prepareStatement(querySetPublished).use {
+        it.setObject(1, oppfolgingsoppgave.publishedAt)
+        it.setObject(2, oppfolgingsoppgave.updatedAt)
+        it.setString(3, oppfolgingsoppgave.uuid.toString())
+        val updated = it.executeUpdate()
+        if (updated != 1) {
+            throw SQLException("Expected a single row to be updated, got update count $updated")
+        }
+    }
+}
+
+private const val queryUpdateRemoved = """
+    UPDATE huskelapp
+    SET is_active = ?, removed_by = ?, published_at = ?, updated_at = ?
+    WHERE uuid = ?
+"""
+
+private fun DatabaseInterface.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave: Oppfolgingsoppgave) {
+    this.connection.use { connection ->
+        connection.prepareStatement(queryUpdateRemoved).use {
+            it.setBoolean(1, oppfolgingsoppgave.isActive)
+            it.setString(2, oppfolgingsoppgave.removedBy)
+            it.setObject(3, oppfolgingsoppgave.publishedAt)
+            it.setObject(4, oppfolgingsoppgave.updatedAt)
+            it.setString(5, oppfolgingsoppgave.uuid.toString())
+            val updated = it.executeUpdate()
+            if (updated != 1) {
+                throw SQLException("Expected a single row to be updated, got update count $updated")
+            }
+        }
+        connection.commit()
+    }
+}
+
+private fun ResultSet.toPOppfolgingsoppgave() = POppfolgingsoppgave(
+    id = getInt("id"),
+    uuid = UUID.fromString(getString("uuid")),
+    personIdent = PersonIdent(getString("personident")),
+    createdAt = getObject("created_at", OffsetDateTime::class.java),
+    updatedAt = getObject("updated_at", OffsetDateTime::class.java),
+    isActive = getBoolean("is_active"),
+    publishedAt = getObject("published_at", OffsetDateTime::class.java),
+    removedBy = getString("removed_by"),
+)
+
+private fun ResultSet.toPOppfolgingsoppgaveVersjon() = POppfolgingsoppgaveVersjon(
+    id = getInt("id"),
+    uuid = UUID.fromString(getString("uuid")),
+    oppfolgingsoppgaveId = getInt("huskelapp_id"),
+    createdAt = getObject("created_at", OffsetDateTime::class.java),
+    createdBy = getString("created_by"),
+    tekst = getString("tekst"),
+    oppfolgingsgrunner = getString("oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty),
+    frist = getDate("frist")?.toLocalDate(),
+)
