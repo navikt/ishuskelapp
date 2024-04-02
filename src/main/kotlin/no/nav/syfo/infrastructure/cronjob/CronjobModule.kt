@@ -5,14 +5,14 @@ import no.nav.syfo.ApplicationState
 import no.nav.syfo.Environment
 import no.nav.syfo.infrastructure.client.leaderelection.LeaderPodClient
 import no.nav.syfo.application.OppfolgingsoppgaveService
-import no.nav.syfo.infrastructure.kafka.HuskelappProducer
+import no.nav.syfo.infrastructure.kafka.OppfolgingsoppgaveProducer
 import no.nav.syfo.launchBackgroundTask
 
 fun Application.cronjobModule(
     applicationState: ApplicationState,
     environment: Environment,
-    huskelappService: OppfolgingsoppgaveService,
-    huskelappProducer: HuskelappProducer,
+    oppfolgingsoppgaveService: OppfolgingsoppgaveService,
+    oppfolgingsoppgaveProducer: OppfolgingsoppgaveProducer,
 ) {
     val leaderPodClient = LeaderPodClient(
         electorPath = environment.electorPath
@@ -22,8 +22,8 @@ fun Application.cronjobModule(
         leaderPodClient = leaderPodClient
     )
     val publishOppfolgingsoppgaveCronjob = PublishOppfolgingsoppgaveCronjob(
-        oppfolgingsoppgaveService = huskelappService,
-        huskelappProducer = huskelappProducer,
+        oppfolgingsoppgaveService = oppfolgingsoppgaveService,
+        oppfolgingsoppgaveProducer = oppfolgingsoppgaveProducer,
     )
 
     val allCronjobs = mutableListOf(publishOppfolgingsoppgaveCronjob)

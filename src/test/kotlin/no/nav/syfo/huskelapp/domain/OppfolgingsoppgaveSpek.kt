@@ -10,22 +10,22 @@ import org.amshove.kluent.shouldBeNull
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
-class HuskelappSpek : Spek({
+class OppfolgingsoppgaveSpek : Spek({
 
-    val huskelapp = Oppfolgingsoppgave.create(
+    val oppfolgingsoppgave = Oppfolgingsoppgave.create(
         personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
         veilederIdent = UserConstants.VEILEDER_IDENT,
-        tekst = "En huskelapp",
+        tekst = "En oppfolgingsoppgave",
         oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
     )
 
     describe("Remove") {
-        it("sets huskelapp inactive, removed_by and resets publishedAt") {
-            val removedHuskelapp = huskelapp.remove(UserConstants.OTHER_VEILEDER_IDENT)
-            removedHuskelapp.isActive.shouldBeFalse()
-            removedHuskelapp.removedBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
-            removedHuskelapp.publishedAt.shouldBeNull()
-            removedHuskelapp.updatedAt shouldBeGreaterThan huskelapp.createdAt
+        it("sets oppfolgingsoppgave inactive, removed_by and resets publishedAt") {
+            val removedOppfolgingsoppgave = oppfolgingsoppgave.remove(UserConstants.OTHER_VEILEDER_IDENT)
+            removedOppfolgingsoppgave.isActive.shouldBeFalse()
+            removedOppfolgingsoppgave.removedBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
+            removedOppfolgingsoppgave.publishedAt.shouldBeNull()
+            removedOppfolgingsoppgave.updatedAt shouldBeGreaterThan oppfolgingsoppgave.createdAt
         }
     }
 })

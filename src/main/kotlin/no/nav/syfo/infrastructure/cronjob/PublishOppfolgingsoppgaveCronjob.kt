@@ -2,12 +2,12 @@ package no.nav.syfo.infrastructure.cronjob
 
 import net.logstash.logback.argument.StructuredArguments
 import no.nav.syfo.application.OppfolgingsoppgaveService
-import no.nav.syfo.infrastructure.kafka.HuskelappProducer
+import no.nav.syfo.infrastructure.kafka.OppfolgingsoppgaveProducer
 import org.slf4j.LoggerFactory
 
 class PublishOppfolgingsoppgaveCronjob(
     private val oppfolgingsoppgaveService: OppfolgingsoppgaveService,
-    private val huskelappProducer: HuskelappProducer
+    private val oppfolgingsoppgaveProducer: OppfolgingsoppgaveProducer
 ) : Cronjob {
     override val initialDelayMinutes: Long = 2
     override val intervalDelaySeconds: Long = 20
@@ -15,7 +15,7 @@ class PublishOppfolgingsoppgaveCronjob(
     override suspend fun run() {
         val result = runJob()
         log.info(
-            "Completed publishing huskelapp processing job with result: {}, {}",
+            "Completed publishing oppfolgingsoppgave processing job with result: {}, {}",
             StructuredArguments.keyValue("failed", result.failed),
             StructuredArguments.keyValue("updated", result.updated),
         )
@@ -27,12 +27,12 @@ class PublishOppfolgingsoppgaveCronjob(
 
         unpublishedOppfolgingsoppgaver.forEach {
             try {
-                huskelappProducer.sendHuskelapp(it)
-                val publishedHuskelapp = it.publish()
-                oppfolgingsoppgaveService.updatePublished(publishedHuskelapp)
+                oppfolgingsoppgaveProducer.send(it)
+                val publishedOppfolgingsoppgave = it.publish()
+                oppfolgingsoppgaveService.updatePublished(publishedOppfolgingsoppgave)
                 result.updated++
             } catch (e: Exception) {
-                log.error("Caught exception in publish huskelapp job", e)
+                log.error("Caught exception in publish oppfolgingsoppgave job", e)
                 result.failed++
             }
         }

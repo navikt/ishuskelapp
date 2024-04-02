@@ -14,11 +14,11 @@ fun Application.testApiModule(
         clientEnvironment = externalMockEnvironment.environment.clients.istilgangskontroll,
         httpClient = externalMockEnvironment.mockHttpClient,
     )
-    val huskelappRepository = OppfolgingsoppgaveRepository(
+    val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(
         database = externalMockEnvironment.database,
     )
-    val huskelappService = OppfolgingsoppgaveService(
-        oppfolgingsoppgaveRepository = huskelappRepository,
+    val oppfolgingsoppgaveService = OppfolgingsoppgaveService(
+        oppfolgingsoppgaveRepository = oppfolgingsoppgaveRepository,
     )
     this.apiModule(
         applicationState = externalMockEnvironment.applicationState,
@@ -26,6 +26,6 @@ fun Application.testApiModule(
         environment = externalMockEnvironment.environment,
         wellKnownInternalAzureAD = externalMockEnvironment.wellKnownInternalAzureAD,
         veilederTilgangskontrollClient = veilederTilgangskontrollClient,
-        huskelappService = huskelappService,
+        oppfolgingsoppgaveService = oppfolgingsoppgaveService,
     )
 }

@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
-data class KafkaHuskelapp(
+data class OppfolgingsoppgaveRecord(
     val uuid: UUID,
     val personIdent: String,
     val veilederIdent: String,

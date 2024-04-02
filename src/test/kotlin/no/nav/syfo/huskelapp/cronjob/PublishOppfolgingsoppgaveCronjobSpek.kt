@@ -7,8 +7,8 @@ import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveReposito
 import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.infrastructure.cronjob.PublishOppfolgingsoppgaveCronjob
-import no.nav.syfo.infrastructure.kafka.HuskelappProducer
-import no.nav.syfo.infrastructure.kafka.KafkaHuskelapp
+import no.nav.syfo.infrastructure.kafka.OppfolgingsoppgaveProducer
+import no.nav.syfo.infrastructure.kafka.OppfolgingsoppgaveRecord
 import no.nav.syfo.testhelper.*
 import org.amshove.kluent.*
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -19,7 +19,7 @@ import org.spekframework.spek2.style.specification.describe
 import java.time.LocalDate
 import java.util.concurrent.Future
 
-class PublishHuskelappCronjobSpek : Spek({
+class PublishOppfolgingsoppgaveCronjobSpek : Spek({
 
     val personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT
     val veilederIdent = UserConstants.VEILEDER_IDENT
@@ -27,20 +27,20 @@ class PublishHuskelappCronjobSpek : Spek({
     describe(PublishOppfolgingsoppgaveCronjob::class.java.simpleName) {
         val externalMockEnvironment = ExternalMockEnvironment.instance
         val database = externalMockEnvironment.database
-        val kafkaProducer = mockk<KafkaProducer<String, KafkaHuskelapp>>()
+        val kafkaProducer = mockk<KafkaProducer<String, OppfolgingsoppgaveRecord>>()
 
-        val huskelappProducer = HuskelappProducer(
-            kafkaProducer = kafkaProducer,
+        val oppfolgingsoppgaveProducer = OppfolgingsoppgaveProducer(
+            producer = kafkaProducer,
         )
-        val huskelappRepository = OppfolgingsoppgaveRepository(
+        val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(
             database = database,
         )
-        val huskelappService = OppfolgingsoppgaveService(
-            oppfolgingsoppgaveRepository = huskelappRepository,
+        val oppfolgingsoppgaveService = OppfolgingsoppgaveService(
+            oppfolgingsoppgaveRepository = oppfolgingsoppgaveRepository,
         )
         val publishOppfolgingsoppgaveCronjob = PublishOppfolgingsoppgaveCronjob(
-            oppfolgingsoppgaveService = huskelappService,
-            huskelappProducer = huskelappProducer,
+            oppfolgingsoppgaveService = oppfolgingsoppgaveService,
+            oppfolgingsoppgaveProducer = oppfolgingsoppgaveProducer,
         )
 
         beforeEachTest {
@@ -53,22 +53,22 @@ class PublishHuskelappCronjobSpek : Spek({
             database.dropData()
         }
 
-        it("publishes unpublished huskelapper oldest first") {
-            val enHuskelapp = Oppfolgingsoppgave.create(
+        it("publishes unpublished oppfolgingsoppgaver oldest first") {
+            val enOppfolgingsoppgave = Oppfolgingsoppgave.create(
                 personIdent,
                 veilederIdent,
-                tekst = "En huskelapp",
+                tekst = "En oppfolgingsoppgave",
                 oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
             )
-            val annenHuskelapp = Oppfolgingsoppgave.create(
+            val annenOppfolgingsoppgave = Oppfolgingsoppgave.create(
                 personIdent,
                 veilederIdent,
                 tekst = null,
                 oppfolgingsgrunner = listOf(Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT),
                 frist = LocalDate.now().plusWeeks(1),
             )
-            listOf(enHuskelapp, annenHuskelapp).forEach {
-                huskelappRepository.create(it)
+            listOf(enOppfolgingsoppgave, annenOppfolgingsoppgave).forEach {
+                oppfolgingsoppgaveRepository.create(it)
             }
 
             val result = publishOppfolgingsoppgaveCronjob.runJob()
@@ -76,37 +76,38 @@ class PublishHuskelappCronjobSpek : Spek({
             result.failed shouldBeEqualTo 0
             result.updated shouldBeEqualTo 2
 
-            val kafkaRecordSlot1 = slot<ProducerRecord<String, KafkaHuskelapp>>()
-            val kafkaRecordSlot2 = slot<ProducerRecord<String, KafkaHuskelapp>>()
+            val kafkaRecordSlot1 = slot<ProducerRecord<String, OppfolgingsoppgaveRecord>>()
+            val kafkaRecordSlot2 = slot<ProducerRecord<String, OppfolgingsoppgaveRecord>>()
             verifyOrder {
                 kafkaProducer.send(capture(kafkaRecordSlot1))
                 kafkaProducer.send(capture(kafkaRecordSlot2))
             }
 
-            val enKafkaHuskelapp = kafkaRecordSlot1.captured.value()
+            val enOppfolgingsoppgaveRecord = kafkaRecordSlot1.captured.value()
 
-            enKafkaHuskelapp.tekst shouldBeEqualTo enHuskelapp.tekst
-            enKafkaHuskelapp.oppfolgingsgrunner shouldBeEqualTo enHuskelapp.oppfolgingsgrunner
-            enKafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
-            enKafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
-            enKafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
-            enKafkaHuskelapp.frist.shouldBeNull()
+            enOppfolgingsoppgaveRecord.tekst shouldBeEqualTo enOppfolgingsoppgave.tekst
+            enOppfolgingsoppgaveRecord.oppfolgingsgrunner shouldBeEqualTo enOppfolgingsoppgave.oppfolgingsgrunner
+            enOppfolgingsoppgaveRecord.personIdent shouldBeEqualTo enOppfolgingsoppgave.personIdent.value
+            enOppfolgingsoppgaveRecord.veilederIdent shouldBeEqualTo enOppfolgingsoppgave.createdBy
+            enOppfolgingsoppgaveRecord.isActive shouldBeEqualTo enOppfolgingsoppgave.isActive
+            enOppfolgingsoppgaveRecord.frist.shouldBeNull()
 
-            val annenKafkaHuskelapp = kafkaRecordSlot2.captured.value()
-            annenKafkaHuskelapp.frist shouldBeEqualTo annenHuskelapp.frist
+            val annenOppfolgingsoppgaveRecord = kafkaRecordSlot2.captured.value()
+            annenOppfolgingsoppgaveRecord.frist shouldBeEqualTo annenOppfolgingsoppgave.frist
 
-            huskelappRepository.getOppfolgingsoppgaver(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
+            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
+                .all { it.publishedAt != null } shouldBeEqualTo true
         }
         it("does not publish published huskelapp") {
             val enHuskelapp = Oppfolgingsoppgave.create(
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
-                tekst = "En huskelapp",
+                tekst = "En oppfolgingsoppgave",
                 oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
             )
-            huskelappRepository.create(enHuskelapp)
+            oppfolgingsoppgaveRepository.create(enHuskelapp)
             val publishedHuskelapp = enHuskelapp.publish()
-            huskelappRepository.updatePublished(publishedHuskelapp)
+            oppfolgingsoppgaveRepository.updatePublished(publishedHuskelapp)
 
             val result = publishOppfolgingsoppgaveCronjob.runJob()
 
@@ -131,10 +132,10 @@ class PublishHuskelappCronjobSpek : Spek({
             val enHuskelapp = Oppfolgingsoppgave.create(
                 personIdent,
                 veilederIdent,
-                tekst = "En huskelapp",
+                tekst = "En oppfolgingsoppgave",
                 oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
             )
-            huskelappRepository.create(enHuskelapp)
+            oppfolgingsoppgaveRepository.create(enHuskelapp)
 
             var result = publishOppfolgingsoppgaveCronjob.runJob()
 
@@ -146,8 +147,8 @@ class PublishHuskelappCronjobSpek : Spek({
             }
 
             val editedOppfolgingsoppgaveDTO =
-                EditedOppfolgingsoppgaveDTO(tekst = "En huskelapp", frist = LocalDate.now().plusDays(3))
-            huskelappService.addVersion(
+                EditedOppfolgingsoppgaveDTO(tekst = "En oppfolgingsoppgave", frist = LocalDate.now().plusDays(3))
+            oppfolgingsoppgaveService.addVersion(
                 existingOppfolgingsoppgaveUuid = enHuskelapp.uuid,
                 newVersion = editedOppfolgingsoppgaveDTO
             )
@@ -157,7 +158,7 @@ class PublishHuskelappCronjobSpek : Spek({
             result.failed shouldBeEqualTo 0
             result.updated shouldBeEqualTo 1
 
-            val kafkaRecordSlot = slot<ProducerRecord<String, KafkaHuskelapp>>()
+            val kafkaRecordSlot = slot<ProducerRecord<String, OppfolgingsoppgaveRecord>>()
             verifyOrder {
                 kafkaProducer.send(capture(kafkaRecordSlot))
             }
@@ -171,7 +172,8 @@ class PublishHuskelappCronjobSpek : Spek({
             kafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
             kafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
 
-            huskelappRepository.getOppfolgingsoppgaver(personIdent).all { it.publishedAt != null } shouldBeEqualTo true
+            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
+                .all { it.publishedAt != null } shouldBeEqualTo true
         }
     }
 })
