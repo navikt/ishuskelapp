@@ -149,7 +149,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     }
                     it("OK with oppfolgingsgrunn") {
                         val requestDTOWithOppfolgingsgrunn = OppfolgingsoppgaveRequestDTO(
-                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
+                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_ANNEN_YTELSE,
                             tekst = null,
                             frist = null,
                         )
