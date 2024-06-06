@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import no.nav.syfo.application.OppfolgingsoppgaveRequestDTO
-import no.nav.syfo.application.OppfolgingsoppgaveResponseDTO
+import no.nav.syfo.api.model.OppfolgingsoppgaveRequestDTO
+import no.nav.syfo.api.model.OppfolgingsoppgaveResponseDTO
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.domain.Oppfolgingsoppgave

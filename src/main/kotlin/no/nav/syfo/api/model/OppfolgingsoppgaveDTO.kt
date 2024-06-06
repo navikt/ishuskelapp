@@ -1,4 +1,4 @@
-package no.nav.syfo.application
+package no.nav.syfo.api.model
 
 import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn

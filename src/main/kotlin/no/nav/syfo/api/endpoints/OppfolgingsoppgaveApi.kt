@@ -6,9 +6,9 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.syfo.api.VeilederTilgangskontrollPlugin
-import no.nav.syfo.application.EditedOppfolgingsoppgaveDTO
-import no.nav.syfo.application.OppfolgingsoppgaveRequestDTO
-import no.nav.syfo.application.OppfolgingsoppgaveResponseDTO
+import no.nav.syfo.api.model.EditedOppfolgingsoppgaveDTO
+import no.nav.syfo.api.model.OppfolgingsoppgaveRequestDTO
+import no.nav.syfo.api.model.OppfolgingsoppgaveResponseDTO
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.application.OppfolgingsoppgaveService

@@ -1,6 +1,8 @@
 package no.nav.syfo.application
 
 import IOppfolgingsoppgaveRepository
+import no.nav.syfo.api.model.EditedOppfolgingsoppgaveDTO
+import no.nav.syfo.api.model.OppfolgingsoppgaveRequestDTO
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_CREATED
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_REMOVED
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
