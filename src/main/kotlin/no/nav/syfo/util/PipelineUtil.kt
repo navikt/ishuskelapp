@@ -39,7 +39,7 @@ suspend fun ApplicationCall.checkVeilederTilgang(
         ?: throw IllegalArgumentException("Failed to complete the following action: $action. No Authorization header supplied")
     val personident = getPersonIdent()
         ?: throw IllegalArgumentException("Failed to $action: No $NAV_PERSONIDENT_HEADER supplied in request header")
-    
+
     val hasAccess = veilederTilgangskontrollClient.hasAccess(
         callId = callId,
         personIdent = personident,

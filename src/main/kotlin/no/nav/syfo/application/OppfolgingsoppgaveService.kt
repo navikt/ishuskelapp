@@ -20,6 +20,10 @@ class OppfolgingsoppgaveService(
             ?.takeIf { it.isActive }
             ?.toOppfolgingsoppgave()
 
+    fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Oppfolgingsoppgave> =
+        oppfolgingsoppgaveRepository.getActiveOppfolgingsoppgaver(personidenter)
+            .map { it.toOppfolgingsoppgave() }
+
     fun createOppfolgingsoppgave(
         personIdent: PersonIdent,
         veilederIdent: String,
