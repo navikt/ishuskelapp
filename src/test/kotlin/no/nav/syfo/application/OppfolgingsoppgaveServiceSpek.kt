@@ -1,5 +1,6 @@
 package no.nav.syfo.application
 
+import no.nav.syfo.api.model.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn

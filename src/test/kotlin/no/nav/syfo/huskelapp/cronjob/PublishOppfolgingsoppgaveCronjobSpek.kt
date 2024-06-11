@@ -2,7 +2,7 @@ package no.nav.syfo.huskelapp.cronjob
 
 import io.mockk.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
-import no.nav.syfo.application.EditedOppfolgingsoppgaveDTO
+import no.nav.syfo.api.model.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn

@@ -17,6 +17,9 @@ class OppfolgingsoppgaveRepository(
         return database.getOppfolgingsoppgaver(personIdent)
     }
 
+    override fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<POppfolgingsoppgave> =
+        database.getActiveOppfolgingsoppgaver(personidenter)
+
     override fun getOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
         return database.getOppfolgingsoppgave(uuid)
     }
@@ -164,6 +167,27 @@ private fun DatabaseInterface.getOppfolgingsoppgave(uuid: UUID): POppfolgingsopp
         connection.prepareStatement(queryGetOppfolgingsoppgaveByUuid).use {
             it.setString(1, uuid.toString())
             it.executeQuery().toList { toPOppfolgingsoppgave() }.firstOrNull()
+        }
+    }
+}
+
+private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
+    SELECT *
+    FROM HUSKELAPP
+    WHERE personident = ? AND is_active = true
+"""
+
+private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<POppfolgingsoppgave> {
+    return if (personidenter.isEmpty()) {
+        emptyList()
+    } else {
+        connection.use { connection ->
+            connection.prepareStatement(queryGetActiveOppfolgingsoppgaverByPersonident).use {
+                personidenter.map { personident ->
+                    it.setString(1, personident.value)
+                    it.executeQuery().toList { toPOppfolgingsoppgave() }
+                }.flatten()
+            }
         }
     }
 }

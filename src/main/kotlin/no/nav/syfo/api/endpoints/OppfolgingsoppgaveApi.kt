@@ -5,16 +5,11 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import no.nav.syfo.api.VeilederTilgangskontrollPlugin
-import no.nav.syfo.application.EditedOppfolgingsoppgaveDTO
-import no.nav.syfo.application.OppfolgingsoppgaveRequestDTO
-import no.nav.syfo.application.OppfolgingsoppgaveResponseDTO
-import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
-import no.nav.syfo.domain.PersonIdent
+import no.nav.syfo.api.model.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
-import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
-import no.nav.syfo.util.getNAVIdent
-import no.nav.syfo.util.getPersonIdent
+import no.nav.syfo.domain.PersonIdent
+import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
+import no.nav.syfo.util.*
 import java.util.*
 
 const val huskelappApiBasePath = "/api/internad/v1/huskelapp"
@@ -27,63 +22,117 @@ fun Route.registerOppfolgingsoppgaveApi(
     oppfolgingsoppgaveService: OppfolgingsoppgaveService,
 ) {
     route(huskelappApiBasePath) {
-        install(VeilederTilgangskontrollPlugin) {
-            this.action = API_ACTION
-            this.veilederTilgangskontrollClient = veilederTilgangskontrollClient
-        }
         get {
-            val personIdent = call.personIdent()
+            call.checkVeilederTilgang(
+                action = API_ACTION,
+                veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+            ) {
+                val personIdent = call.personIdent()
 
-            val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
+                val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
 
-            if (oppfolgingsoppgave == null) {
-                call.respond(HttpStatusCode.NoContent)
-            } else {
-                val responseDTO = OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(oppfolgingsoppgave)
-                call.respond(responseDTO)
+                if (oppfolgingsoppgave == null) {
+                    call.respond(HttpStatusCode.NoContent)
+                } else {
+                    val responseDTO = OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(oppfolgingsoppgave)
+                    call.respond(responseDTO)
+                }
             }
         }
+
         post {
-            val personIdent = call.personIdent()
-            val requestDTO = call.receive<OppfolgingsoppgaveRequestDTO>()
-            val veilederIdent = call.getNAVIdent()
+            call.checkVeilederTilgang(
+                action = API_ACTION,
+                veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+            ) {
+                val personIdent = call.personIdent()
+                val veilederIdent = call.getNAVIdent()
 
-            oppfolgingsoppgaveService.createOppfolgingsoppgave(
-                personIdent = personIdent,
-                veilederIdent = veilederIdent,
-                newOppfolgingsoppgave = requestDTO,
-            )
-            call.respond(HttpStatusCode.Created)
-        }
-        post("/{$huskelappParam}") {
-            val uuid = UUID.fromString(call.parameters[huskelappParam])
-            val requestDTO = call.receive<EditedOppfolgingsoppgaveDTO>()
+                val requestDTO = call.receive<OppfolgingsoppgaveRequestDTO>()
 
-            oppfolgingsoppgaveService.addVersion(
-                existingOppfolgingsoppgaveUuid = uuid,
-                newVersion = requestDTO
-            )
-                ?.let { createdOppfolgingsoppgaveVersjon ->
-                    call.respond(
-                        HttpStatusCode.Created,
-                        OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(createdOppfolgingsoppgaveVersjon)
-                    )
-                }
-                ?: call.respond(HttpStatusCode.NotFound, "Could not find existing oppfolgingsoppgave with uuid: $uuid")
-        }
-        delete("/{$huskelappParam}") {
-            val oppfolgingsoppgaveUuid = UUID.fromString(call.parameters[huskelappParam])
-            val veilederIdent = call.getNAVIdent()
-
-            val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(uuid = oppfolgingsoppgaveUuid)
-            if (oppfolgingsoppgave == null) {
-                call.respond(HttpStatusCode.NotFound)
-            } else {
-                oppfolgingsoppgaveService.removeOppfolgingsoppgave(
-                    oppfolgingsoppgave = oppfolgingsoppgave,
-                    veilederIdent = veilederIdent
+                oppfolgingsoppgaveService.createOppfolgingsoppgave(
+                    personIdent = personIdent,
+                    veilederIdent = veilederIdent,
+                    newOppfolgingsoppgave = requestDTO,
                 )
+                call.respond(HttpStatusCode.Created)
+            }
+        }
+
+        post("/{$huskelappParam}") {
+            call.checkVeilederTilgang(
+                action = API_ACTION,
+                veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+            ) {
+                val uuid = UUID.fromString(call.parameters[huskelappParam])
+                val requestDTO = call.receive<EditedOppfolgingsoppgaveDTO>()
+
+                oppfolgingsoppgaveService.addVersion(
+                    existingOppfolgingsoppgaveUuid = uuid,
+                    newVersion = requestDTO
+                )
+                    ?.let { createdOppfolgingsoppgaveVersjon ->
+                        call.respond(
+                            HttpStatusCode.Created,
+                            OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(createdOppfolgingsoppgaveVersjon)
+                        )
+                    }
+                    ?: call.respond(
+                        HttpStatusCode.NotFound,
+                        "Could not find existing oppfolgingsoppgave with uuid: $uuid"
+                    )
+            }
+        }
+
+        delete("/{$huskelappParam}") {
+            call.checkVeilederTilgang(
+                action = API_ACTION,
+                veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+            ) {
+                val oppfolgingsoppgaveUuid = UUID.fromString(call.parameters[huskelappParam])
+                val veilederIdent = call.getNAVIdent()
+
+                val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(uuid = oppfolgingsoppgaveUuid)
+                if (oppfolgingsoppgave == null) {
+                    call.respond(HttpStatusCode.NotFound)
+                } else {
+                    oppfolgingsoppgaveService.removeOppfolgingsoppgave(
+                        oppfolgingsoppgave = oppfolgingsoppgave,
+                        veilederIdent = veilederIdent
+                    )
+                    call.respond(HttpStatusCode.NoContent)
+                }
+            }
+        }
+
+        post("/get-oppfolgingsoppgaver") {
+            val token = call.getBearerHeader()
+                ?: throw IllegalArgumentException("Failed to get oppfolgingsoppgaver for personer. No Authorization header supplied.")
+            val requestDTOList = call.receive<OppfolgingsoppgaverRequestDTO>()
+
+            val personerVeilederHasAccessTo = veilederTilgangskontrollClient.veilederPersonerAccess(
+                personidenter = requestDTOList.personidenter.map { PersonIdent(it) },
+                token = token,
+                callId = call.getCallId(),
+            )
+
+            val oppfolgingsoppgaver = if (personerVeilederHasAccessTo.isNullOrEmpty()) {
+                emptyList()
+            } else {
+                oppfolgingsoppgaveService.getActiveOppfolgingsoppgaver(
+                    personidenter = personerVeilederHasAccessTo,
+                )
+            }
+
+            if (oppfolgingsoppgaver.isEmpty()) {
                 call.respond(HttpStatusCode.NoContent)
+            } else {
+                val responseDTO = OppfolgingsoppgaverResponseDTO(
+                    oppfolgingsoppgaver = oppfolgingsoppgaver.associate {
+                        it.personIdent.value to OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(it)
+                    }
+                )
+                call.respond(responseDTO)
             }
         }
     }

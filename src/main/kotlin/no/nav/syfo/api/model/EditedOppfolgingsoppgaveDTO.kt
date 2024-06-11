@@ -1,4 +1,4 @@
-package no.nav.syfo.application
+package no.nav.syfo.api.model
 
 import java.time.LocalDate
 
