@@ -60,6 +60,10 @@ spec:
       claims:
         extra:
           - "NAVident"
+  observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
   kafka:
     pool: nav-dev
   env:
