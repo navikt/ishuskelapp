@@ -174,7 +174,7 @@ private fun DatabaseInterface.getOppfolgingsoppgave(uuid: UUID): POppfolgingsopp
 private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
     SELECT *
     FROM HUSKELAPP
-    WHERE personident = ? AND is_active = true
+    WHERE personident = ANY (string_to_array(?, ',')) AND is_active = true
 """
 
 private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<POppfolgingsoppgave> {
@@ -182,11 +182,9 @@ private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<P
         emptyList()
     } else {
         connection.use { connection ->
-            connection.prepareStatement(queryGetActiveOppfolgingsoppgaverByPersonident).use {
-                personidenter.map { personident ->
-                    it.setString(1, personident.value)
-                    it.executeQuery().toList { toPOppfolgingsoppgave() }
-                }.flatten()
+            connection.prepareStatement(queryGetActiveOppfolgingsoppgaverByPersonident).use { preparedStatement ->
+                preparedStatement.setString(1, personidenter.joinToString(",") { it.value })
+                preparedStatement.executeQuery().toList { toPOppfolgingsoppgave() }
             }
         }
     }
