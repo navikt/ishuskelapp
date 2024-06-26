@@ -1,6 +1,5 @@
 package no.nav.syfo.application
 
-import no.nav.syfo.api.model.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
@@ -44,13 +43,10 @@ class OppfolgingsoppgaveServiceSpek : Spek({
                 val publishedOppfolgingsoppgave = createdOppfolgingsoppgave.publish()
                 oppfolgingsoppgaveRepository.updatePublished(publishedOppfolgingsoppgave)
 
-                val newOppfolgingsoppgaveVersion = EditedOppfolgingsoppgaveDTO(
-                    tekst = oppfolgingsoppgave.tekst,
-                    frist = newFrist,
-                )
                 val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
                     existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
-                    newVersion = newOppfolgingsoppgaveVersion
+                    newTekst = oppfolgingsoppgave.tekst,
+                    newFrist = newFrist,
                 )
 
                 newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
@@ -72,13 +68,11 @@ class OppfolgingsoppgaveServiceSpek : Spek({
         it("adds a new version of oppfolgingsoppgave with only edited tekst") {
             val newTekst = oppfolgingsoppgave.tekst + " - enda mer informasjon her"
             val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
-            val newOppfolgingsoppgaveVersion = EditedOppfolgingsoppgaveDTO(
-                tekst = newTekst,
-                frist = oppfolgingsoppgave.frist,
-            )
+
             val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
                 existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
-                newVersion = newOppfolgingsoppgaveVersion
+                newTekst = newTekst,
+                newFrist = oppfolgingsoppgave.frist,
             )
 
             newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
@@ -98,13 +92,11 @@ class OppfolgingsoppgaveServiceSpek : Spek({
             val newTekst = oppfolgingsoppgave.tekst + " - enda mer informasjon her"
             val newFrist = oppfolgingsoppgave.frist!!.plusWeeks(1)
             val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
-            val newOppfolgingsoppgaveVersion = EditedOppfolgingsoppgaveDTO(
-                tekst = newTekst,
-                frist = newFrist,
-            )
+
             val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
                 existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
-                newVersion = newOppfolgingsoppgaveVersion
+                newTekst = newTekst,
+                newFrist = newFrist,
             )
 
             newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid

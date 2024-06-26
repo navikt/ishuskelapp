@@ -69,7 +69,8 @@ fun Route.registerOppfolgingsoppgaveApi(
 
                 oppfolgingsoppgaveService.addVersion(
                     existingOppfolgingsoppgaveUuid = uuid,
-                    newVersion = requestDTO
+                    newTekst = requestDTO.tekst,
+                    newFrist = requestDTO.frist,
                 )
                     ?.let { createdOppfolgingsoppgaveVersjon ->
                         call.respond(
