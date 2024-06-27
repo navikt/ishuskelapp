@@ -422,10 +422,8 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     val oppfolgingsoppgaver = createOppfolgingsoppgaver()
                     oppfolgingsoppgaveService.addVersion(
                         existingOppfolgingsoppgaveUuid = oppfolgingsoppgaver[0].uuid,
-                        newVersion = EditedOppfolgingsoppgaveDTO(
-                            tekst = "Ny tekst",
-                            frist = LocalDate.now().plusDays(1),
-                        )
+                        newTekst = "Ny tekst",
+                        newFrist = LocalDate.now().plusDays(1),
                     )
 
                     with(

@@ -2,7 +2,6 @@ package no.nav.syfo.huskelapp.cronjob
 
 import io.mockk.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
-import no.nav.syfo.api.model.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
@@ -146,11 +145,12 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
                 kafkaProducer.send(any())
             }
 
-            val editedOppfolgingsoppgaveDTO =
-                EditedOppfolgingsoppgaveDTO(tekst = "En oppfolgingsoppgave", frist = LocalDate.now().plusDays(3))
+            val newTekst = "En oppfolgingsoppgave"
+            val newFrist = LocalDate.now().plusDays(3)
             oppfolgingsoppgaveService.addVersion(
                 existingOppfolgingsoppgaveUuid = enHuskelapp.uuid,
-                newVersion = editedOppfolgingsoppgaveDTO
+                newTekst = newTekst,
+                newFrist = newFrist,
             )
 
             result = publishOppfolgingsoppgaveCronjob.runJob()
@@ -165,8 +165,8 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
 
             val kafkaHuskelapp = kafkaRecordSlot.captured.value()
 
-            kafkaHuskelapp.tekst shouldBeEqualTo editedOppfolgingsoppgaveDTO.tekst
-            kafkaHuskelapp.frist shouldBeEqualTo editedOppfolgingsoppgaveDTO.frist
+            kafkaHuskelapp.tekst shouldBeEqualTo newTekst
+            kafkaHuskelapp.frist shouldBeEqualTo newFrist
             kafkaHuskelapp.oppfolgingsgrunner shouldBeEqualTo enHuskelapp.oppfolgingsgrunner
             kafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
             kafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy

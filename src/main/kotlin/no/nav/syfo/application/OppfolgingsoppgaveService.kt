@@ -1,7 +1,6 @@
 package no.nav.syfo.application
 
 import IOppfolgingsoppgaveRepository
-import no.nav.syfo.api.model.EditedOppfolgingsoppgaveDTO
 import no.nav.syfo.api.model.OppfolgingsoppgaveRequestDTO
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_CREATED
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_REMOVED
@@ -9,6 +8,7 @@ import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsoppgave
+import java.time.LocalDate
 import java.util.*
 
 class OppfolgingsoppgaveService(
@@ -44,12 +44,16 @@ class OppfolgingsoppgaveService(
 
     fun addVersion(
         existingOppfolgingsoppgaveUuid: UUID,
-        newVersion: EditedOppfolgingsoppgaveDTO
+        newTekst: String?,
+        newFrist: LocalDate?,
     ): Oppfolgingsoppgave? =
         oppfolgingsoppgaveRepository.getOppfolgingsoppgave(existingOppfolgingsoppgaveUuid)
             ?.let { pExistingOppfolgingsoppgave ->
                 val existingOppfolgingsoppgave = pExistingOppfolgingsoppgave.toOppfolgingsoppgave()
-                val newOppfolgingsoppgaveVersion = existingOppfolgingsoppgave.edit(newVersion.tekst, newVersion.frist)
+                val newOppfolgingsoppgaveVersion = existingOppfolgingsoppgave.edit(
+                    tekst = newTekst,
+                    frist = newFrist,
+                )
                 oppfolgingsoppgaveRepository.createVersion(
                     oppfolgingsoppgaveId = pExistingOppfolgingsoppgave.id,
                     newOppfolgingsoppgaveVersion = newOppfolgingsoppgaveVersion,
