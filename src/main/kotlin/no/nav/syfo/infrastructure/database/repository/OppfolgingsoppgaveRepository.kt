@@ -17,7 +17,7 @@ class OppfolgingsoppgaveRepository(
         return database.getOppfolgingsoppgaver(personIdent)
     }
 
-    override fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<POppfolgingsoppgave> =
+    override fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>> =
         database.getActiveOppfolgingsoppgaver(personidenter)
 
     override fun getOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
@@ -172,19 +172,33 @@ private fun DatabaseInterface.getOppfolgingsoppgave(uuid: UUID): POppfolgingsopp
 }
 
 private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
-    SELECT *
-    FROM HUSKELAPP
-    WHERE personident = ANY (string_to_array(?, ',')) AND is_active = true
+    SELECT h.*, hv.*
+    FROM HUSKELAPP h
+    INNER JOIN (
+        SELECT hv1.*
+        FROM HUSKELAPP_VERSJON hv1
+        INNER JOIN (
+            SELECT huskelapp_id, MAX(created_at) AS max_created_at
+            FROM HUSKELAPP_VERSJON
+            GROUP BY huskelapp_id
+        ) hv2 ON hv1.huskelapp_id = hv2.huskelapp_id AND hv1.created_at = hv2.max_created_at
+    ) hv ON h.id = hv.huskelapp_id
+    WHERE h.personident = ANY (string_to_array(?, ',')) AND h.is_active = true
 """
 
-private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<POppfolgingsoppgave> {
+private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>> {
     return if (personidenter.isEmpty()) {
         emptyList()
     } else {
         connection.use { connection ->
             connection.prepareStatement(queryGetActiveOppfolgingsoppgaverByPersonident).use { preparedStatement ->
                 preparedStatement.setString(1, personidenter.joinToString(",") { it.value })
-                preparedStatement.executeQuery().toList { toPOppfolgingsoppgave() }
+                preparedStatement.executeQuery().toList {
+                    Pair(
+                        toPOppfolgingsoppgave(),
+                        toPOppfolgingsoppgaveVersjon(),
+                    )
+                }
             }
         }
     }

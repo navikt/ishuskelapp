@@ -22,7 +22,7 @@ class OppfolgingsoppgaveService(
 
     fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Oppfolgingsoppgave> =
         oppfolgingsoppgaveRepository.getActiveOppfolgingsoppgaver(personidenter)
-            .map { it.toOppfolgingsoppgave() }
+            .map { it.first.toOppfolgingsoppgave(pOppfolgingsoppgaveVersjon = it.second) }
 
     fun createOppfolgingsoppgave(
         personIdent: PersonIdent,

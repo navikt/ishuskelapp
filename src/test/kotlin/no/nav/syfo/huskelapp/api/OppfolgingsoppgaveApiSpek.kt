@@ -5,10 +5,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
-import no.nav.syfo.api.model.OppfolgingsoppgaveRequestDTO
-import no.nav.syfo.api.model.OppfolgingsoppgaveResponseDTO
-import no.nav.syfo.api.model.OppfolgingsoppgaverRequestDTO
-import no.nav.syfo.api.model.OppfolgingsoppgaverResponseDTO
+import no.nav.syfo.api.model.*
+import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.PersonIdent
@@ -46,6 +44,9 @@ class OppfolgingsoppgaveApiSpek : Spek({
             )
             val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(
                 database = database,
+            )
+            val oppfolgingsoppgaveService = OppfolgingsoppgaveService(
+                oppfolgingsoppgaveRepository = oppfolgingsoppgaveRepository,
             )
 
             afterEachTest {
@@ -382,8 +383,8 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 val requestDTO = OppfolgingsoppgaverRequestDTO(personidenter.map { it.value })
                 val url = "$huskelappApiBasePath/get-oppfolgingsoppgaver"
 
-                fun createOppfolgingsoppgaver(identer: List<PersonIdent> = personidenter) {
-                    identer.forEach { personident ->
+                fun createOppfolgingsoppgaver(identer: List<PersonIdent> = personidenter): List<Oppfolgingsoppgave> {
+                    return identer.map { personident ->
                         val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                             personIdent = personident,
                             veilederIdent = VEILEDER_IDENT,
@@ -414,6 +415,42 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             oppfolgingsoppgave.createdBy shouldBeEqualTo VEILEDER_IDENT
                             oppfolgingsoppgave.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         }
+                    }
+                }
+
+                it("Gets only newest versjon of oppfolgingsoppgaver for all persons") {
+                    val oppfolgingsoppgaver = createOppfolgingsoppgaver()
+                    oppfolgingsoppgaveService.addVersion(
+                        existingOppfolgingsoppgaveUuid = oppfolgingsoppgaver[0].uuid,
+                        newVersion = EditedOppfolgingsoppgaveDTO(
+                            tekst = "Ny tekst",
+                            frist = LocalDate.now().plusDays(1),
+                        )
+                    )
+
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+                        val responseDTO =
+                            objectMapper.readValue<OppfolgingsoppgaverResponseDTO>(response.content!!)
+
+                        responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
+                        responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgave) ->
+                            oppfolgingsoppgave.createdBy shouldBeEqualTo VEILEDER_IDENT
+                            oppfolgingsoppgave.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        }
+                        responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
+                            oppfolgingsoppgave.tekst == "Ny tekst"
+                        }.size shouldBeEqualTo 1
+                        responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
+                            oppfolgingsoppgave.tekst == "En oppfolgingsoppgave"
+                        }.size shouldBeEqualTo 2
                     }
                 }
 

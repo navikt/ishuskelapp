@@ -6,7 +6,7 @@ import java.util.*
 
 interface IOppfolgingsoppgaveRepository {
     fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave>
-    fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<POppfolgingsoppgave>
+    fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>>
     fun getOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave?
     fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon>
     fun create(oppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave
