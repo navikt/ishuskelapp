@@ -172,7 +172,9 @@ private fun DatabaseInterface.getOppfolgingsoppgave(uuid: UUID): POppfolgingsopp
 }
 
 private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
-    SELECT h.*, hv.*
+    SELECT h.*, hv.id as versjon_id, hv.uuid as versjon_uuid, hv.huskelapp_id as versjon_huskelapp_id, 
+           hv.created_at as versjon_created_at, hv.created_by as versjon_created_by, hv.tekst as versjon_tekst, 
+           hv.oppfolgingsgrunner as versjon_oppfolgingsgrunner, hv.frist as versjon_frist
     FROM HUSKELAPP h
     INNER JOIN (
         SELECT hv1.*
@@ -196,7 +198,7 @@ private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<P
                 preparedStatement.executeQuery().toList {
                     Pair(
                         toPOppfolgingsoppgave(),
-                        toPOppfolgingsoppgaveVersjon(),
+                        toPOppfolgingsoppgaveVersjonFromJoinQuery(),
                     )
                 }
             }
@@ -302,4 +304,15 @@ private fun ResultSet.toPOppfolgingsoppgaveVersjon() = POppfolgingsoppgaveVersjo
     tekst = getString("tekst"),
     oppfolgingsgrunner = getString("oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty),
     frist = getDate("frist")?.toLocalDate(),
+)
+
+private fun ResultSet.toPOppfolgingsoppgaveVersjonFromJoinQuery() = POppfolgingsoppgaveVersjon(
+    id = getInt("versjon_id"),
+    uuid = UUID.fromString(getString("versjon_uuid")),
+    oppfolgingsoppgaveId = getInt("versjon_huskelapp_id"),
+    createdAt = getObject("versjon_created_at", OffsetDateTime::class.java),
+    createdBy = getString("versjon_created_by"),
+    tekst = getString("versjon_tekst"),
+    oppfolgingsgrunner = getString("versjon_oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty),
+    frist = getDate("versjon_frist")?.toLocalDate(),
 )
