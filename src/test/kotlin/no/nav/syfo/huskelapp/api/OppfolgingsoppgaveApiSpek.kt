@@ -443,9 +443,11 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             oppfolgingsoppgave.createdBy shouldBeEqualTo VEILEDER_IDENT
                             oppfolgingsoppgave.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         }
-                        responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
+                        val updatedOppgaver = responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
                             oppfolgingsoppgave.tekst == "Ny tekst"
-                        }.size shouldBeEqualTo 1
+                        }.values
+                        updatedOppgaver.first().uuid shouldBeEqualTo oppfolgingsoppgaver[0].uuid.toString()
+
                         responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
                             oppfolgingsoppgave.tekst == "En oppfolgingsoppgave"
                         }.size shouldBeEqualTo 2
