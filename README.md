@@ -2,7 +2,7 @@
 
 # ishuskelapp
 
-Applikasjon for å skrive oppfølgingsoppgave
+Applikasjon for å skrive oppfølgingsoppgave.
 
 ## Technologies used
 
