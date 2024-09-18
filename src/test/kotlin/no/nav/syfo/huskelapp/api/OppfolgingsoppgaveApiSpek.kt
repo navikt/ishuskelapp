@@ -446,6 +446,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         val updatedOppgaver = responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
                             oppfolgingsoppgave.tekst == "Ny tekst"
                         }.values
+                        updatedOppgaver.size shouldBeEqualTo 1
                         updatedOppgaver.first().uuid shouldBeEqualTo oppfolgingsoppgaver[0].uuid.toString()
 
                         responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
