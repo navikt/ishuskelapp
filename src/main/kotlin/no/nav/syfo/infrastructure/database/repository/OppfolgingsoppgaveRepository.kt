@@ -198,7 +198,9 @@ private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<P
                 preparedStatement.executeQuery().toList {
                     Pair(
                         toPOppfolgingsoppgave(),
-                        toPOppfolgingsoppgaveVersjonFromJoinQuery(),
+                        toPOppfolgingsoppgaveVersjon(
+                            col_name_prefix = "versjon_",
+                        ),
                     )
                 }
             }
@@ -295,24 +297,15 @@ private fun ResultSet.toPOppfolgingsoppgave() = POppfolgingsoppgave(
     removedBy = getString("removed_by"),
 )
 
-private fun ResultSet.toPOppfolgingsoppgaveVersjon() = POppfolgingsoppgaveVersjon(
-    id = getInt("id"),
-    uuid = UUID.fromString(getString("uuid")),
-    oppfolgingsoppgaveId = getInt("huskelapp_id"),
-    createdAt = getObject("created_at", OffsetDateTime::class.java),
-    createdBy = getString("created_by"),
-    tekst = getString("tekst"),
-    oppfolgingsgrunner = getString("oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty),
-    frist = getDate("frist")?.toLocalDate(),
-)
-
-private fun ResultSet.toPOppfolgingsoppgaveVersjonFromJoinQuery() = POppfolgingsoppgaveVersjon(
-    id = getInt("versjon_id"),
-    uuid = UUID.fromString(getString("versjon_uuid")),
-    oppfolgingsoppgaveId = getInt("versjon_huskelapp_id"),
-    createdAt = getObject("versjon_created_at", OffsetDateTime::class.java),
-    createdBy = getString("versjon_created_by"),
-    tekst = getString("versjon_tekst"),
-    oppfolgingsgrunner = getString("versjon_oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty),
-    frist = getDate("versjon_frist")?.toLocalDate(),
+private fun ResultSet.toPOppfolgingsoppgaveVersjon(
+    col_name_prefix: String = "",
+) = POppfolgingsoppgaveVersjon(
+    id = getInt("${col_name_prefix}id"),
+    uuid = UUID.fromString(getString("${col_name_prefix}uuid")),
+    oppfolgingsoppgaveId = getInt("${col_name_prefix}huskelapp_id"),
+    createdAt = getObject("${col_name_prefix}created_at", OffsetDateTime::class.java),
+    createdBy = getString("${col_name_prefix}created_by"),
+    tekst = getString("${col_name_prefix}tekst"),
+    oppfolgingsgrunner = getString("${col_name_prefix}oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty),
+    frist = getDate("${col_name_prefix}frist")?.toLocalDate(),
 )
