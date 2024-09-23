@@ -10,7 +10,7 @@ val kluent = "1.73"
 val ktor = "2.3.12"
 val logback = "1.5.8"
 val logstashEncoder = "7.4"
-val micrometerRegistry = "1.12.8"
+val micrometerRegistry = "1.13.4"
 val mockk = "1.13.12"
 val nimbusJoseJwt = "9.41.1"
 val postgres = "42.7.4"
@@ -20,7 +20,7 @@ val spek = "2.0.19"
 
 plugins {
     kotlin("jvm") version "2.0.20"
-    id("com.gradleup.shadow") version "8.3.1"
+    id("com.gradleup.shadow") version "8.3.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.0"
 }
 
