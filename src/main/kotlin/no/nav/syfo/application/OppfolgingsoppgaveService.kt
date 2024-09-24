@@ -44,6 +44,7 @@ class OppfolgingsoppgaveService(
 
     fun addVersion(
         existingOppfolgingsoppgaveUuid: UUID,
+        veilederIdent: String,
         newTekst: String?,
         newFrist: LocalDate?,
     ): Oppfolgingsoppgave? =
@@ -51,6 +52,7 @@ class OppfolgingsoppgaveService(
             ?.let { pExistingOppfolgingsoppgave ->
                 val existingOppfolgingsoppgave = pExistingOppfolgingsoppgave.toOppfolgingsoppgave()
                 val newOppfolgingsoppgaveVersion = existingOppfolgingsoppgave.edit(
+                    veilederIdent = veilederIdent,
                     tekst = newTekst,
                     frist = newFrist,
                 )
@@ -83,7 +85,7 @@ class OppfolgingsoppgaveService(
     }
 
     private fun POppfolgingsoppgave.toOppfolgingsoppgave(): Oppfolgingsoppgave {
-        val oppfolgingsoppgaveVersjon = oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(this.id).first()
-        return this.toOppfolgingsoppgave(oppfolgingsoppgaveVersjon)
+        val latestOppfolgingsoppgaveVersjon = oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(this.id).first()
+        return this.toOppfolgingsoppgave(latestOppfolgingsoppgaveVersjon)
     }
 }
