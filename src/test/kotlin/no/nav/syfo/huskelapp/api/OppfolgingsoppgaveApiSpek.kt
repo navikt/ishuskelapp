@@ -58,6 +58,11 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 issuer = externalMockEnvironment.wellKnownInternalAzureAD.issuer,
                 navIdent = VEILEDER_IDENT,
             )
+            val validTokenOtherVeileder = generateJWT(
+                audience = externalMockEnvironment.environment.azure.appClientId,
+                issuer = externalMockEnvironment.wellKnownInternalAzureAD.issuer,
+                navIdent = OTHER_VEILEDER_IDENT,
+            )
 
             describe("Get oppfolgingsoppgave for person") {
                 val oppfolgingsoppgave = Oppfolgingsoppgave.create(
@@ -237,7 +242,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
             }
             describe("Post new version of oppfolgingsoppgave") {
                 describe("Happy path") {
-                    it("OK with new date") {
+                    it("OK with new date and other veileder") {
                         val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                             personIdent = ARBEIDSTAKER_PERSONIDENT,
                             veilederIdent = VEILEDER_IDENT,
@@ -247,10 +252,50 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         )
                         val existingOppfolgingsoppgave =
                             oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
-                        val requestDTO = OppfolgingsoppgaveRequestDTO(
+                        val requestDTO = EditedOppfolgingsoppgaveDTO(
                             tekst = existingOppfolgingsoppgave.tekst,
-                            oppfolgingsgrunn = existingOppfolgingsoppgave.oppfolgingsgrunner.first(),
                             frist = LocalDate.now().plusDays(1),
+                        )
+
+                        with(
+                            handleRequest(HttpMethod.Post, "$huskelappApiBasePath/${existingOppfolgingsoppgave.uuid}") {
+                                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validTokenOtherVeileder))
+                                addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                                setBody(objectMapper.writeValueAsString(requestDTO))
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.Created
+                        }
+
+                        with(
+                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                                addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                            }
+                        ) {
+                            response.status() shouldBeEqualTo HttpStatusCode.OK
+                            val responseDTO =
+                                objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
+
+                            responseDTO.tekst shouldBeEqualTo requestDTO.tekst
+                            responseDTO.frist shouldBeEqualTo requestDTO.frist
+                            responseDTO.createdBy shouldBeEqualTo OTHER_VEILEDER_IDENT
+                        }
+                    }
+                    it("OK with new tekst and same veileder") {
+                        val oppfolgingsoppgave = Oppfolgingsoppgave.create(
+                            personIdent = ARBEIDSTAKER_PERSONIDENT,
+                            veilederIdent = VEILEDER_IDENT,
+                            tekst = "En oppfolgingsoppgave",
+                            oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
+                            frist = LocalDate.now().minusDays(1)
+                        )
+                        val existingOppfolgingsoppgave =
+                            oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
+                        val requestDTO = EditedOppfolgingsoppgaveDTO(
+                            tekst = "Ny tekst",
+                            frist = existingOppfolgingsoppgave.frist,
                         )
 
                         with(
@@ -275,9 +320,8 @@ class OppfolgingsoppgaveApiSpek : Spek({
                                 objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
 
                             responseDTO.tekst shouldBeEqualTo requestDTO.tekst
-                            responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTO.oppfolgingsgrunn
                             responseDTO.frist shouldBeEqualTo requestDTO.frist
-                            responseDTO.createdBy shouldBeEqualTo VEILEDER_IDENT
+                            responseDTO.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
                         }
                     }
                 }
@@ -422,6 +466,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     val oppfolgingsoppgaver = createOppfolgingsoppgaver()
                     oppfolgingsoppgaveService.addVersion(
                         existingOppfolgingsoppgaveUuid = oppfolgingsoppgaver[0].uuid,
+                        veilederIdent = VEILEDER_IDENT,
                         newTekst = "Ny tekst",
                         newFrist = LocalDate.now().plusDays(1),
                     )
@@ -479,12 +524,6 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 }
 
                 it("Gets all oppfolgingsoppgaver only for persons where veileder has access") {
-                    val validTokenOtherVeileder = generateJWT(
-                        audience = externalMockEnvironment.environment.azure.appClientId,
-                        issuer = externalMockEnvironment.wellKnownInternalAzureAD.issuer,
-                        navIdent = OTHER_VEILEDER_IDENT,
-                    )
-
                     createOppfolgingsoppgaver()
 
                     with(

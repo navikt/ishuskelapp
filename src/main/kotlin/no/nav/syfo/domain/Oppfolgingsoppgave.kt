@@ -19,7 +19,7 @@ data class Oppfolgingsoppgave private constructor(
     val removedBy: String?,
 ) {
 
-    fun edit(tekst: String?, frist: LocalDate?): Oppfolgingsoppgave {
+    fun edit(tekst: String?, frist: LocalDate?, veilederIdent: String): Oppfolgingsoppgave {
         if (this.tekst == tekst && this.frist == frist) {
             throw IllegalArgumentException("No changes detected, not updating oppfolgingsoppgave")
         }
@@ -27,6 +27,7 @@ data class Oppfolgingsoppgave private constructor(
             tekst = tekst,
             frist = frist,
             updatedAt = nowUTC(),
+            createdBy = veilederIdent,
             publishedAt = null,
         )
     }

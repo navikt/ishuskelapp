@@ -66,9 +66,11 @@ fun Route.registerOppfolgingsoppgaveApi(
             ) {
                 val uuid = UUID.fromString(call.parameters[huskelappParam])
                 val requestDTO = call.receive<EditedOppfolgingsoppgaveDTO>()
+                val veilederIdent = call.getNAVIdent()
 
                 oppfolgingsoppgaveService.addVersion(
                     existingOppfolgingsoppgaveUuid = uuid,
+                    veilederIdent = veilederIdent,
                     newTekst = requestDTO.tekst,
                     newFrist = requestDTO.frist,
                 )

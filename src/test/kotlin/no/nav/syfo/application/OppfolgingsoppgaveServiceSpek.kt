@@ -45,13 +45,14 @@ class OppfolgingsoppgaveServiceSpek : Spek({
 
                 val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
                     existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
+                    veilederIdent = UserConstants.OTHER_VEILEDER_IDENT,
                     newTekst = oppfolgingsoppgave.tekst,
                     newFrist = newFrist,
                 )
 
                 newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
                 newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
-                newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
+                newOppfolgingsoppgave?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
                 newOppfolgingsoppgave?.tekst shouldBeEqualTo oppfolgingsoppgave.tekst
                 newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
                 newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
@@ -71,13 +72,14 @@ class OppfolgingsoppgaveServiceSpek : Spek({
 
             val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
                 existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
+                veilederIdent = UserConstants.OTHER_VEILEDER_IDENT,
                 newTekst = newTekst,
                 newFrist = oppfolgingsoppgave.frist,
             )
 
             newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
             newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
-            newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
+            newOppfolgingsoppgave?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
             newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
             newOppfolgingsoppgave?.frist shouldBeEqualTo oppfolgingsoppgave.frist
             newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
@@ -95,13 +97,14 @@ class OppfolgingsoppgaveServiceSpek : Spek({
 
             val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
                 existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
+                veilederIdent = UserConstants.OTHER_VEILEDER_IDENT,
                 newTekst = newTekst,
                 newFrist = newFrist,
             )
 
             newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
             newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
-            newOppfolgingsoppgave?.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
+            newOppfolgingsoppgave?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
             newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
             newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
             newOppfolgingsoppgave?.publishedAt shouldBeEqualTo oppfolgingsoppgave.publishedAt

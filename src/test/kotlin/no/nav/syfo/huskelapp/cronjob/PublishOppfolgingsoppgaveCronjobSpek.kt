@@ -149,6 +149,7 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
             val newFrist = LocalDate.now().plusDays(3)
             oppfolgingsoppgaveService.addVersion(
                 existingOppfolgingsoppgaveUuid = enHuskelapp.uuid,
+                veilederIdent = veilederIdent,
                 newTekst = newTekst,
                 newFrist = newFrist,
             )
