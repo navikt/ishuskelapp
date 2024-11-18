@@ -3,6 +3,8 @@ package no.nav.syfo.infrastructure.database.repository
 import IOppfolgingsoppgaveRepository
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.domain.Oppfolgingsoppgave
+import no.nav.syfo.domain.OppfolgingsoppgaveHistorikk
+import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.infrastructure.database.*
 import no.nav.syfo.util.nowUTC
 import java.sql.*
@@ -40,6 +42,18 @@ class OppfolgingsoppgaveRepository(
         }
     }
 
+    override fun create(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk): OppfolgingsoppgaveHistorikk {
+        database.connection.use { connection ->
+            val createdOppfolgingsoppgave = connection.createOppfolgingsoppgaveHistorikk(oppfolgingsoppgaveHistorikk)
+            val createdVersion = connection.createOppfolgingsoppgaveVersjon(
+                oppfolgingsoppgaveId = createdOppfolgingsoppgave.id,
+                newOppfolgingsoppgaveHistorikk = oppfolgingsoppgaveHistorikk
+            )
+            connection.commit()
+            return createdOppfolgingsoppgave.toOppfolgingsoppgaveHistorikk(listOf(createdVersion))
+        }
+    }
+
     override fun createVersion(
         oppfolgingsoppgaveId: Int,
         newOppfolgingsoppgaveVersion: Oppfolgingsoppgave,
@@ -53,6 +67,19 @@ class OppfolgingsoppgaveRepository(
             connection.commit()
             return oppfolgingsoppgaveVersjon
         }
+
+    override fun edit(
+        oppfolgingsoppgaveId: Int,
+        oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk
+    ): OppfolgingsoppgaveHistorikk {
+        database.connection.use { connection ->
+            connection.createOppfolgingsoppgaveVersjon(oppfolgingsoppgaveId, oppfolgingsoppgaveHistorikk)
+            connection.updateOppfolgingsoppgave(oppfolgingsoppgaveHistorikk)
+            connection.commit()
+            COUNT_HUSKELAPP_VERSJON_CREATED.increment()
+            return oppfolgingsoppgaveHistorikk
+        }
+    }
 
     private fun Connection.createOppfolgingsoppgaveVersjon(
         oppfolgingsoppgaveId: Int,
@@ -80,6 +107,49 @@ class OppfolgingsoppgaveRepository(
         }
 
         return idList.first()
+    }
+
+    private fun Connection.createOppfolgingsoppgaveVersjon(
+        oppfolgingsoppgaveId: Int,
+        newOppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk
+    ): POppfolgingsoppgaveVersjon {
+        //TODO: Hva bør denne metoden ta inn? Oppgaven eller versjonen?
+        val newVersjon = newOppfolgingsoppgaveHistorikk.versjoner.first()
+        val idList = this.prepareStatement(CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY).use {
+            it.setString(1, UUID.randomUUID().toString())
+            it.setInt(2, oppfolgingsoppgaveId)
+            it.setObject(3, newVersjon.createdAt)
+            it.setString(4, newVersjon.createdBy)
+            it.setStringOrNull(5, newVersjon.tekst)
+            it.setStringOrNull(6, newVersjon.oppfolgingsgrunn.toString())
+            //TODO: Endre denne til noe annet enn it mtp. shadowing?
+            it.setDateOrNull(7, newVersjon.frist?.let { Date.valueOf(it) })
+            it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
+        }
+
+        if (idList.size != 1) {
+            throw NoElementInsertedException("Creating HUSKELAPP_VERSJON failed, no rows affected.")
+        }
+
+        return idList.first()
+    }
+
+    //TODO: Flytte? I så fall hvor?
+    private fun PreparedStatement.setStringOrNull(parameterIndex: Int, value: String?) {
+        if (value == null) {
+            this.setNull(parameterIndex, Types.LONGVARCHAR)
+        } else {
+            this.setString(parameterIndex, value)
+        }
+    }
+
+    //TODO: Flytte? I så fall hvor?
+    private fun PreparedStatement.setDateOrNull(parameterIndex: Int, value: Date?) {
+        if (value == null) {
+            this.setNull(parameterIndex, Types.DATE)
+        } else {
+            this.setDate(parameterIndex, value)
+        }
     }
 
     override fun getUnpublished(): List<POppfolgingsoppgave> = database.getUnpublishedOppfolgingsoppgaver()
@@ -138,6 +208,43 @@ private fun Connection.createOppfolgingsoppgave(
     }
 
     return idList.first()
+}
+
+private fun Connection.createOppfolgingsoppgaveHistorikk(
+    oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk,
+): POppfolgingsoppgave {
+    val idList = this.prepareStatement(queryCreateOppfolgingsoppgave).use {
+        it.setString(1, oppfolgingsoppgaveHistorikk.uuid.toString())
+        it.setString(2, oppfolgingsoppgaveHistorikk.personIdent.value)
+        it.setObject(3, oppfolgingsoppgaveHistorikk.createdAt)
+        it.setObject(4, oppfolgingsoppgaveHistorikk.updatedAt)
+        it.setObject(5, oppfolgingsoppgaveHistorikk.isActive)
+        it.executeQuery().toList { toPOppfolgingsoppgave() }
+    }
+
+    if (idList.size != 1) {
+        throw NoElementInsertedException("Creating HUSKELAPP failed, no rows affected.")
+    }
+
+    return idList.first()
+}
+
+//TODO: Rename
+private const val queryUpdatedAt = """
+    UPDATE huskelapp
+    SET updated_at = ?
+    WHERE uuid = ?
+"""
+
+private fun Connection.updateOppfolgingsoppgave(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk) {
+    this.prepareStatement(queryUpdatedAt).use {
+        it.setObject(1, oppfolgingsoppgaveHistorikk.updatedAt)
+        it.setString(2, oppfolgingsoppgaveHistorikk.uuid.toString())
+        val updated = it.executeUpdate()
+        if (updated != 1) {
+            throw SQLException("Expected a single row to be updated, got update count $updated")
+        }
+    }
 }
 
 private const val queryGetOppfolgingsoppgaveByPersonIdent = """

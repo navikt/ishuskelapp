@@ -17,6 +17,10 @@ const val huskelappParam = "huskelappUuid"
 
 private const val API_ACTION = "access oppfolgingsoppgave for person"
 
+private const val LATEST = "latest"
+private const val ALL = "all"
+private const val FILTER = "filter"
+
 fun Route.registerOppfolgingsoppgaveApi(
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
     oppfolgingsoppgaveService: OppfolgingsoppgaveService,
@@ -28,14 +32,22 @@ fun Route.registerOppfolgingsoppgaveApi(
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
             ) {
                 val personIdent = call.personIdent()
+                val filter = call.request.queryParameters[FILTER]
 
-                val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
-
-                if (oppfolgingsoppgave == null) {
-                    call.respond(HttpStatusCode.NoContent)
-                } else {
-                    val responseDTO = OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(oppfolgingsoppgave)
+                if (filter == ALL) {
+                    val responseDTO = oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).map {
+                        OppfolgingsoppgaveHistorikkResponseDTO.fromOppfolgingsoppgaveHistorikk(it)
+                    }
                     call.respond(responseDTO)
+                } else if (filter == null || filter == LATEST) {
+                    val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
+
+                    if (oppfolgingsoppgave == null) {
+                        call.respond(HttpStatusCode.NoContent)
+                    } else {
+                        val responseDTO = OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(oppfolgingsoppgave)
+                        call.respond(responseDTO)
+                    }
                 }
             }
         }

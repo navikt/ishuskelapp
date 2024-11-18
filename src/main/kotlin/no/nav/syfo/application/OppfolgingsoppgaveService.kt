@@ -8,6 +8,7 @@ import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsoppgave
+import no.nav.syfo.domain.OppfolgingsoppgaveHistorikk
 import java.time.LocalDate
 import java.util.*
 
@@ -23,6 +24,19 @@ class OppfolgingsoppgaveService(
     fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Oppfolgingsoppgave> =
         oppfolgingsoppgaveRepository.getActiveOppfolgingsoppgaver(personidenter)
             .map { it.first.toOppfolgingsoppgave(pOppfolgingsoppgaveVersjon = it.second) }
+
+    fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<OppfolgingsoppgaveHistorikk> =
+        oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
+            .map { it.toOppfolgingsoppgaveHistorikk() }
+            .map { oppgave ->
+                oppgave.versjoner.sortedByDescending { it.createdAt }
+                oppgave
+            }
+
+    private fun POppfolgingsoppgave.toOppfolgingsoppgaveHistorikk(): OppfolgingsoppgaveHistorikk {
+        val versjoner = oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(this.id)
+        return this.toOppfolgingsoppgaveHistorikk(versjoner)
+    }
 
     fun createOppfolgingsoppgave(
         personIdent: PersonIdent,
@@ -64,6 +78,22 @@ class OppfolgingsoppgaveService(
                 return newOppfolgingsoppgaveVersion
             }
 
+    fun editOppfolgingsoppgave(
+        existingOppfolgingsoppgaveUuid: UUID,
+        veilederIdent: String,
+        newTekst: String?,
+        newFrist: LocalDate?,
+    ): OppfolgingsoppgaveHistorikk? =
+        oppfolgingsoppgaveRepository.getOppfolgingsoppgave(existingOppfolgingsoppgaveUuid)
+            ?.let { pExistingOppfolgingsoppgave ->
+                pExistingOppfolgingsoppgave.toOppfolgingsoppgaveHistorikk().edit(
+                    veilederIdent = veilederIdent,
+                    tekst = newTekst,
+                    frist = newFrist,
+                ).run { oppfolgingsoppgaveRepository.edit(pExistingOppfolgingsoppgave.id, this) }
+            }
+
+
     fun getUnpublishedOppfolgingsoppgaver(): List<Oppfolgingsoppgave> =
         oppfolgingsoppgaveRepository.getUnpublished().map { it.toOppfolgingsoppgave() }
 
@@ -85,7 +115,8 @@ class OppfolgingsoppgaveService(
     }
 
     private fun POppfolgingsoppgave.toOppfolgingsoppgave(): Oppfolgingsoppgave {
-        val latestOppfolgingsoppgaveVersjon = oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(this.id).first()
+        val latestOppfolgingsoppgaveVersjon =
+            oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(this.id).first()
         return this.toOppfolgingsoppgave(latestOppfolgingsoppgaveVersjon)
     }
 }
