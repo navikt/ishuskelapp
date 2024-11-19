@@ -83,8 +83,8 @@ class OppfolgingsoppgaveRepository(
         }
     }
 
-    override fun remove(oppfolgingsoppgave: OppfolgingsoppgaveHistorikk) =
-        database.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave)
+    override fun remove(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk) =
+        database.updateRemovedOppfolgingsoppgave(oppfolgingsoppgaveHistorikk)
 
     private fun Connection.createOppfolgingsoppgaveVersjon(
         oppfolgingsoppgaveId: Int,
@@ -377,14 +377,14 @@ private fun DatabaseInterface.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave
     }
 }
 
-private fun DatabaseInterface.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave: OppfolgingsoppgaveHistorikk) {
+private fun DatabaseInterface.updateRemovedOppfolgingsoppgave(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk) {
     this.connection.use { connection ->
         connection.prepareStatement(queryUpdateRemoved).use {
-            it.setBoolean(1, oppfolgingsoppgave.isActive)
-            it.setString(2, oppfolgingsoppgave.removedBy)
-            it.setObject(3, oppfolgingsoppgave.publishedAt)
-            it.setObject(4, oppfolgingsoppgave.updatedAt)
-            it.setString(5, oppfolgingsoppgave.uuid.toString())
+            it.setBoolean(1, oppfolgingsoppgaveHistorikk.isActive)
+            it.setString(2, oppfolgingsoppgaveHistorikk.removedBy)
+            it.setObject(3, oppfolgingsoppgaveHistorikk.publishedAt)
+            it.setObject(4, oppfolgingsoppgaveHistorikk.updatedAt)
+            it.setString(5, oppfolgingsoppgaveHistorikk.uuid.toString())
             val updated = it.executeUpdate()
             if (updated != 1) {
                 throw SQLException("Expected a single row to be updated, got update count $updated")

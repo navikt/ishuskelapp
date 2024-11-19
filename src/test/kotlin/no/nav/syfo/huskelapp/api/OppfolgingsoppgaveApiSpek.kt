@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import no.nav.syfo.api.endpoints.FilterRequestParameter
 import no.nav.syfo.api.endpoints.FilterRequestParameter.ALL
-import no.nav.syfo.api.endpoints.RequestParameters
 import no.nav.syfo.api.endpoints.RequestParameters.FILTER
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
 import no.nav.syfo.api.model.*
