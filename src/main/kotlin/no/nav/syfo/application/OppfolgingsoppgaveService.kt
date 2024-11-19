@@ -28,10 +28,6 @@ class OppfolgingsoppgaveService(
     fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<OppfolgingsoppgaveHistorikk> =
         oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
             .map { it.toOppfolgingsoppgaveHistorikk() }
-            .map { oppgave ->
-                oppgave.versjoner.sortedByDescending { it.createdAt }
-                oppgave
-            }
 
     private fun POppfolgingsoppgave.toOppfolgingsoppgaveHistorikk(): OppfolgingsoppgaveHistorikk {
         val versjoner = oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(this.id)

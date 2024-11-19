@@ -18,7 +18,7 @@ data class OppfolgingsoppgaveHistorikk private constructor(
 
     fun edit(tekst: String?, frist: LocalDate? = null, veilederIdent: String): OppfolgingsoppgaveHistorikk {
         val updatedAt = nowUTC()
-        val versjon = versjoner.sortedBy { it.frist }.last().edit(
+        val versjon = versjoner.first().edit(
             createdAt = updatedAt,
             veilederIdent = veilederIdent,
             tekst = tekst,
