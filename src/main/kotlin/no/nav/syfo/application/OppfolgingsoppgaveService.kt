@@ -93,7 +93,6 @@ class OppfolgingsoppgaveService(
                 ).run { oppfolgingsoppgaveRepository.edit(pExistingOppfolgingsoppgave.id, this) }
             }
 
-
     fun getUnpublishedOppfolgingsoppgaver(): List<Oppfolgingsoppgave> =
         oppfolgingsoppgaveRepository.getUnpublished().map { it.toOppfolgingsoppgave() }
 

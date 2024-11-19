@@ -5,6 +5,8 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import no.nav.syfo.api.endpoints.FilterRequestParameter.*
+import no.nav.syfo.api.endpoints.RequestParameters.FILTER
 import no.nav.syfo.api.model.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.domain.PersonIdent
@@ -17,10 +19,6 @@ const val huskelappParam = "huskelappUuid"
 
 private const val API_ACTION = "access oppfolgingsoppgave for person"
 
-private const val LATEST = "latest"
-private const val ALL = "all"
-private const val FILTER = "filter"
-
 fun Route.registerOppfolgingsoppgaveApi(
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
     oppfolgingsoppgaveService: OppfolgingsoppgaveService,
@@ -32,14 +30,14 @@ fun Route.registerOppfolgingsoppgaveApi(
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
             ) {
                 val personIdent = call.personIdent()
-                val filter = call.request.queryParameters[FILTER]
+                val filter = FilterRequestParameter.fromString(call.request.queryParameters[FILTER])
 
                 if (filter == ALL) {
                     val responseDTO = oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).map {
                         OppfolgingsoppgaveHistorikkResponseDTO.fromOppfolgingsoppgaveHistorikk(it)
                     }
                     call.respond(responseDTO)
-                } else if (filter == null || filter == LATEST) {
+                } else if (filter in listOf(null, LATEST)) {
                     val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
 
                     if (oppfolgingsoppgave == null) {
@@ -155,3 +153,17 @@ fun Route.registerOppfolgingsoppgaveApi(
 
 private fun ApplicationCall.personIdent(): PersonIdent = this.getPersonIdent()
     ?: throw IllegalArgumentException("Failed to $API_ACTION: No $NAV_PERSONIDENT_HEADER supplied in request header")
+
+object RequestParameters {
+    const val FILTER = "filter"
+}
+
+enum class FilterRequestParameter(val value: String?) {
+    LATEST("latest"),
+    ALL("all");
+
+    companion object {
+        private val map = entries.associateBy(FilterRequestParameter::value)
+        fun fromString(type: String?) = map[type]
+    }
+}

@@ -6,6 +6,8 @@ import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.OppfolgingsoppgaveHistorikk
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.infrastructure.database.*
+import no.nav.syfo.infrastructure.database.repository.extension.setDateOrNull
+import no.nav.syfo.infrastructure.database.repository.extension.setStringOrNull
 import no.nav.syfo.util.nowUTC
 import java.sql.*
 import java.sql.Date
@@ -81,6 +83,9 @@ class OppfolgingsoppgaveRepository(
         }
     }
 
+    override fun remove(oppfolgingsoppgave: OppfolgingsoppgaveHistorikk) =
+        database.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave)
+
     private fun Connection.createOppfolgingsoppgaveVersjon(
         oppfolgingsoppgaveId: Int,
         newOppfolgingsoppgaveVersion: Oppfolgingsoppgave,
@@ -113,7 +118,6 @@ class OppfolgingsoppgaveRepository(
         oppfolgingsoppgaveId: Int,
         newOppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk
     ): POppfolgingsoppgaveVersjon {
-        //TODO: Hva bør denne metoden ta inn? Oppgaven eller versjonen?
         val newVersjon = newOppfolgingsoppgaveHistorikk.versjoner.first()
         val idList = this.prepareStatement(CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY).use {
             it.setString(1, UUID.randomUUID().toString())
@@ -122,8 +126,7 @@ class OppfolgingsoppgaveRepository(
             it.setString(4, newVersjon.createdBy)
             it.setStringOrNull(5, newVersjon.tekst)
             it.setStringOrNull(6, newVersjon.oppfolgingsgrunn.toString())
-            //TODO: Endre denne til noe annet enn it mtp. shadowing?
-            it.setDateOrNull(7, newVersjon.frist?.let { Date.valueOf(it) })
+            it.setDateOrNull(7, newVersjon.frist?.let { date -> Date.valueOf(date) })
             it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
         }
 
@@ -132,24 +135,6 @@ class OppfolgingsoppgaveRepository(
         }
 
         return idList.first()
-    }
-
-    //TODO: Flytte? I så fall hvor?
-    private fun PreparedStatement.setStringOrNull(parameterIndex: Int, value: String?) {
-        if (value == null) {
-            this.setNull(parameterIndex, Types.LONGVARCHAR)
-        } else {
-            this.setString(parameterIndex, value)
-        }
-    }
-
-    //TODO: Flytte? I så fall hvor?
-    private fun PreparedStatement.setDateOrNull(parameterIndex: Int, value: Date?) {
-        if (value == null) {
-            this.setNull(parameterIndex, Types.DATE)
-        } else {
-            this.setDate(parameterIndex, value)
-        }
     }
 
     override fun getUnpublished(): List<POppfolgingsoppgave> = database.getUnpublishedOppfolgingsoppgaver()
@@ -229,15 +214,14 @@ private fun Connection.createOppfolgingsoppgaveHistorikk(
     return idList.first()
 }
 
-//TODO: Rename
-private const val queryUpdatedAt = """
+private const val queryUpdateOppfolgingsoppgaveUpdatedAt = """
     UPDATE huskelapp
     SET updated_at = ?
     WHERE uuid = ?
 """
 
 private fun Connection.updateOppfolgingsoppgave(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk) {
-    this.prepareStatement(queryUpdatedAt).use {
+    this.prepareStatement(queryUpdateOppfolgingsoppgaveUpdatedAt).use {
         it.setObject(1, oppfolgingsoppgaveHistorikk.updatedAt)
         it.setString(2, oppfolgingsoppgaveHistorikk.uuid.toString())
         val updated = it.executeUpdate()
@@ -377,6 +361,23 @@ private const val queryUpdateRemoved = """
 """
 
 private fun DatabaseInterface.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave: Oppfolgingsoppgave) {
+    this.connection.use { connection ->
+        connection.prepareStatement(queryUpdateRemoved).use {
+            it.setBoolean(1, oppfolgingsoppgave.isActive)
+            it.setString(2, oppfolgingsoppgave.removedBy)
+            it.setObject(3, oppfolgingsoppgave.publishedAt)
+            it.setObject(4, oppfolgingsoppgave.updatedAt)
+            it.setString(5, oppfolgingsoppgave.uuid.toString())
+            val updated = it.executeUpdate()
+            if (updated != 1) {
+                throw SQLException("Expected a single row to be updated, got update count $updated")
+            }
+        }
+        connection.commit()
+    }
+}
+
+private fun DatabaseInterface.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave: OppfolgingsoppgaveHistorikk) {
     this.connection.use { connection ->
         connection.prepareStatement(queryUpdateRemoved).use {
             it.setBoolean(1, oppfolgingsoppgave.isActive)

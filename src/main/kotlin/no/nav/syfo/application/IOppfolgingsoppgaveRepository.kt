@@ -13,6 +13,7 @@ interface IOppfolgingsoppgaveRepository {
     fun create(oppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave
     fun create(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk): OppfolgingsoppgaveHistorikk
     fun edit(oppfolgingsoppgaveId: Int, oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk): OppfolgingsoppgaveHistorikk
+    fun remove(oppfolgingsoppgave: OppfolgingsoppgaveHistorikk)
     fun createVersion(
         oppfolgingsoppgaveId: Int,
         newOppfolgingsoppgaveVersion: Oppfolgingsoppgave,
