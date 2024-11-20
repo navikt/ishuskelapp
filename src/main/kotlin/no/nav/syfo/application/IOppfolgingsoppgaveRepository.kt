@@ -14,10 +14,13 @@ interface IOppfolgingsoppgaveRepository {
     fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon>
     fun create(oppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave
     fun create(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk): OppfolgingsoppgaveHistorikk
-    fun edit(existingOppfolgingsoppgaveUuid: UUID,
-             veilederIdent: String,
-             newTekst: String?,
-             newFrist: LocalDate?): OppfolgingsoppgaveHistorikk?
+    fun edit(
+        existingOppfolgingsoppgaveUuid: UUID,
+        veilederIdent: String,
+        newTekst: String?,
+        newFrist: LocalDate?
+    ): OppfolgingsoppgaveHistorikk?
+
     fun remove(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk)
     fun createVersion(
         oppfolgingsoppgaveId: Int,
