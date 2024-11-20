@@ -129,18 +129,18 @@ class OppfolgingsoppgaveApiSpek : Spek({
             describe("Get oppfølgingsoppgaver med versjoner") {
                 val huskelappUrlAll = "$huskelappApiBasePath?$FILTER=${ALL.value}"
 
-                fun createOppfolgingsoppgave(tekst: String = "En oppfolgingsoppgave"): OppfolgingsoppgaveHistorikk =
-                    OppfolgingsoppgaveHistorikk.create(
+                fun createOppfolgingsoppgave(tekst: String = "En oppfolgingsoppgave"): OppfolgingsoppgaveNew =
+                    OppfolgingsoppgaveNew.create(
                         personIdent = ARBEIDSTAKER_PERSONIDENT,
                         veilederIdent = VEILEDER_IDENT,
                         tekst = tekst,
                         oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                     )
 
-                val oppfolgingsoppgaveHistorikk = createOppfolgingsoppgave()
+                val oppfolgingsoppgaveNew = createOppfolgingsoppgave()
 
                 it("Oppretting av oppfølgingsoppgave skal ha 1 versjon") {
-                    oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveHistorikk)
+                    oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew)
 
                     with(
                         handleRequest(HttpMethod.Get, huskelappUrlAll) {
@@ -151,7 +151,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         response.status() shouldBeEqualTo HttpStatusCode.OK
 
                         val responseDTO =
-                            objectMapper.readValue<List<OppfolgingsoppgaveHistorikkResponseDTO>>(response.content!!)
+                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
 
                         responseDTO.size shouldBeEqualTo 1
 
@@ -185,7 +185,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         response.status() shouldBeEqualTo HttpStatusCode.OK
 
                         val responseDTO =
-                            objectMapper.readValue<List<OppfolgingsoppgaveHistorikkResponseDTO>>(response.content!!)
+                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
 
                         responseDTO.size shouldBeEqualTo 2
 
@@ -215,8 +215,8 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 }
 
                 it("Oppretting av flere oppfølgingsoppgaver") {
-                    val initiellOppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveHistorikk)
-                    val oppdatertOppfolgingsoppgave = oppfolgingsoppgaveHistorikk.edit(
+                    val initiellOppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew)
+                    val oppdatertOppfolgingsoppgave = oppfolgingsoppgaveNew.edit(
                         tekst = "En oppfolgingsoppgave oppdatert",
                         veilederIdent = VEILEDER_IDENT,
                     )
@@ -232,7 +232,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         response.status() shouldBeEqualTo HttpStatusCode.OK
 
                         val responseDTO =
-                            objectMapper.readValue<List<OppfolgingsoppgaveHistorikkResponseDTO>>(response.content!!)
+                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
 
                         responseDTO.size shouldBeEqualTo 1
 

@@ -2,7 +2,7 @@ package no.nav.syfo.infrastructure.database.repository
 
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.domain.Oppfolgingsoppgave
-import no.nav.syfo.domain.OppfolgingsoppgaveHistorikk
+import no.nav.syfo.domain.OppfolgingsoppgaveNew
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -32,8 +32,8 @@ data class POppfolgingsoppgave(
         )
     }
 
-    fun toOppfolgingsoppgaveHistorikk(pOppfolgingsoppgaveVersjon: List<POppfolgingsoppgaveVersjon>): OppfolgingsoppgaveHistorikk {
-        return OppfolgingsoppgaveHistorikk.createFromDatabase(
+    fun toOppfolgingsoppgaveNew(pOppfolgingsoppgaveVersjon: List<POppfolgingsoppgaveVersjon>): OppfolgingsoppgaveNew {
+        return OppfolgingsoppgaveNew.createFromDatabase(
             uuid = uuid,
             personIdent = personIdent,
             versjoner = pOppfolgingsoppgaveVersjon.map { it.toOppfolgingsoppgaveVersjon() },

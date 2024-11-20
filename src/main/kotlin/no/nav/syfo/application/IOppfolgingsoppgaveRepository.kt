@@ -1,5 +1,5 @@
 import no.nav.syfo.domain.Oppfolgingsoppgave
-import no.nav.syfo.domain.OppfolgingsoppgaveHistorikk
+import no.nav.syfo.domain.OppfolgingsoppgaveNew
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgave
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgaveVersjon
@@ -8,20 +8,20 @@ import java.util.*
 
 interface IOppfolgingsoppgaveRepository {
     fun getPOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave>
-    fun getOppfolgingsoppgaverHistorikk(personIdent: PersonIdent): List<OppfolgingsoppgaveHistorikk>
+    fun getOppfolgingsoppgaverNew(personIdent: PersonIdent): List<OppfolgingsoppgaveNew>
     fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>>
     fun getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave?
     fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon>
     fun create(oppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave
-    fun create(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk): OppfolgingsoppgaveHistorikk
+    fun create(oppfolgingsoppgaveNew: OppfolgingsoppgaveNew): OppfolgingsoppgaveNew
     fun edit(
         existingOppfolgingsoppgaveUuid: UUID,
         veilederIdent: String,
         newTekst: String?,
         newFrist: LocalDate?
-    ): OppfolgingsoppgaveHistorikk?
+    ): OppfolgingsoppgaveNew?
 
-    fun remove(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk)
+    fun remove(oppfolgingsoppgaveNew: OppfolgingsoppgaveNew)
     fun createVersion(
         oppfolgingsoppgaveId: Int,
         newOppfolgingsoppgaveVersion: Oppfolgingsoppgave,

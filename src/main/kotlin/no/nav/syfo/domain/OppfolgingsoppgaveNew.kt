@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
-data class OppfolgingsoppgaveHistorikk private constructor(
+data class OppfolgingsoppgaveNew private constructor(
     val uuid: UUID,
     val personIdent: PersonIdent,
     val versjoner: List<OppfolgingsoppgaveVersjon>,
@@ -16,7 +16,7 @@ data class OppfolgingsoppgaveHistorikk private constructor(
     val removedBy: String?,
 ) {
 
-    fun edit(tekst: String?, frist: LocalDate? = null, veilederIdent: String): OppfolgingsoppgaveHistorikk {
+    fun edit(tekst: String?, frist: LocalDate? = null, veilederIdent: String): OppfolgingsoppgaveNew {
         val updatedAt = nowUTC()
         val versjon = versjoner.first().edit(
             createdAt = updatedAt,
@@ -32,12 +32,12 @@ data class OppfolgingsoppgaveHistorikk private constructor(
         )
     }
 
-    fun publish(): OppfolgingsoppgaveHistorikk {
+    fun publish(): OppfolgingsoppgaveNew {
         val now = nowUTC()
         return this.copy(updatedAt = now, publishedAt = now)
     }
 
-    fun remove(veilederIdent: String): OppfolgingsoppgaveHistorikk {
+    fun remove(veilederIdent: String): OppfolgingsoppgaveNew {
         return this.copy(
             isActive = false,
             publishedAt = null,
@@ -53,7 +53,7 @@ data class OppfolgingsoppgaveHistorikk private constructor(
             tekst: String?,
             oppfolgingsgrunn: Oppfolgingsgrunn,
             frist: LocalDate? = null,
-        ): OppfolgingsoppgaveHistorikk {
+        ): OppfolgingsoppgaveNew {
             val now = nowUTC()
             val oppfolgingsoppgaveVersjon = OppfolgingsoppgaveVersjon.create(
                 veilederIdent = veilederIdent,
@@ -63,7 +63,7 @@ data class OppfolgingsoppgaveHistorikk private constructor(
                 createdAt = now,
             )
 
-            return OppfolgingsoppgaveHistorikk(
+            return OppfolgingsoppgaveNew(
                 uuid = UUID.randomUUID(),
                 personIdent = personIdent,
                 versjoner = listOf(oppfolgingsoppgaveVersjon),
@@ -84,7 +84,7 @@ data class OppfolgingsoppgaveHistorikk private constructor(
             updatedAt: OffsetDateTime,
             publishedAt: OffsetDateTime?,
             removedBy: String?,
-        ) = OppfolgingsoppgaveHistorikk(
+        ) = OppfolgingsoppgaveNew(
             uuid = uuid,
             personIdent = personIdent,
             versjoner = versjoner,

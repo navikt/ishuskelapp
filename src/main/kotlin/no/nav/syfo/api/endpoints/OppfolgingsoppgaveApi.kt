@@ -36,7 +36,7 @@ fun Route.registerOppfolgingsoppgaveApi(
 
                 if (filter == ALL) {
                     val responseDTO = oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).map {
-                        OppfolgingsoppgaveHistorikkResponseDTO.fromOppfolgingsoppgaveHistorikk(it)
+                        OppfolgingsoppgaveNewResponseDTO.fromOppfolgingsoppgaveNew(it)
                     }
                     call.respond(responseDTO)
                 } else if (filter == null || isActive) {

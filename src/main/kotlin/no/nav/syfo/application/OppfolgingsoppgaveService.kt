@@ -8,7 +8,7 @@ import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsoppgave
-import no.nav.syfo.domain.OppfolgingsoppgaveHistorikk
+import no.nav.syfo.domain.OppfolgingsoppgaveNew
 import java.time.LocalDate
 import java.util.*
 
@@ -25,8 +25,8 @@ class OppfolgingsoppgaveService(
         oppfolgingsoppgaveRepository.getActiveOppfolgingsoppgaver(personidenter)
             .map { it.first.toOppfolgingsoppgave(pOppfolgingsoppgaveVersjon = it.second) }
 
-    fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<OppfolgingsoppgaveHistorikk> =
-        oppfolgingsoppgaveRepository.getOppfolgingsoppgaverHistorikk(personIdent)
+    fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<OppfolgingsoppgaveNew> =
+        oppfolgingsoppgaveRepository.getOppfolgingsoppgaverNew(personIdent)
 
     fun createOppfolgingsoppgave(
         personIdent: PersonIdent,
@@ -73,7 +73,7 @@ class OppfolgingsoppgaveService(
         veilederIdent: String,
         newTekst: String?,
         newFrist: LocalDate?,
-    ): OppfolgingsoppgaveHistorikk? =
+    ): OppfolgingsoppgaveNew? =
         oppfolgingsoppgaveRepository.edit(
             existingOppfolgingsoppgaveUuid = existingOppfolgingsoppgaveUuid,
             veilederIdent = veilederIdent,
