@@ -7,6 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.syfo.api.endpoints.FilterRequestParameter.*
 import no.nav.syfo.api.endpoints.RequestParameters.FILTER
+import no.nav.syfo.api.endpoints.RequestParameters.IS_ACTIVE
 import no.nav.syfo.api.model.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.domain.PersonIdent
@@ -31,13 +32,14 @@ fun Route.registerOppfolgingsoppgaveApi(
             ) {
                 val personIdent = call.personIdent()
                 val filter = FilterRequestParameter.fromString(call.request.queryParameters[FILTER])
+                val isActive = call.request.queryParameters[IS_ACTIVE]?.toBoolean() ?: false
 
                 if (filter == ALL) {
                     val responseDTO = oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).map {
                         OppfolgingsoppgaveHistorikkResponseDTO.fromOppfolgingsoppgaveHistorikk(it)
                     }
                     call.respond(responseDTO)
-                } else if (filter in listOf(null, LATEST)) {
+                } else if (filter == null || isActive) {
                     val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
 
                     if (oppfolgingsoppgave == null) {
@@ -156,10 +158,10 @@ private fun ApplicationCall.personIdent(): PersonIdent = this.getPersonIdent()
 
 object RequestParameters {
     const val FILTER = "filter"
+    const val IS_ACTIVE = "isActive"
 }
 
 enum class FilterRequestParameter(val value: String?) {
-    LATEST("latest"),
     ALL("all");
 
     companion object {

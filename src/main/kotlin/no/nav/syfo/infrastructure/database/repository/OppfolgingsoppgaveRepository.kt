@@ -11,21 +11,30 @@ import no.nav.syfo.infrastructure.database.repository.extension.setStringOrNull
 import no.nav.syfo.util.nowUTC
 import java.sql.*
 import java.sql.Date
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
 
 class OppfolgingsoppgaveRepository(
     private val database: DatabaseInterface,
 ) : IOppfolgingsoppgaveRepository {
-    override fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave> {
+    override fun getPOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave> {
         return database.getOppfolgingsoppgaver(personIdent)
+    }
+
+    override fun getOppfolgingsoppgaverHistorikk(personIdent: PersonIdent): List<OppfolgingsoppgaveHistorikk> =
+        getPOppfolgingsoppgaver(personIdent).map { it.toOppfolgingsoppgaveHistorikk() }
+
+    private fun POppfolgingsoppgave.toOppfolgingsoppgaveHistorikk(): OppfolgingsoppgaveHistorikk {
+        val versjoner = getOppfolgingsoppgaveVersjoner(this.id)
+        return this.toOppfolgingsoppgaveHistorikk(versjoner)
     }
 
     override fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>> =
         database.getActiveOppfolgingsoppgaver(personidenter)
 
-    override fun getOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
-        return database.getOppfolgingsoppgave(uuid)
+    override fun getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
+        return database.getPOppfolgingsoppgave(uuid)
     }
 
     override fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon> {
@@ -71,6 +80,23 @@ class OppfolgingsoppgaveRepository(
         }
 
     override fun edit(
+        existingOppfolgingsoppgaveUuid: UUID,
+        veilederIdent: String,
+        newTekst: String?,
+        newFrist: LocalDate?
+    ): OppfolgingsoppgaveHistorikk? {
+        return getPOppfolgingsoppgave(existingOppfolgingsoppgaveUuid)
+            ?.let { pExistingOppfolgingsoppgave ->
+                val newOppfolgingsoppgave = pExistingOppfolgingsoppgave.toOppfolgingsoppgaveHistorikk().edit(
+                    veilederIdent = veilederIdent,
+                    tekst = newTekst,
+                    frist = newFrist,
+                )
+                updateOppfolgingsoppgaveMedVersjon(pExistingOppfolgingsoppgave.id, newOppfolgingsoppgave)
+            }
+    }
+
+    fun updateOppfolgingsoppgaveMedVersjon(
         oppfolgingsoppgaveId: Int,
         oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk
     ): OppfolgingsoppgaveHistorikk {
@@ -253,7 +279,7 @@ private const val queryGetOppfolgingsoppgaveByUuid = """
     WHERE uuid = ?
 """
 
-private fun DatabaseInterface.getOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
+private fun DatabaseInterface.getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
     return connection.use { connection ->
         connection.prepareStatement(queryGetOppfolgingsoppgaveByUuid).use {
             it.setString(1, uuid.toString())
@@ -414,6 +440,7 @@ private fun ResultSet.toPOppfolgingsoppgaveVersjon(
     createdAt = getObject("${col_name_prefix}created_at", OffsetDateTime::class.java),
     createdBy = getString("${col_name_prefix}created_by"),
     tekst = getString("${col_name_prefix}tekst"),
-    oppfolgingsgrunner = getString("${col_name_prefix}oppfolgingsgrunner").split(",").map(String::trim).filter(String::isNotEmpty),
+    oppfolgingsgrunner = getString("${col_name_prefix}oppfolgingsgrunner").split(",").map(String::trim)
+        .filter(String::isNotEmpty),
     frist = getDate("${col_name_prefix}frist")?.toLocalDate(),
 )

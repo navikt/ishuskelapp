@@ -16,7 +16,7 @@ class OppfolgingsoppgaveService(
     private val oppfolgingsoppgaveRepository: IOppfolgingsoppgaveRepository,
 ) {
     fun getOppfolgingsoppgave(personIdent: PersonIdent): Oppfolgingsoppgave? =
-        oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
+        oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(personIdent)
             .firstOrNull()
             ?.takeIf { it.isActive }
             ?.toOppfolgingsoppgave()
@@ -26,13 +26,7 @@ class OppfolgingsoppgaveService(
             .map { it.first.toOppfolgingsoppgave(pOppfolgingsoppgaveVersjon = it.second) }
 
     fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<OppfolgingsoppgaveHistorikk> =
-        oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
-            .map { it.toOppfolgingsoppgaveHistorikk() }
-
-    private fun POppfolgingsoppgave.toOppfolgingsoppgaveHistorikk(): OppfolgingsoppgaveHistorikk {
-        val versjoner = oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(this.id)
-        return this.toOppfolgingsoppgaveHistorikk(versjoner)
-    }
+        oppfolgingsoppgaveRepository.getOppfolgingsoppgaverHistorikk(personIdent)
 
     fun createOppfolgingsoppgave(
         personIdent: PersonIdent,
@@ -58,7 +52,7 @@ class OppfolgingsoppgaveService(
         newTekst: String?,
         newFrist: LocalDate?,
     ): Oppfolgingsoppgave? =
-        oppfolgingsoppgaveRepository.getOppfolgingsoppgave(existingOppfolgingsoppgaveUuid)
+        oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(existingOppfolgingsoppgaveUuid)
             ?.let { pExistingOppfolgingsoppgave ->
                 val existingOppfolgingsoppgave = pExistingOppfolgingsoppgave.toOppfolgingsoppgave()
                 val newOppfolgingsoppgaveVersion = existingOppfolgingsoppgave.edit(
@@ -80,14 +74,12 @@ class OppfolgingsoppgaveService(
         newTekst: String?,
         newFrist: LocalDate?,
     ): OppfolgingsoppgaveHistorikk? =
-        oppfolgingsoppgaveRepository.getOppfolgingsoppgave(existingOppfolgingsoppgaveUuid)
-            ?.let { pExistingOppfolgingsoppgave ->
-                pExistingOppfolgingsoppgave.toOppfolgingsoppgaveHistorikk().edit(
-                    veilederIdent = veilederIdent,
-                    tekst = newTekst,
-                    frist = newFrist,
-                ).run { oppfolgingsoppgaveRepository.edit(pExistingOppfolgingsoppgave.id, this) }
-            }
+        oppfolgingsoppgaveRepository.edit(
+            existingOppfolgingsoppgaveUuid = existingOppfolgingsoppgaveUuid,
+            veilederIdent = veilederIdent,
+            newTekst = newTekst,
+            newFrist = newFrist,
+        )
 
     fun getUnpublishedOppfolgingsoppgaver(): List<Oppfolgingsoppgave> =
         oppfolgingsoppgaveRepository.getUnpublished().map { it.toOppfolgingsoppgave() }
@@ -96,7 +88,7 @@ class OppfolgingsoppgaveService(
         oppfolgingsoppgaveRepository.updatePublished(oppfolgingsoppgave = oppfolgingsoppgave)
 
     fun getOppfolgingsoppgave(uuid: UUID): Oppfolgingsoppgave? =
-        oppfolgingsoppgaveRepository.getOppfolgingsoppgave(uuid)
+        oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(uuid)
             ?.takeIf { it.isActive }
             ?.toOppfolgingsoppgave()
 

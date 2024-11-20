@@ -3,16 +3,21 @@ import no.nav.syfo.domain.OppfolgingsoppgaveHistorikk
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgave
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgaveVersjon
+import java.time.LocalDate
 import java.util.*
 
 interface IOppfolgingsoppgaveRepository {
-    fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave>
+    fun getPOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave>
+    fun getOppfolgingsoppgaverHistorikk(personIdent: PersonIdent): List<OppfolgingsoppgaveHistorikk>
     fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>>
-    fun getOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave?
+    fun getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave?
     fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon>
     fun create(oppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave
     fun create(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk): OppfolgingsoppgaveHistorikk
-    fun edit(oppfolgingsoppgaveId: Int, oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk): OppfolgingsoppgaveHistorikk
+    fun edit(existingOppfolgingsoppgaveUuid: UUID,
+             veilederIdent: String,
+             newTekst: String?,
+             newFrist: LocalDate?): OppfolgingsoppgaveHistorikk?
     fun remove(oppfolgingsoppgaveHistorikk: OppfolgingsoppgaveHistorikk)
     fun createVersion(
         oppfolgingsoppgaveId: Int,

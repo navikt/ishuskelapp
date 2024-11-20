@@ -220,8 +220,8 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         tekst = "En oppfolgingsoppgave oppdatert",
                         veilederIdent = VEILEDER_IDENT,
                     )
-                    val pExistingOppgave = oppfolgingsoppgaveRepository.getOppfolgingsoppgave(initiellOppgave.uuid)
-                    oppfolgingsoppgaveRepository.edit(pExistingOppgave!!.id, oppdatertOppfolgingsoppgave)
+                    val pExistingOppgave = oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(initiellOppgave.uuid)
+                    oppfolgingsoppgaveRepository.updateOppfolgingsoppgaveMedVersjon(pExistingOppgave!!.id, oppdatertOppfolgingsoppgave)
 
                     with(
                         handleRequest(HttpMethod.Get, huskelappUrlAll) {
@@ -351,7 +351,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.Created
                         }
                         val oppfolgingsoppgave =
-                            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(ARBEIDSTAKER_PERSONIDENT)
+                            oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(ARBEIDSTAKER_PERSONIDENT)
                                 .first()
                         oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgave.id).size shouldBeEqualTo 1
                     }
@@ -505,7 +505,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         }
 
                         val oppfolgingsoppgaver =
-                            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(ARBEIDSTAKER_PERSONIDENT)
+                            oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(ARBEIDSTAKER_PERSONIDENT)
                         oppfolgingsoppgaver.size shouldBeEqualTo 1
                         oppfolgingsoppgaver.first().isActive.shouldBeFalse()
                     }
