@@ -214,7 +214,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     }
                 }
 
-                it("Oppretting av flere oppfølgingsoppgaver") {
+                it("En oppfølgingsoppgave med 2 versjoner") {
                     val initiellOppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew)
                     val oppdatertOppfolgingsoppgave = oppfolgingsoppgaveNew.edit(
                         tekst = "En oppfolgingsoppgave oppdatert",
