@@ -3,7 +3,6 @@ import no.nav.syfo.domain.OppfolgingsoppgaveNew
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgave
 import no.nav.syfo.infrastructure.database.repository.POppfolgingsoppgaveVersjon
-import java.time.LocalDate
 import java.util.*
 
 interface IOppfolgingsoppgaveRepository {
@@ -11,16 +10,11 @@ interface IOppfolgingsoppgaveRepository {
     fun getOppfolgingsoppgaverNew(personIdent: PersonIdent): List<OppfolgingsoppgaveNew>
     fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>>
     fun getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave?
+    fun getOppfolgingsoppgaveNew(uuid: UUID): OppfolgingsoppgaveNew?
     fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon>
     fun create(oppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave
     fun create(oppfolgingsoppgaveNew: OppfolgingsoppgaveNew): OppfolgingsoppgaveNew
-    fun edit(
-        existingOppfolgingsoppgaveUuid: UUID,
-        veilederIdent: String,
-        newTekst: String?,
-        newFrist: LocalDate?
-    ): OppfolgingsoppgaveNew?
-
+    fun edit(existingOppfolgingsoppgave: OppfolgingsoppgaveNew): OppfolgingsoppgaveNew?
     fun remove(oppfolgingsoppgaveNew: OppfolgingsoppgaveNew)
     fun createVersion(
         oppfolgingsoppgaveId: Int,

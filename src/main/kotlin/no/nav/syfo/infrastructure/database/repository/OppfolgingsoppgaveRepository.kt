@@ -11,7 +11,6 @@ import no.nav.syfo.infrastructure.database.repository.extension.setStringOrNull
 import no.nav.syfo.util.nowUTC
 import java.sql.*
 import java.sql.Date
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -35,6 +34,10 @@ class OppfolgingsoppgaveRepository(
 
     override fun getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
         return database.getPOppfolgingsoppgave(uuid)
+    }
+
+    override fun getOppfolgingsoppgaveNew(uuid: UUID): OppfolgingsoppgaveNew? {
+        return database.getPOppfolgingsoppgave(uuid)?.toOppfolgingsoppgaveNew()
     }
 
     override fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon> {
@@ -80,19 +83,11 @@ class OppfolgingsoppgaveRepository(
         }
 
     override fun edit(
-        existingOppfolgingsoppgaveUuid: UUID,
-        veilederIdent: String,
-        newTekst: String?,
-        newFrist: LocalDate?
+        existingOppfolgingsoppgave: OppfolgingsoppgaveNew
     ): OppfolgingsoppgaveNew? {
-        return getPOppfolgingsoppgave(existingOppfolgingsoppgaveUuid)
+        return getPOppfolgingsoppgave(existingOppfolgingsoppgave.uuid)
             ?.let { pExistingOppfolgingsoppgave ->
-                val newOppfolgingsoppgave = pExistingOppfolgingsoppgave.toOppfolgingsoppgaveNew().edit(
-                    veilederIdent = veilederIdent,
-                    tekst = newTekst,
-                    frist = newFrist,
-                )
-                updateOppfolgingsoppgaveMedVersjon(pExistingOppfolgingsoppgave.id, newOppfolgingsoppgave)
+                updateOppfolgingsoppgaveMedVersjon(pExistingOppfolgingsoppgave.id, existingOppfolgingsoppgave)
             }
     }
 

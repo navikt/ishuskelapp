@@ -73,13 +73,18 @@ class OppfolgingsoppgaveService(
         veilederIdent: String,
         newTekst: String?,
         newFrist: LocalDate?,
-    ): OppfolgingsoppgaveNew? =
-        oppfolgingsoppgaveRepository.edit(
-            existingOppfolgingsoppgaveUuid = existingOppfolgingsoppgaveUuid,
-            veilederIdent = veilederIdent,
-            newTekst = newTekst,
-            newFrist = newFrist,
-        )
+    ): OppfolgingsoppgaveNew? {
+        return oppfolgingsoppgaveRepository.getOppfolgingsoppgaveNew(existingOppfolgingsoppgaveUuid)
+            ?.let { existingOppfolgingsoppgave ->
+                existingOppfolgingsoppgave
+                    .edit(
+                        veilederIdent = veilederIdent,
+                        tekst = newTekst,
+                        frist = newFrist,
+                    )
+                    .run { oppfolgingsoppgaveRepository.edit(this) }
+            }
+    }
 
     fun getUnpublishedOppfolgingsoppgaver(): List<Oppfolgingsoppgave> =
         oppfolgingsoppgaveRepository.getUnpublished().map { it.toOppfolgingsoppgave() }
