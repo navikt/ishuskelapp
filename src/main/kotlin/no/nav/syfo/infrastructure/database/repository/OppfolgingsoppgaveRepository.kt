@@ -82,9 +82,7 @@ class OppfolgingsoppgaveRepository(
             return oppfolgingsoppgaveVersjon
         }
 
-    override fun edit(
-        existingOppfolgingsoppgave: OppfolgingsoppgaveNew
-    ): OppfolgingsoppgaveNew? {
+    override fun edit(existingOppfolgingsoppgave: OppfolgingsoppgaveNew): OppfolgingsoppgaveNew? {
         return getPOppfolgingsoppgave(existingOppfolgingsoppgave.uuid)
             ?.let { pExistingOppfolgingsoppgave ->
                 updateOppfolgingsoppgaveMedVersjon(pExistingOppfolgingsoppgave.id, existingOppfolgingsoppgave)
