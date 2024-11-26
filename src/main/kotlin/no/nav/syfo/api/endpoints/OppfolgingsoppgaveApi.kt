@@ -5,6 +5,9 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import no.nav.syfo.api.endpoints.FilterRequestParameter.*
+import no.nav.syfo.api.endpoints.RequestParameters.FILTER
+import no.nav.syfo.api.endpoints.RequestParameters.IS_ACTIVE
 import no.nav.syfo.api.model.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.domain.PersonIdent
@@ -28,14 +31,23 @@ fun Route.registerOppfolgingsoppgaveApi(
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
             ) {
                 val personIdent = call.personIdent()
+                val filter = FilterRequestParameter.fromString(call.request.queryParameters[FILTER])
+                val isActive = call.request.queryParameters[IS_ACTIVE]?.toBoolean() ?: false
 
-                val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
-
-                if (oppfolgingsoppgave == null) {
-                    call.respond(HttpStatusCode.NoContent)
-                } else {
-                    val responseDTO = OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(oppfolgingsoppgave)
+                if (filter == ALL) {
+                    val responseDTO = oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).map {
+                        OppfolgingsoppgaveNewResponseDTO.fromOppfolgingsoppgaveNew(it)
+                    }
                     call.respond(responseDTO)
+                } else if (filter == null || isActive) {
+                    val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
+
+                    if (oppfolgingsoppgave == null) {
+                        call.respond(HttpStatusCode.NoContent)
+                    } else {
+                        val responseDTO = OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(oppfolgingsoppgave)
+                        call.respond(responseDTO)
+                    }
                 }
             }
         }
@@ -143,3 +155,17 @@ fun Route.registerOppfolgingsoppgaveApi(
 
 private fun ApplicationCall.personIdent(): PersonIdent = this.getPersonIdent()
     ?: throw IllegalArgumentException("Failed to $API_ACTION: No $NAV_PERSONIDENT_HEADER supplied in request header")
+
+object RequestParameters {
+    const val FILTER = "filter"
+    const val IS_ACTIVE = "isActive"
+}
+
+enum class FilterRequestParameter(val value: String?) {
+    ALL("all");
+
+    companion object {
+        private val map = entries.associateBy(FilterRequestParameter::value)
+        fun fromString(type: String?) = map[type]
+    }
+}

@@ -35,7 +35,7 @@ class OppfolgingsoppgaveRepositorySpek : Spek({
             it("creates an oppfolgingsoppgave") {
                 val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
                 val retrievedOppfolgingsoppgave =
-                    oppfolgingsoppgaveRepository.getOppfolgingsoppgave(createdOppfolgingsoppgave.uuid)
+                    oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(createdOppfolgingsoppgave.uuid)
 
                 createdOppfolgingsoppgave.uuid shouldBeEqualTo retrievedOppfolgingsoppgave?.uuid
                 createdOppfolgingsoppgave.personIdent shouldBeEqualTo retrievedOppfolgingsoppgave?.personIdent
@@ -51,7 +51,7 @@ class OppfolgingsoppgaveRepositorySpek : Spek({
                 val newFrist = LocalDate.now().plusWeeks(1)
                 val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
                 val createdOppfolgingsoppgaveId =
-                    oppfolgingsoppgaveRepository.getOppfolgingsoppgave(createdOppfolgingsoppgave.uuid)!!.id
+                    oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(createdOppfolgingsoppgave.uuid)!!.id
                 val newVersion = oppfolgingsoppgave.edit(
                     tekst = oppfolgingsoppgave.tekst,
                     frist = newFrist,

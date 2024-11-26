@@ -2,6 +2,7 @@ package no.nav.syfo.infrastructure.database.repository
 
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.domain.Oppfolgingsoppgave
+import no.nav.syfo.domain.OppfolgingsoppgaveNew
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -28,6 +29,19 @@ data class POppfolgingsoppgave(
             publishedAt = publishedAt,
             removedBy = removedBy,
             frist = pOppfolgingsoppgaveVersjon.frist,
+        )
+    }
+
+    fun toOppfolgingsoppgaveNew(pOppfolgingsoppgaveVersjon: List<POppfolgingsoppgaveVersjon>): OppfolgingsoppgaveNew {
+        return OppfolgingsoppgaveNew.createFromDatabase(
+            uuid = uuid,
+            personIdent = personIdent,
+            versjoner = pOppfolgingsoppgaveVersjon.map { it.toOppfolgingsoppgaveVersjon() },
+            isActive = isActive,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            publishedAt = publishedAt,
+            removedBy = removedBy,
         )
     }
 }

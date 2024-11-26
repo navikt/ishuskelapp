@@ -94,7 +94,7 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
             val annenOppfolgingsoppgaveRecord = kafkaRecordSlot2.captured.value()
             annenOppfolgingsoppgaveRecord.frist shouldBeEqualTo annenOppfolgingsoppgave.frist
 
-            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
+            oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(personIdent)
                 .all { it.publishedAt != null } shouldBeEqualTo true
         }
         it("does not publish published huskelapp") {
@@ -173,7 +173,7 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
             kafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
             kafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
 
-            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
+            oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(personIdent)
                 .all { it.publishedAt != null } shouldBeEqualTo true
         }
     }

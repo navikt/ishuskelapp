@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import no.nav.syfo.api.endpoints.FilterRequestParameter.ALL
+import no.nav.syfo.api.endpoints.RequestParameters.FILTER
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
 import no.nav.syfo.api.model.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
-import no.nav.syfo.domain.Oppfolgingsgrunn
-import no.nav.syfo.domain.Oppfolgingsoppgave
-import no.nav.syfo.domain.PersonIdent
+import no.nav.syfo.domain.*
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.testhelper.*
 import no.nav.syfo.testhelper.UserConstants.ARBEIDSTAKER_2_PERSONIDENT
@@ -22,10 +22,7 @@ import no.nav.syfo.testhelper.UserConstants.VEILEDER_IDENT
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
 import no.nav.syfo.util.bearerHeader
 import no.nav.syfo.util.configuredJacksonMapper
-import org.amshove.kluent.shouldBeEqualTo
-import org.amshove.kluent.shouldBeFalse
-import org.amshove.kluent.shouldContainAll
-import org.amshove.kluent.shouldNotContain
+import org.amshove.kluent.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.time.LocalDate
@@ -128,6 +125,140 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     }
                 }
             }
+
+            describe("Get oppfølgingsoppgaver med versjoner") {
+                val huskelappUrlAll = "$huskelappApiBasePath?$FILTER=${ALL.value}"
+
+                fun createOppfolgingsoppgave(tekst: String = "En oppfolgingsoppgave"): OppfolgingsoppgaveNew =
+                    OppfolgingsoppgaveNew.create(
+                        personIdent = ARBEIDSTAKER_PERSONIDENT,
+                        veilederIdent = VEILEDER_IDENT,
+                        tekst = tekst,
+                        oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
+                    )
+
+                val oppfolgingsoppgaveNew = createOppfolgingsoppgave()
+
+                it("Oppretting av oppfølgingsoppgave skal ha 1 versjon") {
+                    oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew)
+
+                    with(
+                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+
+                        val responseDTO =
+                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
+
+                        responseDTO.size shouldBeEqualTo 1
+
+                        val oppfolgingsoppgave = responseDTO.first()
+                        val sisteVersjon = oppfolgingsoppgave.versjoner.first()
+
+                        oppfolgingsoppgave.personIdent shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT
+                        oppfolgingsoppgave.isActive shouldBe true
+                        oppfolgingsoppgave.createdAt shouldBeEqualTo oppfolgingsoppgave.updatedAt
+                        oppfolgingsoppgave.versjoner.size shouldBeEqualTo 1
+
+                        sisteVersjon.createdAt shouldBeEqualTo oppfolgingsoppgave.updatedAt
+                        sisteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                        sisteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        sisteVersjon.tekst shouldBeEqualTo "En oppfolgingsoppgave"
+                    }
+                }
+
+                it("Oppretting av 2 oppfølgingsoppgaver skal ha 1 versjon hver") {
+                    val oppfolgingsoppgave = createOppfolgingsoppgave("Oppfølgingsoppgave nr. 1")
+                    oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
+                    oppfolgingsoppgaveRepository.remove(oppfolgingsoppgave.remove(VEILEDER_IDENT))
+                    oppfolgingsoppgaveRepository.create(createOppfolgingsoppgave("Oppfølgingsoppgave nr. 2"))
+
+                    with(
+                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+
+                        val responseDTO =
+                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
+
+                        responseDTO.size shouldBeEqualTo 2
+
+                        val sisteOppfolgingsoppgave = responseDTO.get(0)
+                        val sisteVersjon = sisteOppfolgingsoppgave.versjoner.first()
+
+                        sisteOppfolgingsoppgave.personIdent shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT
+                        sisteOppfolgingsoppgave.isActive shouldBe true
+                        sisteOppfolgingsoppgave.createdAt shouldBeEqualTo sisteOppfolgingsoppgave.updatedAt
+                        sisteOppfolgingsoppgave.versjoner.size shouldBeEqualTo 1
+
+                        sisteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                        sisteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        sisteVersjon.tekst shouldBeEqualTo "Oppfølgingsoppgave nr. 2"
+
+                        val forsteOppfolgingsoppgave = responseDTO.get(1)
+                        val forsteVersjon = forsteOppfolgingsoppgave.versjoner.first()
+
+                        forsteOppfolgingsoppgave.personIdent shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT
+                        forsteOppfolgingsoppgave.isActive shouldBe false
+                        forsteOppfolgingsoppgave.versjoner.size shouldBeEqualTo 1
+
+                        forsteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                        forsteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        forsteVersjon.tekst shouldBeEqualTo "Oppfølgingsoppgave nr. 1"
+                    }
+                }
+
+                it("En oppfølgingsoppgave med 2 versjoner") {
+                    val initiellOppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew)
+                    val oppdatertOppfolgingsoppgave = oppfolgingsoppgaveNew.edit(
+                        tekst = "En oppfolgingsoppgave oppdatert",
+                        veilederIdent = VEILEDER_IDENT,
+                    )
+                    val pExistingOppgave = oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(initiellOppgave.uuid)
+                    oppfolgingsoppgaveRepository.updateOppfolgingsoppgaveMedVersjon(pExistingOppgave!!.id, oppdatertOppfolgingsoppgave)
+
+                    with(
+                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+
+                        val responseDTO =
+                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
+
+                        responseDTO.size shouldBeEqualTo 1
+
+                        val oppfolgingsoppgave = responseDTO.first()
+                        val forsteVersjon = oppfolgingsoppgave.versjoner.get(1)
+                        val sisteVersjon = oppfolgingsoppgave.versjoner.get(0)
+
+                        forsteVersjon.createdAt shouldBeEqualTo oppfolgingsoppgave.createdAt
+                        forsteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                        forsteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        forsteVersjon.tekst shouldBeEqualTo "En oppfolgingsoppgave"
+
+                        sisteVersjon.createdAt shouldBeEqualTo oppfolgingsoppgave.updatedAt
+                        sisteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                        sisteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        sisteVersjon.tekst shouldBeEqualTo "En oppfolgingsoppgave oppdatert"
+
+                        oppfolgingsoppgave.personIdent shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT
+                        oppfolgingsoppgave.isActive shouldBe true
+                        oppfolgingsoppgave.versjoner.size shouldBeEqualTo 2
+                        oppfolgingsoppgave.createdAt shouldBeEqualTo forsteVersjon.createdAt
+                        oppfolgingsoppgave.updatedAt shouldBeEqualTo sisteVersjon.createdAt
+                    }
+                }
+            }
+
             describe("Post oppfolgingsoppgave") {
                 describe("Happy path") {
                     val requestDTO = OppfolgingsoppgaveRequestDTO(
@@ -220,7 +351,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.Created
                         }
                         val oppfolgingsoppgave =
-                            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(ARBEIDSTAKER_PERSONIDENT)
+                            oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(ARBEIDSTAKER_PERSONIDENT)
                                 .first()
                         oppfolgingsoppgaveRepository.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgave.id).size shouldBeEqualTo 1
                     }
@@ -374,7 +505,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         }
 
                         val oppfolgingsoppgaver =
-                            oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(ARBEIDSTAKER_PERSONIDENT)
+                            oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(ARBEIDSTAKER_PERSONIDENT)
                         oppfolgingsoppgaver.size shouldBeEqualTo 1
                         oppfolgingsoppgaver.first().isActive.shouldBeFalse()
                     }
