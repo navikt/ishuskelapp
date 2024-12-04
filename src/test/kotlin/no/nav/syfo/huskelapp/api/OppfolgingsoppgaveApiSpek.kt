@@ -6,6 +6,7 @@ import io.ktor.http.*
 import io.ktor.server.testing.*
 import no.nav.syfo.api.endpoints.FilterRequestParameter.ALL
 import no.nav.syfo.api.endpoints.RequestParameters.FILTER
+import no.nav.syfo.api.endpoints.RequestParameters.IS_ACTIVE
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
 import no.nav.syfo.api.model.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
@@ -84,6 +85,8 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             }
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.OK
+
+                            objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
                         }
                     }
                     it("Returns no content if no oppfolgingsoppgave exists") {
@@ -106,6 +109,53 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             }
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.NoContent
+                        }
+                    }
+
+                    describe("Hente aktiv oppfølgingsoppgave") {
+                        val oppfolgingsoppgaveNew = OppfolgingsoppgaveNew.create(
+                            personIdent = ARBEIDSTAKER_PERSONIDENT,
+                            veilederIdent = VEILEDER_IDENT,
+                            tekst = "En oppfolgingsoppgave",
+                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        )
+
+                        val fjernetOppfolgingsoppgave = oppfolgingsoppgaveNew.copy(
+                            uuid = UUID.randomUUID(),
+                            removedBy = VEILEDER_IDENT,
+                            isActive = false
+                        )
+
+                        it("Har en aktiv oppfølgingsoppgave") {
+                            oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew = oppfolgingsoppgaveNew)
+
+                            with(
+                                handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
+                                    addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                    addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                                }
+                            ) {
+                                response.status() shouldBeEqualTo HttpStatusCode.OK
+
+                                val responseDTO =
+                                    objectMapper.readValue<OppfolgingsoppgaveNewResponseDTO>(response.content!!)
+
+                                responseDTO.isActive shouldBe true
+                                responseDTO.versjoner.size shouldBe 1
+                            }
+                        }
+
+                        it("Har ikke en aktiv oppfølgingsoppgave") {
+                            oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew = fjernetOppfolgingsoppgave)
+
+                            with(
+                                handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
+                                    addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                                    addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                                }
+                            ) {
+                                response.status() shouldBeEqualTo HttpStatusCode.NoContent
+                            }
                         }
                     }
 

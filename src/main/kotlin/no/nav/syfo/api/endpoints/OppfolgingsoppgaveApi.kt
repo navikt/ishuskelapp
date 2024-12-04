@@ -39,7 +39,17 @@ fun Route.registerOppfolgingsoppgaveApi(
                         OppfolgingsoppgaveNewResponseDTO.fromOppfolgingsoppgaveNew(it)
                     }
                     call.respond(responseDTO)
-                } else if (filter == null || isActive) {
+                } else if (isActive) {
+                    val oppfolgingsoppgave =
+                        oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).firstOrNull { it.isActive }
+
+                    if (oppfolgingsoppgave == null) {
+                        call.respond(HttpStatusCode.NoContent)
+                    } else {
+                        val responseDTO = OppfolgingsoppgaveNewResponseDTO.fromOppfolgingsoppgaveNew(oppfolgingsoppgave)
+                        call.respond(responseDTO)
+                    }
+                } else if (filter == null) {
                     val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
 
                     if (oppfolgingsoppgave == null) {
