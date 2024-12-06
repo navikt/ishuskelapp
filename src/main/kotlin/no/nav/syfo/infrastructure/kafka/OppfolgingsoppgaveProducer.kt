@@ -12,16 +12,17 @@ class OppfolgingsoppgaveProducer(
     private val producer: KafkaProducer<String, OppfolgingsoppgaveRecord>,
 ) {
     fun send(oppfolgingsoppgave: Oppfolgingsoppgave) {
+        val sisteVersjon = oppfolgingsoppgave.sisteVersjon()
         val oppfolgingsoppgaveRecord = OppfolgingsoppgaveRecord(
             uuid = oppfolgingsoppgave.uuid,
             personIdent = oppfolgingsoppgave.personIdent.value,
-            veilederIdent = oppfolgingsoppgave.createdBy,
-            tekst = oppfolgingsoppgave.tekst,
-            oppfolgingsgrunner = oppfolgingsoppgave.oppfolgingsgrunner,
+            veilederIdent = sisteVersjon.createdBy,
+            tekst = sisteVersjon.tekst,
+            oppfolgingsgrunner = listOf(sisteVersjon.oppfolgingsgrunn),
             isActive = oppfolgingsoppgave.isActive,
             createdAt = oppfolgingsoppgave.createdAt,
             updatedAt = oppfolgingsoppgave.updatedAt,
-            frist = oppfolgingsoppgave.frist,
+            frist = sisteVersjon.frist,
         )
         val key = UUID.nameUUIDFromBytes(oppfolgingsoppgaveRecord.personIdent.toByteArray()).toString()
         try {

@@ -8,10 +8,7 @@ import java.util.UUID
 data class Oppfolgingsoppgave private constructor(
     val uuid: UUID,
     val personIdent: PersonIdent,
-    val createdBy: String,
-    val tekst: String?,
-    val oppfolgingsgrunner: List<Oppfolgingsgrunn>,
-    val frist: LocalDate?,
+    val versjoner: List<OppfolgingsoppgaveVersjon>,
     val isActive: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
@@ -19,16 +16,19 @@ data class Oppfolgingsoppgave private constructor(
     val removedBy: String?,
 ) {
 
-    fun edit(tekst: String?, frist: LocalDate?, veilederIdent: String): Oppfolgingsoppgave {
-        if (this.tekst == tekst && this.frist == frist) {
-            throw IllegalArgumentException("No changes detected, not updating oppfolgingsoppgave")
-        }
-        return this.copy(
+    fun edit(tekst: String?, frist: LocalDate? = null, veilederIdent: String): Oppfolgingsoppgave {
+        val updatedAt = nowUTC()
+        val versjon = versjoner.first().edit(
+            createdAt = updatedAt,
+            veilederIdent = veilederIdent,
             tekst = tekst,
             frist = frist,
-            updatedAt = nowUTC(),
-            createdBy = veilederIdent,
+        )
+
+        return this.copy(
+            updatedAt = updatedAt,
             publishedAt = null,
+            versjoner = listOf(versjon),
         )
     }
 
@@ -46,22 +46,29 @@ data class Oppfolgingsoppgave private constructor(
         )
     }
 
+    fun sisteVersjon() = versjoner.first()
+
     companion object {
         fun create(
             personIdent: PersonIdent,
             veilederIdent: String,
             tekst: String?,
-            oppfolgingsgrunner: List<Oppfolgingsgrunn>,
+            oppfolgingsgrunn: Oppfolgingsgrunn,
             frist: LocalDate? = null,
         ): Oppfolgingsoppgave {
             val now = nowUTC()
+            val oppfolgingsoppgaveVersjon = OppfolgingsoppgaveVersjon.create(
+                veilederIdent = veilederIdent,
+                tekst = tekst,
+                oppfolgingsgrunn = oppfolgingsgrunn,
+                frist = frist,
+                createdAt = now,
+            )
+
             return Oppfolgingsoppgave(
                 uuid = UUID.randomUUID(),
                 personIdent = personIdent,
-                createdBy = veilederIdent,
-                tekst = tekst,
-                oppfolgingsgrunner = oppfolgingsgrunner,
-                frist = frist,
+                versjoner = listOf(oppfolgingsoppgaveVersjon),
                 isActive = true,
                 createdAt = now,
                 updatedAt = now,
@@ -73,10 +80,7 @@ data class Oppfolgingsoppgave private constructor(
         fun createFromDatabase(
             uuid: UUID,
             personIdent: PersonIdent,
-            veilederIdent: String,
-            tekst: String?,
-            oppfolgingsgrunner: List<String>,
-            frist: LocalDate?,
+            versjoner: List<OppfolgingsoppgaveVersjon>,
             isActive: Boolean,
             createdAt: OffsetDateTime,
             updatedAt: OffsetDateTime,
@@ -85,10 +89,7 @@ data class Oppfolgingsoppgave private constructor(
         ) = Oppfolgingsoppgave(
             uuid = uuid,
             personIdent = personIdent,
-            createdBy = veilederIdent,
-            tekst = tekst,
-            oppfolgingsgrunner = oppfolgingsgrunner.map { Oppfolgingsgrunn.valueOf(it) },
-            frist = frist,
+            versjoner = versjoner,
             isActive = isActive,
             createdAt = createdAt,
             updatedAt = updatedAt,

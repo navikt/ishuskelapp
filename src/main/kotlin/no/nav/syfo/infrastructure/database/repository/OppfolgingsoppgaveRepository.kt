@@ -1,16 +1,18 @@
 package no.nav.syfo.infrastructure.database.repository
 
 import IOppfolgingsoppgaveRepository
-import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.domain.Oppfolgingsoppgave
-import no.nav.syfo.domain.OppfolgingsoppgaveNew
+import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
-import no.nav.syfo.infrastructure.database.*
+import no.nav.syfo.infrastructure.database.DatabaseInterface
+import no.nav.syfo.infrastructure.database.NoElementInsertedException
 import no.nav.syfo.infrastructure.database.repository.extension.setDateOrNull
 import no.nav.syfo.infrastructure.database.repository.extension.setStringOrNull
-import no.nav.syfo.util.nowUTC
-import java.sql.*
+import no.nav.syfo.infrastructure.database.toList
+import java.sql.Connection
 import java.sql.Date
+import java.sql.ResultSet
+import java.sql.SQLException
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -21,26 +23,23 @@ class OppfolgingsoppgaveRepository(
         return database.getOppfolgingsoppgaver(personIdent)
     }
 
-    override fun getOppfolgingsoppgaverNew(personIdent: PersonIdent): List<OppfolgingsoppgaveNew> =
-        getPOppfolgingsoppgaver(personIdent).map { it.toOppfolgingsoppgaveNew() }
+    override fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<Oppfolgingsoppgave> =
+        getPOppfolgingsoppgaver(personIdent).map { it.toOppfolgingsoppgave() }
 
-    private fun POppfolgingsoppgave.toOppfolgingsoppgaveNew(): OppfolgingsoppgaveNew {
+    private fun POppfolgingsoppgave.toOppfolgingsoppgave(): Oppfolgingsoppgave {
         val versjoner = getOppfolgingsoppgaveVersjoner(this.id)
-        return this.toOppfolgingsoppgaveNew(versjoner)
+        return this.toOppfolgingsoppgave(versjoner)
     }
 
-    override fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>> =
+    override fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Oppfolgingsoppgave> =
         database.getActiveOppfolgingsoppgaver(personidenter)
-
-    override fun getActiveOppfolgingsoppgaverNew(personidenter: List<PersonIdent>): List<OppfolgingsoppgaveNew> =
-        database.getActiveOppfolgingsoppgaverNew(personidenter)
 
     override fun getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
         return database.getPOppfolgingsoppgave(uuid)
     }
 
-    override fun getOppfolgingsoppgaveNew(uuid: UUID): OppfolgingsoppgaveNew? {
-        return database.getPOppfolgingsoppgave(uuid)?.toOppfolgingsoppgaveNew()
+    override fun getOppfolgingsoppgave(uuid: UUID): Oppfolgingsoppgave? {
+        return database.getPOppfolgingsoppgave(uuid)?.toOppfolgingsoppgave()
     }
 
     override fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon> {
@@ -52,95 +51,44 @@ class OppfolgingsoppgaveRepository(
             val createdOppfolgingsoppgave = connection.createOppfolgingsoppgave(oppfolgingsoppgave)
             val createdVersion = connection.createOppfolgingsoppgaveVersjon(
                 oppfolgingsoppgaveId = createdOppfolgingsoppgave.id,
-                newOppfolgingsoppgaveVersion = oppfolgingsoppgave,
+                newOppfolgingsoppgave = oppfolgingsoppgave
             )
             connection.commit()
-            return createdOppfolgingsoppgave.toOppfolgingsoppgave(createdVersion)
+            return createdOppfolgingsoppgave.toOppfolgingsoppgave(listOf(createdVersion))
         }
     }
 
-    override fun create(oppfolgingsoppgaveNew: OppfolgingsoppgaveNew): OppfolgingsoppgaveNew {
-        database.connection.use { connection ->
-            val createdOppfolgingsoppgave = connection.createOppfolgingsoppgaveNew(oppfolgingsoppgaveNew)
-            val createdVersion = connection.createOppfolgingsoppgaveVersjon(
-                oppfolgingsoppgaveId = createdOppfolgingsoppgave.id,
-                newOppfolgingsoppgaveNew = oppfolgingsoppgaveNew
-            )
-            connection.commit()
-            return createdOppfolgingsoppgave.toOppfolgingsoppgaveNew(listOf(createdVersion))
-        }
-    }
-
-    override fun createVersion(
-        oppfolgingsoppgaveId: Int,
-        newOppfolgingsoppgaveVersion: Oppfolgingsoppgave,
-    ): POppfolgingsoppgaveVersjon =
-        database.connection.use { connection ->
-            val oppfolgingsoppgaveVersjon = connection.createOppfolgingsoppgaveVersjon(
-                oppfolgingsoppgaveId = oppfolgingsoppgaveId,
-                newOppfolgingsoppgaveVersion = newOppfolgingsoppgaveVersion,
-            )
-            connection.updatePublished(oppfolgingsoppgave = newOppfolgingsoppgaveVersion)
-            connection.commit()
-            return oppfolgingsoppgaveVersjon
-        }
-
-    override fun edit(existingOppfolgingsoppgave: OppfolgingsoppgaveNew): OppfolgingsoppgaveNew? {
+    override fun edit(existingOppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave? {
         return getPOppfolgingsoppgave(existingOppfolgingsoppgave.uuid)
             ?.let { pExistingOppfolgingsoppgave ->
                 updateOppfolgingsoppgaveMedVersjon(pExistingOppfolgingsoppgave.id, existingOppfolgingsoppgave)
+            }?.let {
+                getOppfolgingsoppgave(it)
             }
     }
 
     fun updateOppfolgingsoppgaveMedVersjon(
         oppfolgingsoppgaveId: Int,
-        oppfolgingsoppgaveNew: OppfolgingsoppgaveNew
-    ): OppfolgingsoppgaveNew {
+        oppfolgingsoppgave: Oppfolgingsoppgave
+    ): UUID {
         database.connection.use { connection ->
-            connection.createOppfolgingsoppgaveVersjon(oppfolgingsoppgaveId, oppfolgingsoppgaveNew)
-            connection.updateOppfolgingsoppgave(oppfolgingsoppgaveNew)
+            connection.createOppfolgingsoppgaveVersjon(oppfolgingsoppgaveId, oppfolgingsoppgave)
+            connection.updateOppfolgingsoppgave(oppfolgingsoppgave)
+            connection.updatePublished(oppfolgingsoppgave)
             connection.commit()
             COUNT_HUSKELAPP_VERSJON_CREATED.increment()
-            return oppfolgingsoppgaveNew
+            return oppfolgingsoppgave.uuid
         }
     }
 
-    override fun remove(oppfolgingsoppgaveNew: OppfolgingsoppgaveNew) =
-        database.updateRemovedOppfolgingsoppgave(oppfolgingsoppgaveNew)
+    override fun remove(oppfolgingsoppgave: Oppfolgingsoppgave) =
+        database.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave)
 
     private fun Connection.createOppfolgingsoppgaveVersjon(
         oppfolgingsoppgaveId: Int,
-        newOppfolgingsoppgaveVersion: Oppfolgingsoppgave,
+        newOppfolgingsoppgave: Oppfolgingsoppgave
     ): POppfolgingsoppgaveVersjon {
-        val idList = this.prepareStatement(CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY).use {
-            it.setString(1, UUID.randomUUID().toString())
-            it.setInt(2, oppfolgingsoppgaveId)
-            it.setObject(3, nowUTC())
-            it.setString(4, newOppfolgingsoppgaveVersion.createdBy)
-            newOppfolgingsoppgaveVersion.tekst
-                ?.let { tekst -> it.setString(5, tekst) }
-                ?: it.setNull(5, Types.LONGVARCHAR)
-            if (newOppfolgingsoppgaveVersion.oppfolgingsgrunner.isEmpty()) {
-                it.setNull(6, Types.LONGVARCHAR)
-            } else {
-                it.setString(6, newOppfolgingsoppgaveVersion.oppfolgingsgrunner.joinToString(","))
-            }
-            it.setDate(7, newOppfolgingsoppgaveVersion.frist?.let { frist -> Date.valueOf(frist) })
-            it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
-        }
-
-        if (idList.size != 1) {
-            throw NoElementInsertedException("Creating HUSKELAPP_VERSJON failed, no rows affected.")
-        }
-
-        return idList.first()
-    }
-
-    private fun Connection.createOppfolgingsoppgaveVersjon(
-        oppfolgingsoppgaveId: Int,
-        newOppfolgingsoppgaveNew: OppfolgingsoppgaveNew
-    ): POppfolgingsoppgaveVersjon {
-        val newVersjon = newOppfolgingsoppgaveNew.versjoner.first()
+        val newVersjon = newOppfolgingsoppgave.versjoner.first()
         val idList = this.prepareStatement(CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY).use {
             it.setString(1, UUID.randomUUID().toString())
             it.setInt(2, oppfolgingsoppgaveId)
@@ -159,7 +107,9 @@ class OppfolgingsoppgaveRepository(
         return idList.first()
     }
 
-    override fun getUnpublished(): List<POppfolgingsoppgave> = database.getUnpublishedOppfolgingsoppgaver()
+    override fun getUnpublished(): List<Oppfolgingsoppgave> =
+        database.getUnpublishedOppfolgingsoppgaver().map { it.toOppfolgingsoppgave() }
+
     override fun updatePublished(oppfolgingsoppgave: Oppfolgingsoppgave) =
         database.updatePublished(oppfolgingsoppgave = oppfolgingsoppgave)
 
@@ -200,32 +150,12 @@ private const val queryCreateOppfolgingsoppgave =
 private fun Connection.createOppfolgingsoppgave(
     oppfolgingsoppgave: Oppfolgingsoppgave,
 ): POppfolgingsoppgave {
-    val now = nowUTC()
     val idList = this.prepareStatement(queryCreateOppfolgingsoppgave).use {
         it.setString(1, oppfolgingsoppgave.uuid.toString())
         it.setString(2, oppfolgingsoppgave.personIdent.value)
-        it.setObject(3, now)
-        it.setObject(4, now)
+        it.setObject(3, oppfolgingsoppgave.createdAt)
+        it.setObject(4, oppfolgingsoppgave.updatedAt)
         it.setObject(5, oppfolgingsoppgave.isActive)
-        it.executeQuery().toList { toPOppfolgingsoppgave() }
-    }
-
-    if (idList.size != 1) {
-        throw NoElementInsertedException("Creating HUSKELAPP failed, no rows affected.")
-    }
-
-    return idList.first()
-}
-
-private fun Connection.createOppfolgingsoppgaveNew(
-    oppfolgingsoppgaveNew: OppfolgingsoppgaveNew,
-): POppfolgingsoppgave {
-    val idList = this.prepareStatement(queryCreateOppfolgingsoppgave).use {
-        it.setString(1, oppfolgingsoppgaveNew.uuid.toString())
-        it.setString(2, oppfolgingsoppgaveNew.personIdent.value)
-        it.setObject(3, oppfolgingsoppgaveNew.createdAt)
-        it.setObject(4, oppfolgingsoppgaveNew.updatedAt)
-        it.setObject(5, oppfolgingsoppgaveNew.isActive)
         it.executeQuery().toList { toPOppfolgingsoppgave() }
     }
 
@@ -242,10 +172,10 @@ private const val queryUpdateOppfolgingsoppgaveUpdatedAt = """
     WHERE uuid = ?
 """
 
-private fun Connection.updateOppfolgingsoppgave(oppfolgingsoppgaveNew: OppfolgingsoppgaveNew) {
+private fun Connection.updateOppfolgingsoppgave(oppfolgingsoppgave: Oppfolgingsoppgave) {
     this.prepareStatement(queryUpdateOppfolgingsoppgaveUpdatedAt).use {
-        it.setObject(1, oppfolgingsoppgaveNew.updatedAt)
-        it.setString(2, oppfolgingsoppgaveNew.uuid.toString())
+        it.setObject(1, oppfolgingsoppgave.updatedAt)
+        it.setString(2, oppfolgingsoppgave.uuid.toString())
         val updated = it.executeUpdate()
         if (updated != 1) {
             throw SQLException("Expected a single row to be updated, got update count $updated")
@@ -301,7 +231,7 @@ private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
     WHERE h.personident = ANY (string_to_array(?, ',')) AND h.is_active = true
 """
 
-private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>> {
+private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Oppfolgingsoppgave> {
     return if (personidenter.isEmpty()) {
         emptyList()
     } else {
@@ -309,27 +239,7 @@ private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<P
             connection.prepareStatement(queryGetActiveOppfolgingsoppgaverByPersonident).use { preparedStatement ->
                 preparedStatement.setString(1, personidenter.joinToString(",") { it.value })
                 preparedStatement.executeQuery().toList {
-                    Pair(
-                        toPOppfolgingsoppgave(),
-                        toPOppfolgingsoppgaveVersjon(
-                            col_name_prefix = "versjon_",
-                        ),
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun DatabaseInterface.getActiveOppfolgingsoppgaverNew(personidenter: List<PersonIdent>): List<OppfolgingsoppgaveNew> {
-    return if (personidenter.isEmpty()) {
-        emptyList()
-    } else {
-        connection.use { connection ->
-            connection.prepareStatement(queryGetActiveOppfolgingsoppgaverByPersonident).use { preparedStatement ->
-                preparedStatement.setString(1, personidenter.joinToString(",") { it.value })
-                preparedStatement.executeQuery().toList {
-                    toPOppfolgingsoppgave().toOppfolgingsoppgaveNew(
+                    toPOppfolgingsoppgave().toOppfolgingsoppgave(
                         listOf(
                             toPOppfolgingsoppgaveVersjon(
                                 col_name_prefix = "versjon_",
@@ -411,23 +321,6 @@ private fun DatabaseInterface.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave
             it.setObject(3, oppfolgingsoppgave.publishedAt)
             it.setObject(4, oppfolgingsoppgave.updatedAt)
             it.setString(5, oppfolgingsoppgave.uuid.toString())
-            val updated = it.executeUpdate()
-            if (updated != 1) {
-                throw SQLException("Expected a single row to be updated, got update count $updated")
-            }
-        }
-        connection.commit()
-    }
-}
-
-private fun DatabaseInterface.updateRemovedOppfolgingsoppgave(oppfolgingsoppgaveNew: OppfolgingsoppgaveNew) {
-    this.connection.use { connection ->
-        connection.prepareStatement(queryUpdateRemoved).use {
-            it.setBoolean(1, oppfolgingsoppgaveNew.isActive)
-            it.setString(2, oppfolgingsoppgaveNew.removedBy)
-            it.setObject(3, oppfolgingsoppgaveNew.publishedAt)
-            it.setObject(4, oppfolgingsoppgaveNew.updatedAt)
-            it.setString(5, oppfolgingsoppgaveNew.uuid.toString())
             val updated = it.executeUpdate()
             if (updated != 1) {
                 throw SQLException("Expected a single row to be updated, got update count $updated")
