@@ -25,6 +25,9 @@ class OppfolgingsoppgaveService(
         oppfolgingsoppgaveRepository.getActiveOppfolgingsoppgaver(personidenter)
             .map { it.first.toOppfolgingsoppgave(pOppfolgingsoppgaveVersjon = it.second) }
 
+    fun getActiveOppfolgingsoppgaverNew(personidenter: List<PersonIdent>): List<OppfolgingsoppgaveNew> =
+        oppfolgingsoppgaveRepository.getActiveOppfolgingsoppgaverNew(personidenter)
+
     fun getOppfolgingsoppgaver(personIdent: PersonIdent): List<OppfolgingsoppgaveNew> =
         oppfolgingsoppgaveRepository.getOppfolgingsoppgaverNew(personIdent)
 

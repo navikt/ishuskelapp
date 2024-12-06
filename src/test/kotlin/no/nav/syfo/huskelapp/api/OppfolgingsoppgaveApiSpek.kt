@@ -802,6 +802,217 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     }
                 }
             }
+
+            describe("POST: Get oppfolgingsoppgaverNew for several persons") {
+                val personidenter =
+                    listOf(ARBEIDSTAKER_PERSONIDENT, ARBEIDSTAKER_2_PERSONIDENT, ARBEIDSTAKER_3_PERSONIDENT)
+                val requestDTO = OppfolgingsoppgaverRequestDTO(personidenter.map { it.value })
+                val url = "$huskelappApiBasePath/get-oppfolgingsoppgaver-new"
+
+                fun createOppfolgingsoppgaver(identer: List<PersonIdent> = personidenter): List<OppfolgingsoppgaveNew> {
+                    return identer.map { personident ->
+                        val oppfolgingsoppgave = OppfolgingsoppgaveNew.create(
+                            personIdent = personident,
+                            veilederIdent = VEILEDER_IDENT,
+                            tekst = "En oppfolgingsoppgave",
+                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        )
+                        oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew = oppfolgingsoppgave)
+                    }
+                }
+
+                it("Gets all oppfolgingsoppgaver for all persons") {
+                    createOppfolgingsoppgaver()
+
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+                        val responseDTO =
+                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+
+                        responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
+                        responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
+                        }
+                    }
+                }
+
+                it("Gets only newest versjon of oppfolgingsoppgaver for all persons") {
+                    val oppfolgingsoppgaver = createOppfolgingsoppgaver()
+                    oppfolgingsoppgaveService.editOppfolgingsoppgave(
+                        existingOppfolgingsoppgaveUuid = oppfolgingsoppgaver[0].uuid,
+                        veilederIdent = VEILEDER_IDENT,
+                        newTekst = "Ny tekst",
+                        newFrist = LocalDate.now().plusDays(1),
+                    )
+
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+                        val responseDTO =
+                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+
+                        responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
+                        responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
+                        }
+                        val updatedOppgaver = responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.first().tekst == "Ny tekst"
+                        }.values
+                        updatedOppgaver.size shouldBeEqualTo 1
+                        updatedOppgaver.first().uuid shouldBeEqualTo oppfolgingsoppgaver[0].uuid.toString()
+
+                        responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.first().tekst == "En oppfolgingsoppgave"
+                        }.size shouldBeEqualTo 2
+                    }
+                }
+
+                it("Gets oppfolgingsoppgaver only for person with oppgaver, even when veileder has access to all persons") {
+                    createOppfolgingsoppgaver(identer = listOf(ARBEIDSTAKER_PERSONIDENT))
+
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+                        val responseDTO =
+                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+
+                        responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 1
+                        responseDTO.oppfolgingsoppgaver.forEach { (personident, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                personident shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT.value
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
+                        }
+                    }
+                }
+
+                it("Gets all oppfolgingsoppgaver only for persons where veileder has access") {
+                    createOppfolgingsoppgaver()
+
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validTokenOtherVeileder))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+                        val responseDTO =
+                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+
+                        responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 2
+                        responseDTO.oppfolgingsoppgaver.keys shouldNotContain ARBEIDSTAKER_3_FNR
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
+                        }
+                    }
+                }
+
+                it("Gets all oppfolgingsoppgaver and send no duplicates when duplicates personident are sent in request") {
+                    createOppfolgingsoppgaver(identer = listOf(*personidenter.toTypedArray(), ARBEIDSTAKER_PERSONIDENT))
+
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.OK
+                        val responseDTO =
+                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+
+                        responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
+                        responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
+                        }
+                    }
+                }
+
+                it("Gets no oppfolgingsoppgaver when veileder doesn't have access to any of the persons") {
+                    val validTokenAccessToNoneVeileder = generateJWT(
+                        audience = externalMockEnvironment.environment.azure.appClientId,
+                        issuer = externalMockEnvironment.wellKnownInternalAzureAD.issuer,
+                        navIdent = FAILS_VEILEDER_IDENT,
+                    )
+
+                    createOppfolgingsoppgaver()
+
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validTokenAccessToNoneVeileder))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.NoContent
+                    }
+                }
+
+                it("Gets no oppfolgingsoppgaver when none of the persons has oppfolgingsoppgaver") {
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.NoContent
+                    }
+                }
+
+                it("Gets no oppfolgingsoppgaver when veileder has access but no active oppfolgingsoppgave") {
+                    val oppfolgingsoppgave = OppfolgingsoppgaveNew.create(
+                        personIdent = ARBEIDSTAKER_PERSONIDENT,
+                        veilederIdent = VEILEDER_IDENT,
+                        tekst = "En oppfolgingsoppgave",
+                        oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                    )
+                    oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew = oppfolgingsoppgave.copy(isActive = false))
+
+                    with(
+                        handleRequest(HttpMethod.Post, url) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
+                            setBody(objectMapper.writeValueAsString(requestDTO))
+                        }
+                    ) {
+                        response.status() shouldBeEqualTo HttpStatusCode.NoContent
+                    }
+                }
+            }
         }
     }
 })

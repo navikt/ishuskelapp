@@ -7,3 +7,7 @@ data class OppfolgingsoppgaverRequestDTO(
 data class OppfolgingsoppgaverResponseDTO(
     val oppfolgingsoppgaver: Map<String, OppfolgingsoppgaveResponseDTO>
 )
+
+data class OppfolgingsoppgaverNewResponseDTO(
+    val oppfolgingsoppgaver: Map<String, OppfolgingsoppgaveNewResponseDTO>
+)

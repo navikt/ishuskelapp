@@ -160,6 +160,37 @@ fun Route.registerOppfolgingsoppgaveApi(
                 call.respond(responseDTO)
             }
         }
+
+        post("/get-oppfolgingsoppgaver-new") {
+            val token = call.getBearerHeader()
+                ?: throw IllegalArgumentException("Failed to get oppfolgingsoppgaver for personer. No Authorization header supplied.")
+            val requestDTOList = call.receive<OppfolgingsoppgaverRequestDTO>()
+
+            val personerVeilederHasAccessTo = veilederTilgangskontrollClient.veilederPersonerAccess(
+                personidenter = requestDTOList.personidenter.map { PersonIdent(it) },
+                token = token,
+                callId = call.getCallId(),
+            )
+
+            val oppfolgingsoppgaver = if (personerVeilederHasAccessTo.isNullOrEmpty()) {
+                emptyList()
+            } else {
+                oppfolgingsoppgaveService.getActiveOppfolgingsoppgaverNew(
+                    personidenter = personerVeilederHasAccessTo,
+                )
+            }
+
+            if (oppfolgingsoppgaver.isEmpty()) {
+                call.respond(HttpStatusCode.NoContent)
+            } else {
+                val responseDTO = OppfolgingsoppgaverNewResponseDTO(
+                    oppfolgingsoppgaver = oppfolgingsoppgaver.associate {
+                        it.personIdent.value to OppfolgingsoppgaveNewResponseDTO.fromOppfolgingsoppgaveNew(it)
+                    }
+                )
+                call.respond(responseDTO)
+            }
+        }
     }
 }
 
