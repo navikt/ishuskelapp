@@ -32,6 +32,9 @@ class OppfolgingsoppgaveRepository(
     override fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>> =
         database.getActiveOppfolgingsoppgaver(personidenter)
 
+    override fun getActiveOppfolgingsoppgaverNew(personidenter: List<PersonIdent>): List<OppfolgingsoppgaveNew> =
+        database.getActiveOppfolgingsoppgaverNew(personidenter)
+
     override fun getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave? {
         return database.getPOppfolgingsoppgave(uuid)
     }
@@ -311,6 +314,27 @@ private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<P
                         toPOppfolgingsoppgaveVersjon(
                             col_name_prefix = "versjon_",
                         ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun DatabaseInterface.getActiveOppfolgingsoppgaverNew(personidenter: List<PersonIdent>): List<OppfolgingsoppgaveNew> {
+    return if (personidenter.isEmpty()) {
+        emptyList()
+    } else {
+        connection.use { connection ->
+            connection.prepareStatement(queryGetActiveOppfolgingsoppgaverByPersonident).use { preparedStatement ->
+                preparedStatement.setString(1, personidenter.joinToString(",") { it.value })
+                preparedStatement.executeQuery().toList {
+                    toPOppfolgingsoppgave().toOppfolgingsoppgaveNew(
+                        listOf(
+                            toPOppfolgingsoppgaveVersjon(
+                                col_name_prefix = "versjon_",
+                            )
+                        )
                     )
                 }
             }

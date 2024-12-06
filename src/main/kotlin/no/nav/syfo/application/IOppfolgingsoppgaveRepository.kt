@@ -9,6 +9,7 @@ interface IOppfolgingsoppgaveRepository {
     fun getPOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave>
     fun getOppfolgingsoppgaverNew(personIdent: PersonIdent): List<OppfolgingsoppgaveNew>
     fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Pair<POppfolgingsoppgave, POppfolgingsoppgaveVersjon>>
+    fun getActiveOppfolgingsoppgaverNew(personidenter: List<PersonIdent>): List<OppfolgingsoppgaveNew>
     fun getPOppfolgingsoppgave(uuid: UUID): POppfolgingsoppgave?
     fun getOppfolgingsoppgaveNew(uuid: UUID): OppfolgingsoppgaveNew?
     fun getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon>
