@@ -34,23 +34,8 @@ fun Route.registerOppfolgingsoppgaveApi(
                 val filter = FilterRequestParameter.fromString(call.request.queryParameters[FILTER])
                 val isActive = call.request.queryParameters[IS_ACTIVE]?.toBoolean() ?: false
 
-                if (filter == ALL) {
-                    val responseDTO = oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).map {
-                        OppfolgingsoppgaveNewResponseDTO.fromOppfolgingsoppgaveNew(it)
-                    }
-                    call.respond(responseDTO)
-                } else if (isActive) {
-                    val oppfolgingsoppgave =
-                        oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).firstOrNull { it.isActive }
-
-                    if (oppfolgingsoppgave == null) {
-                        call.respond(HttpStatusCode.NoContent)
-                    } else {
-                        val responseDTO = OppfolgingsoppgaveNewResponseDTO.fromOppfolgingsoppgaveNew(oppfolgingsoppgave)
-                        call.respond(responseDTO)
-                    }
-                } else if (filter == null) {
-                    val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(personIdent)
+                if (isActive) {
+                    val oppfolgingsoppgave = oppfolgingsoppgaveService.getActiveOppfolgingsoppgave(personIdent)
 
                     if (oppfolgingsoppgave == null) {
                         call.respond(HttpStatusCode.NoContent)
@@ -58,6 +43,11 @@ fun Route.registerOppfolgingsoppgaveApi(
                         val responseDTO = OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(oppfolgingsoppgave)
                         call.respond(responseDTO)
                     }
+                } else if (filter == null || filter == ALL) {
+                    val responseDTO = oppfolgingsoppgaveService.getOppfolgingsoppgaver(personIdent).map {
+                        OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(it)
+                    }
+                    call.respond(responseDTO)
                 }
             }
         }
@@ -72,12 +62,12 @@ fun Route.registerOppfolgingsoppgaveApi(
 
                 val requestDTO = call.receive<OppfolgingsoppgaveRequestDTO>()
 
-                oppfolgingsoppgaveService.createOppfolgingsoppgave(
+                val oppfolgingsoppgave = oppfolgingsoppgaveService.createOppfolgingsoppgave(
                     personIdent = personIdent,
                     veilederIdent = veilederIdent,
                     newOppfolgingsoppgave = requestDTO,
                 )
-                call.respond(HttpStatusCode.Created)
+                call.respond(HttpStatusCode.Created, oppfolgingsoppgave)
             }
         }
 
@@ -90,7 +80,7 @@ fun Route.registerOppfolgingsoppgaveApi(
                 val requestDTO = call.receive<EditedOppfolgingsoppgaveDTO>()
                 val veilederIdent = call.getNAVIdent()
 
-                oppfolgingsoppgaveService.addVersion(
+                oppfolgingsoppgaveService.editOppfolgingsoppgave(
                     existingOppfolgingsoppgaveUuid = uuid,
                     veilederIdent = veilederIdent,
                     newTekst = requestDTO.tekst,
@@ -117,7 +107,8 @@ fun Route.registerOppfolgingsoppgaveApi(
                 val oppfolgingsoppgaveUuid = UUID.fromString(call.parameters[huskelappParam])
                 val veilederIdent = call.getNAVIdent()
 
-                val oppfolgingsoppgave = oppfolgingsoppgaveService.getOppfolgingsoppgave(uuid = oppfolgingsoppgaveUuid)
+                val oppfolgingsoppgave =
+                    oppfolgingsoppgaveService.getActiveOppfolgingsoppgave(uuid = oppfolgingsoppgaveUuid)
                 if (oppfolgingsoppgave == null) {
                     call.respond(HttpStatusCode.NotFound)
                 } else {
@@ -175,7 +166,7 @@ fun Route.registerOppfolgingsoppgaveApi(
             val oppfolgingsoppgaver = if (personerVeilederHasAccessTo.isNullOrEmpty()) {
                 emptyList()
             } else {
-                oppfolgingsoppgaveService.getActiveOppfolgingsoppgaverNew(
+                oppfolgingsoppgaveService.getActiveOppfolgingsoppgaver(
                     personidenter = personerVeilederHasAccessTo,
                 )
             }
@@ -183,9 +174,9 @@ fun Route.registerOppfolgingsoppgaveApi(
             if (oppfolgingsoppgaver.isEmpty()) {
                 call.respond(HttpStatusCode.NoContent)
             } else {
-                val responseDTO = OppfolgingsoppgaverNewResponseDTO(
+                val responseDTO = OppfolgingsoppgaverResponseDTO(
                     oppfolgingsoppgaver = oppfolgingsoppgaver.associate {
-                        it.personIdent.value to OppfolgingsoppgaveNewResponseDTO.fromOppfolgingsoppgaveNew(it)
+                        it.personIdent.value to OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(it)
                     }
                 )
                 call.respond(responseDTO)
