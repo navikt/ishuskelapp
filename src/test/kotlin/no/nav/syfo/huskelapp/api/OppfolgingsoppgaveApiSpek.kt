@@ -144,8 +144,6 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                     )
 
-//                val oppfolgingsoppgave = createOppfolgingsoppgave()
-
                 it("Oppretting av oppfølgingsoppgave skal ha 1 versjon") {
                     oppfolgingsoppgaveRepository.create(createOppfolgingsoppgave())
 
