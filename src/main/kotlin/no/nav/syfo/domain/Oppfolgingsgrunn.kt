@@ -11,5 +11,6 @@ enum class Oppfolgingsgrunn {
     FRISKMELDING_TIL_ARBEIDSFORMIDLING,
     VURDER_14A,
     VURDER_ANNEN_YTELSE,
+    BRUKERMOTE,
     ANNET,
 }
