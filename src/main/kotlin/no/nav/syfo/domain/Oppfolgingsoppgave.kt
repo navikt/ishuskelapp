@@ -16,7 +16,7 @@ data class Oppfolgingsoppgave private constructor(
     val removedBy: String?,
 ) {
 
-    fun edit(tekst: String?, frist: LocalDate? = null, veilederIdent: String): Oppfolgingsoppgave {
+    fun edit(tekst: String?, frist: LocalDate?, veilederIdent: String): Oppfolgingsoppgave {
         val updatedAt = nowUTC()
         val versjon = versjoner.first().edit(
             createdAt = updatedAt,

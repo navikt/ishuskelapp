@@ -224,6 +224,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     val oppdatertOppfolgingsoppgave = existingOppfolgingsoppgave.edit(
                         tekst = "En oppfolgingsoppgave oppdatert",
                         veilederIdent = VEILEDER_IDENT,
+                        frist = null
                     )
                     val pExistingOppgave = oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(existingOppfolgingsoppgave.uuid)
                     oppfolgingsoppgaveRepository.updateOppfolgingsoppgaveMedVersjon(
@@ -252,11 +253,13 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         forsteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
                         forsteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         forsteVersjon.tekst shouldBeEqualTo "En oppfolgingsoppgave"
+                        forsteVersjon.frist.shouldBeNull()
 
                         sisteVersjon.createdAt shouldBeEqualTo oppfolgingsoppgave.updatedAt
                         sisteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
                         sisteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         sisteVersjon.tekst shouldBeEqualTo "En oppfolgingsoppgave oppdatert"
+                        sisteVersjon.frist.shouldBeNull()
 
                         oppfolgingsoppgave.personIdent shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT
                         oppfolgingsoppgave.isActive shouldBe true
