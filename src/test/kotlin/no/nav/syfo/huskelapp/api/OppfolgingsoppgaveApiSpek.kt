@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import no.nav.syfo.api.endpoints.FilterRequestParameter.ALL
-import no.nav.syfo.api.endpoints.RequestParameters.FILTER
 import no.nav.syfo.api.endpoints.RequestParameters.IS_ACTIVE
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
 import no.nav.syfo.api.model.*
@@ -134,7 +132,6 @@ class OppfolgingsoppgaveApiSpek : Spek({
             }
 
             describe("Get oppfølgingsoppgaver med versjoner") {
-                val huskelappUrlAll = "$huskelappApiBasePath?$FILTER=${ALL.value}"
 
                 fun createOppfolgingsoppgave(tekst: String = "En oppfolgingsoppgave"): Oppfolgingsoppgave =
                     Oppfolgingsoppgave.create(
@@ -148,7 +145,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     oppfolgingsoppgaveRepository.create(createOppfolgingsoppgave())
 
                     with(
-                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                        handleRequest(HttpMethod.Get, huskelappApiBasePath) {
                             addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                             addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         }
@@ -182,7 +179,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     oppfolgingsoppgaveRepository.create(createOppfolgingsoppgave("Oppfølgingsoppgave nr. 2"))
 
                     with(
-                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                        handleRequest(HttpMethod.Get, huskelappApiBasePath) {
                             addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                             addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         }
@@ -233,7 +230,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     )
 
                     with(
-                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                        handleRequest(HttpMethod.Get, huskelappApiBasePath) {
                             addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                             addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         }
