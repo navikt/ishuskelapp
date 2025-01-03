@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import no.nav.syfo.api.endpoints.FilterRequestParameter.ALL
-import no.nav.syfo.api.endpoints.RequestParameters.FILTER
 import no.nav.syfo.api.endpoints.RequestParameters.IS_ACTIVE
 import no.nav.syfo.api.endpoints.huskelappApiBasePath
 import no.nav.syfo.api.model.*
@@ -67,7 +65,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     personIdent = ARBEIDSTAKER_PERSONIDENT,
                     veilederIdent = VEILEDER_IDENT,
                     tekst = "En oppfolgingsoppgave",
-                    oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
+                    oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                 )
                 val inactiveOppfolgingsoppgave = oppfolgingsoppgave.copy(
                     uuid = UUID.randomUUID(),
@@ -79,19 +77,23 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
 
                         with(
-                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                            handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                             }
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.OK
 
-                            objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
+                            val responseDTO =
+                                objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
+
+                            responseDTO.isActive shouldBe true
+                            responseDTO.versjoner.size shouldBe 1
                         }
                     }
                     it("Returns no content if no oppfolgingsoppgave exists") {
                         with(
-                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                            handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                             }
@@ -103,59 +105,12 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = inactiveOppfolgingsoppgave)
 
                         with(
-                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                            handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                             }
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.NoContent
-                        }
-                    }
-
-                    describe("Hente aktiv oppfølgingsoppgave") {
-                        val oppfolgingsoppgaveNew = OppfolgingsoppgaveNew.create(
-                            personIdent = ARBEIDSTAKER_PERSONIDENT,
-                            veilederIdent = VEILEDER_IDENT,
-                            tekst = "En oppfolgingsoppgave",
-                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
-                        )
-
-                        val fjernetOppfolgingsoppgave = oppfolgingsoppgaveNew.copy(
-                            uuid = UUID.randomUUID(),
-                            removedBy = VEILEDER_IDENT,
-                            isActive = false
-                        )
-
-                        it("Har en aktiv oppfølgingsoppgave") {
-                            oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew = oppfolgingsoppgaveNew)
-
-                            with(
-                                handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
-                                    addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
-                                    addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
-                                }
-                            ) {
-                                response.status() shouldBeEqualTo HttpStatusCode.OK
-
-                                val responseDTO =
-                                    objectMapper.readValue<OppfolgingsoppgaveNewResponseDTO>(response.content!!)
-
-                                responseDTO.isActive shouldBe true
-                                responseDTO.versjoner.size shouldBe 1
-                            }
-                        }
-
-                        it("Har ikke en aktiv oppfølgingsoppgave") {
-                            oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew = fjernetOppfolgingsoppgave)
-
-                            with(
-                                handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
-                                    addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
-                                    addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
-                                }
-                            ) {
-                                response.status() shouldBeEqualTo HttpStatusCode.NoContent
-                            }
                         }
                     }
 
@@ -177,23 +132,20 @@ class OppfolgingsoppgaveApiSpek : Spek({
             }
 
             describe("Get oppfølgingsoppgaver med versjoner") {
-                val huskelappUrlAll = "$huskelappApiBasePath?$FILTER=${ALL.value}"
 
-                fun createOppfolgingsoppgave(tekst: String = "En oppfolgingsoppgave"): OppfolgingsoppgaveNew =
-                    OppfolgingsoppgaveNew.create(
+                fun createOppfolgingsoppgave(tekst: String = "En oppfolgingsoppgave"): Oppfolgingsoppgave =
+                    Oppfolgingsoppgave.create(
                         personIdent = ARBEIDSTAKER_PERSONIDENT,
                         veilederIdent = VEILEDER_IDENT,
                         tekst = tekst,
                         oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                     )
 
-                val oppfolgingsoppgaveNew = createOppfolgingsoppgave()
-
                 it("Oppretting av oppfølgingsoppgave skal ha 1 versjon") {
-                    oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew)
+                    oppfolgingsoppgaveRepository.create(createOppfolgingsoppgave())
 
                     with(
-                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                        handleRequest(HttpMethod.Get, huskelappApiBasePath) {
                             addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                             addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         }
@@ -201,7 +153,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         response.status() shouldBeEqualTo HttpStatusCode.OK
 
                         val responseDTO =
-                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
+                            objectMapper.readValue<List<OppfolgingsoppgaveResponseDTO>>(response.content!!)
 
                         responseDTO.size shouldBeEqualTo 1
 
@@ -227,7 +179,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     oppfolgingsoppgaveRepository.create(createOppfolgingsoppgave("Oppfølgingsoppgave nr. 2"))
 
                     with(
-                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                        handleRequest(HttpMethod.Get, huskelappApiBasePath) {
                             addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                             addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         }
@@ -235,11 +187,11 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         response.status() shouldBeEqualTo HttpStatusCode.OK
 
                         val responseDTO =
-                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
+                            objectMapper.readValue<List<OppfolgingsoppgaveResponseDTO>>(response.content!!)
 
                         responseDTO.size shouldBeEqualTo 2
 
-                        val sisteOppfolgingsoppgave = responseDTO.get(0)
+                        val sisteOppfolgingsoppgave = responseDTO[0]
                         val sisteVersjon = sisteOppfolgingsoppgave.versjoner.first()
 
                         sisteOppfolgingsoppgave.personIdent shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT
@@ -251,7 +203,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         sisteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         sisteVersjon.tekst shouldBeEqualTo "Oppfølgingsoppgave nr. 2"
 
-                        val forsteOppfolgingsoppgave = responseDTO.get(1)
+                        val forsteOppfolgingsoppgave = responseDTO[1]
                         val forsteVersjon = forsteOppfolgingsoppgave.versjoner.first()
 
                         forsteOppfolgingsoppgave.personIdent shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT
@@ -265,16 +217,20 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 }
 
                 it("En oppfølgingsoppgave med 2 versjoner") {
-                    val initiellOppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew)
-                    val oppdatertOppfolgingsoppgave = oppfolgingsoppgaveNew.edit(
+                    val existingOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(createOppfolgingsoppgave())
+                    val oppdatertOppfolgingsoppgave = existingOppfolgingsoppgave.edit(
                         tekst = "En oppfolgingsoppgave oppdatert",
                         veilederIdent = VEILEDER_IDENT,
+                        frist = null
                     )
-                    val pExistingOppgave = oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(initiellOppgave.uuid)
-                    oppfolgingsoppgaveRepository.updateOppfolgingsoppgaveMedVersjon(pExistingOppgave!!.id, oppdatertOppfolgingsoppgave)
+                    val pExistingOppgave = oppfolgingsoppgaveRepository.getPOppfolgingsoppgave(existingOppfolgingsoppgave.uuid)
+                    oppfolgingsoppgaveRepository.updateOppfolgingsoppgaveMedVersjon(
+                        pExistingOppgave!!.id,
+                        oppdatertOppfolgingsoppgave
+                    )
 
                     with(
-                        handleRequest(HttpMethod.Get, huskelappUrlAll) {
+                        handleRequest(HttpMethod.Get, huskelappApiBasePath) {
                             addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                             addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         }
@@ -282,23 +238,25 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         response.status() shouldBeEqualTo HttpStatusCode.OK
 
                         val responseDTO =
-                            objectMapper.readValue<List<OppfolgingsoppgaveNewResponseDTO>>(response.content!!)
+                            objectMapper.readValue<List<OppfolgingsoppgaveResponseDTO>>(response.content!!)
 
                         responseDTO.size shouldBeEqualTo 1
 
                         val oppfolgingsoppgave = responseDTO.first()
-                        val forsteVersjon = oppfolgingsoppgave.versjoner.get(1)
-                        val sisteVersjon = oppfolgingsoppgave.versjoner.get(0)
+                        val forsteVersjon = oppfolgingsoppgave.versjoner[1]
+                        val sisteVersjon = oppfolgingsoppgave.versjoner[0]
 
                         forsteVersjon.createdAt shouldBeEqualTo oppfolgingsoppgave.createdAt
                         forsteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
                         forsteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         forsteVersjon.tekst shouldBeEqualTo "En oppfolgingsoppgave"
+                        forsteVersjon.frist.shouldBeNull()
 
                         sisteVersjon.createdAt shouldBeEqualTo oppfolgingsoppgave.updatedAt
                         sisteVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
                         sisteVersjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         sisteVersjon.tekst shouldBeEqualTo "En oppfolgingsoppgave oppdatert"
+                        sisteVersjon.frist.shouldBeNull()
 
                         oppfolgingsoppgave.personIdent shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT
                         oppfolgingsoppgave.isActive shouldBe true
@@ -330,10 +288,21 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             }
                         ) {
                             response.status() shouldBeEqualTo HttpStatusCode.Created
+
+                            val responseDTO =
+                                objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
+
+                            responseDTO.versjoner.size shouldBeEqualTo 1
+
+                            val oppfolgingsoppgaveVersjon = responseDTO.versjoner.first()
+
+                            oppfolgingsoppgaveVersjon.tekst shouldBeEqualTo requestDTOWithTekst.tekst
+                            oppfolgingsoppgaveVersjon.oppfolgingsgrunn shouldBeEqualTo requestDTOWithTekst.oppfolgingsgrunn
+                            oppfolgingsoppgaveVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
                         }
 
                         with(
-                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                            handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                             }
@@ -341,9 +310,14 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             response.status() shouldBeEqualTo HttpStatusCode.OK
                             val responseDTO =
                                 objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
-                            responseDTO.tekst shouldBeEqualTo requestDTOWithTekst.tekst
-                            responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTOWithTekst.oppfolgingsgrunn
-                            responseDTO.createdBy shouldBeEqualTo VEILEDER_IDENT
+
+                            responseDTO.versjoner.size shouldBeEqualTo 1
+
+                            val oppfolgingsoppgaveVersjon = responseDTO.versjoner.first()
+
+                            oppfolgingsoppgaveVersjon.tekst shouldBeEqualTo requestDTOWithTekst.tekst
+                            oppfolgingsoppgaveVersjon.oppfolgingsgrunn shouldBeEqualTo requestDTOWithTekst.oppfolgingsgrunn
+                            oppfolgingsoppgaveVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
                         }
                     }
                     it("OK with oppfolgingsgrunn") {
@@ -364,7 +338,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         }
 
                         with(
-                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                            handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                             }
@@ -373,10 +347,12 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             val responseDTO =
                                 objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
 
-                            responseDTO.tekst shouldBeEqualTo requestDTOWithOppfolgingsgrunn.tekst
-                            responseDTO.oppfolgingsgrunn shouldBeEqualTo requestDTOWithOppfolgingsgrunn.oppfolgingsgrunn
-                            responseDTO.frist shouldBeEqualTo requestDTOWithOppfolgingsgrunn.frist
-                            responseDTO.createdBy shouldBeEqualTo VEILEDER_IDENT
+                            val oppfolgingsoppgaveVersjon = responseDTO.versjoner.first()
+
+                            oppfolgingsoppgaveVersjon.tekst shouldBeEqualTo requestDTOWithOppfolgingsgrunn.tekst
+                            oppfolgingsoppgaveVersjon.oppfolgingsgrunn shouldBeEqualTo requestDTOWithOppfolgingsgrunn.oppfolgingsgrunn
+                            oppfolgingsoppgaveVersjon.frist shouldBeEqualTo requestDTOWithOppfolgingsgrunn.frist
+                            oppfolgingsoppgaveVersjon.createdBy shouldBeEqualTo VEILEDER_IDENT
                         }
                     }
                     it("Does not store unchanged") {
@@ -428,13 +404,13 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             personIdent = ARBEIDSTAKER_PERSONIDENT,
                             veilederIdent = VEILEDER_IDENT,
                             tekst = "En oppfolgingsoppgave",
-                            oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
+                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                             frist = LocalDate.now().minusDays(1)
                         )
                         val existingOppfolgingsoppgave =
                             oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
                         val requestDTO = EditedOppfolgingsoppgaveDTO(
-                            tekst = existingOppfolgingsoppgave.tekst,
+                            tekst = existingOppfolgingsoppgave.sisteVersjon().tekst,
                             frist = LocalDate.now().plusDays(1),
                         )
 
@@ -450,7 +426,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         }
 
                         with(
-                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                            handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                             }
@@ -459,9 +435,11 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             val responseDTO =
                                 objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
 
-                            responseDTO.tekst shouldBeEqualTo requestDTO.tekst
-                            responseDTO.frist shouldBeEqualTo requestDTO.frist
-                            responseDTO.createdBy shouldBeEqualTo OTHER_VEILEDER_IDENT
+                            val oppfolgingsoppgaveVersjon = responseDTO.versjoner.first()
+
+                            oppfolgingsoppgaveVersjon.tekst shouldBeEqualTo requestDTO.tekst
+                            oppfolgingsoppgaveVersjon.frist shouldBeEqualTo requestDTO.frist
+                            oppfolgingsoppgaveVersjon.createdBy shouldBeEqualTo OTHER_VEILEDER_IDENT
                         }
                     }
                     it("OK with new tekst and same veileder") {
@@ -469,14 +447,14 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             personIdent = ARBEIDSTAKER_PERSONIDENT,
                             veilederIdent = VEILEDER_IDENT,
                             tekst = "En oppfolgingsoppgave",
-                            oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
+                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                             frist = LocalDate.now().minusDays(1)
                         )
                         val existingOppfolgingsoppgave =
                             oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
                         val requestDTO = EditedOppfolgingsoppgaveDTO(
                             tekst = "Ny tekst",
-                            frist = existingOppfolgingsoppgave.frist,
+                            frist = existingOppfolgingsoppgave.sisteVersjon().frist,
                         )
 
                         with(
@@ -491,7 +469,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         }
 
                         with(
-                            handleRequest(HttpMethod.Get, huskelappApiBasePath) {
+                            handleRequest(HttpMethod.Get, "$huskelappApiBasePath?$IS_ACTIVE=true") {
                                 addHeader(HttpHeaders.Authorization, bearerHeader(validToken))
                                 addHeader(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                             }
@@ -500,9 +478,11 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             val responseDTO =
                                 objectMapper.readValue<OppfolgingsoppgaveResponseDTO>(response.content!!)
 
-                            responseDTO.tekst shouldBeEqualTo requestDTO.tekst
-                            responseDTO.frist shouldBeEqualTo requestDTO.frist
-                            responseDTO.createdBy shouldBeEqualTo oppfolgingsoppgave.createdBy
+                            val oppfolgingsoppgaveVersjon = responseDTO.versjoner.first()
+
+                            oppfolgingsoppgaveVersjon.tekst shouldBeEqualTo requestDTO.tekst
+                            oppfolgingsoppgaveVersjon.frist shouldBeEqualTo requestDTO.frist
+                            oppfolgingsoppgaveVersjon.createdBy shouldBeEqualTo oppfolgingsoppgave.sisteVersjon().createdBy
                         }
                     }
                 }
@@ -531,7 +511,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     personIdent = ARBEIDSTAKER_PERSONIDENT,
                     veilederIdent = VEILEDER_IDENT,
                     tekst = "En oppfolgingsoppgave",
-                    oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE),
+                    oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                 )
                 val inactiveOppfolgingsoppgave = oppfolgingsoppgave.copy(
                     uuid = UUID.randomUUID(),
@@ -604,7 +584,8 @@ class OppfolgingsoppgaveApiSpek : Spek({
             }
 
             describe("POST: Get oppfolgingsoppgaver for several persons") {
-                val personidenter = listOf(ARBEIDSTAKER_PERSONIDENT, ARBEIDSTAKER_2_PERSONIDENT, ARBEIDSTAKER_3_PERSONIDENT)
+                val personidenter =
+                    listOf(ARBEIDSTAKER_PERSONIDENT, ARBEIDSTAKER_2_PERSONIDENT, ARBEIDSTAKER_3_PERSONIDENT)
                 val requestDTO = OppfolgingsoppgaverRequestDTO(personidenter.map { it.value })
                 val url = "$huskelappApiBasePath/get-oppfolgingsoppgaver"
 
@@ -614,7 +595,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             personIdent = personident,
                             veilederIdent = VEILEDER_IDENT,
                             tekst = "En oppfolgingsoppgave",
-                            oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
+                            oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         )
                         oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
                     }
@@ -636,16 +617,18 @@ class OppfolgingsoppgaveApiSpek : Spek({
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
                         responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
-                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgave) ->
-                            oppfolgingsoppgave.createdBy shouldBeEqualTo VEILEDER_IDENT
-                            oppfolgingsoppgave.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
                         }
                     }
                 }
 
                 it("Gets only newest versjon of oppfolgingsoppgaver for all persons") {
                     val oppfolgingsoppgaver = createOppfolgingsoppgaver()
-                    oppfolgingsoppgaveService.addVersion(
+                    oppfolgingsoppgaveService.editOppfolgingsoppgave(
                         existingOppfolgingsoppgaveUuid = oppfolgingsoppgaver[0].uuid,
                         veilederIdent = VEILEDER_IDENT,
                         newTekst = "Ny tekst",
@@ -665,18 +648,21 @@ class OppfolgingsoppgaveApiSpek : Spek({
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
                         responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
-                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgave) ->
-                            oppfolgingsoppgave.createdBy shouldBeEqualTo VEILEDER_IDENT
-                            oppfolgingsoppgave.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
                         }
-                        val updatedOppgaver = responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
-                            oppfolgingsoppgave.tekst == "Ny tekst"
-                        }.values
+                        val updatedOppgaver =
+                            responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgaveResponseDTO) ->
+                                oppfolgingsoppgaveResponseDTO.versjoner.first().tekst == "Ny tekst"
+                            }.values
                         updatedOppgaver.size shouldBeEqualTo 1
                         updatedOppgaver.first().uuid shouldBeEqualTo oppfolgingsoppgaver[0].uuid.toString()
 
-                        responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgave) ->
-                            oppfolgingsoppgave.tekst == "En oppfolgingsoppgave"
+                        responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.first().tekst == "En oppfolgingsoppgave"
                         }.size shouldBeEqualTo 2
                     }
                 }
@@ -696,10 +682,12 @@ class OppfolgingsoppgaveApiSpek : Spek({
                             objectMapper.readValue<OppfolgingsoppgaverResponseDTO>(response.content!!)
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 1
-                        responseDTO.oppfolgingsoppgaver.forEach { (personident, oppfolgingsoppgave) ->
-                            personident shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT.value
-                            oppfolgingsoppgave.createdBy shouldBeEqualTo VEILEDER_IDENT
-                            oppfolgingsoppgave.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        responseDTO.oppfolgingsoppgaver.forEach { (personident, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                personident shouldBeEqualTo ARBEIDSTAKER_PERSONIDENT.value
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
                         }
                     }
                 }
@@ -720,9 +708,11 @@ class OppfolgingsoppgaveApiSpek : Spek({
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 2
                         responseDTO.oppfolgingsoppgaver.keys shouldNotContain ARBEIDSTAKER_3_FNR
-                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgave) ->
-                            oppfolgingsoppgave.createdBy shouldBeEqualTo VEILEDER_IDENT
-                            oppfolgingsoppgave.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
                         }
                     }
                 }
@@ -743,9 +733,11 @@ class OppfolgingsoppgaveApiSpek : Spek({
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
                         responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
-                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgave) ->
-                            oppfolgingsoppgave.createdBy shouldBeEqualTo VEILEDER_IDENT
-                            oppfolgingsoppgave.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        responseDTO.oppfolgingsoppgaver.forEach { (_, oppfolgingsoppgaveResponseDTO) ->
+                            oppfolgingsoppgaveResponseDTO.versjoner.forEach { versjon ->
+                                versjon.createdBy shouldBeEqualTo VEILEDER_IDENT
+                                versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                            }
                         }
                     }
                 }
@@ -787,7 +779,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         personIdent = ARBEIDSTAKER_PERSONIDENT,
                         veilederIdent = VEILEDER_IDENT,
                         tekst = "En oppfolgingsoppgave",
-                        oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
+                        oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                     )
                     oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave.copy(isActive = false))
 
@@ -809,15 +801,15 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 val requestDTO = OppfolgingsoppgaverRequestDTO(personidenter.map { it.value })
                 val url = "$huskelappApiBasePath/get-oppfolgingsoppgaver-new"
 
-                fun createOppfolgingsoppgaver(identer: List<PersonIdent> = personidenter): List<OppfolgingsoppgaveNew> {
+                fun createOppfolgingsoppgaver(identer: List<PersonIdent> = personidenter): List<Oppfolgingsoppgave> {
                     return identer.map { personident ->
-                        val oppfolgingsoppgave = OppfolgingsoppgaveNew.create(
+                        val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                             personIdent = personident,
                             veilederIdent = VEILEDER_IDENT,
                             tekst = "En oppfolgingsoppgave",
                             oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                         )
-                        oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew = oppfolgingsoppgave)
+                        oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
                     }
                 }
 
@@ -833,7 +825,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     ) {
                         response.status() shouldBeEqualTo HttpStatusCode.OK
                         val responseDTO =
-                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+                            objectMapper.readValue<OppfolgingsoppgaverResponseDTO>(response.content!!)
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
                         responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
@@ -864,7 +856,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     ) {
                         response.status() shouldBeEqualTo HttpStatusCode.OK
                         val responseDTO =
-                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+                            objectMapper.readValue<OppfolgingsoppgaverResponseDTO>(response.content!!)
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
                         responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
@@ -874,9 +866,10 @@ class OppfolgingsoppgaveApiSpek : Spek({
                                 versjon.oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                             }
                         }
-                        val updatedOppgaver = responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgaveResponseDTO) ->
-                            oppfolgingsoppgaveResponseDTO.versjoner.first().tekst == "Ny tekst"
-                        }.values
+                        val updatedOppgaver =
+                            responseDTO.oppfolgingsoppgaver.filter { (_, oppfolgingsoppgaveResponseDTO) ->
+                                oppfolgingsoppgaveResponseDTO.versjoner.first().tekst == "Ny tekst"
+                            }.values
                         updatedOppgaver.size shouldBeEqualTo 1
                         updatedOppgaver.first().uuid shouldBeEqualTo oppfolgingsoppgaver[0].uuid.toString()
 
@@ -898,7 +891,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     ) {
                         response.status() shouldBeEqualTo HttpStatusCode.OK
                         val responseDTO =
-                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+                            objectMapper.readValue<OppfolgingsoppgaverResponseDTO>(response.content!!)
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 1
                         responseDTO.oppfolgingsoppgaver.forEach { (personident, oppfolgingsoppgaveResponseDTO) ->
@@ -923,7 +916,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     ) {
                         response.status() shouldBeEqualTo HttpStatusCode.OK
                         val responseDTO =
-                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+                            objectMapper.readValue<OppfolgingsoppgaverResponseDTO>(response.content!!)
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 2
                         responseDTO.oppfolgingsoppgaver.keys shouldNotContain ARBEIDSTAKER_3_FNR
@@ -948,7 +941,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     ) {
                         response.status() shouldBeEqualTo HttpStatusCode.OK
                         val responseDTO =
-                            objectMapper.readValue<OppfolgingsoppgaverNewResponseDTO>(response.content!!)
+                            objectMapper.readValue<OppfolgingsoppgaverResponseDTO>(response.content!!)
 
                         responseDTO.oppfolgingsoppgaver.size shouldBeEqualTo 3
                         responseDTO.oppfolgingsoppgaver.keys shouldContainAll personidenter.map { it.value }
@@ -994,13 +987,13 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 }
 
                 it("Gets no oppfolgingsoppgaver when veileder has access but no active oppfolgingsoppgave") {
-                    val oppfolgingsoppgave = OppfolgingsoppgaveNew.create(
+                    val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                         personIdent = ARBEIDSTAKER_PERSONIDENT,
                         veilederIdent = VEILEDER_IDENT,
                         tekst = "En oppfolgingsoppgave",
                         oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                     )
-                    oppfolgingsoppgaveRepository.create(oppfolgingsoppgaveNew = oppfolgingsoppgave.copy(isActive = false))
+                    oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave.copy(isActive = false))
 
                     with(
                         handleRequest(HttpMethod.Post, url) {

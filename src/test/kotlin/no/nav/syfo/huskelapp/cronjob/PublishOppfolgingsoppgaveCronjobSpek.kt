@@ -2,14 +2,17 @@ package no.nav.syfo.huskelapp.cronjob
 
 import io.mockk.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
-import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
-import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.infrastructure.cronjob.PublishOppfolgingsoppgaveCronjob
+import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.infrastructure.kafka.OppfolgingsoppgaveProducer
 import no.nav.syfo.infrastructure.kafka.OppfolgingsoppgaveRecord
-import no.nav.syfo.testhelper.*
-import org.amshove.kluent.*
+import no.nav.syfo.testhelper.ExternalMockEnvironment
+import no.nav.syfo.testhelper.UserConstants
+import no.nav.syfo.testhelper.dropData
+import org.amshove.kluent.shouldBeEqualTo
+import org.amshove.kluent.shouldBeNull
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
@@ -57,13 +60,13 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
                 personIdent,
                 veilederIdent,
                 tekst = "En oppfolgingsoppgave",
-                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
+                oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
             )
             val annenOppfolgingsoppgave = Oppfolgingsoppgave.create(
                 personIdent,
                 veilederIdent,
                 tekst = null,
-                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT),
+                oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
                 frist = LocalDate.now().plusWeeks(1),
             )
             listOf(enOppfolgingsoppgave, annenOppfolgingsoppgave).forEach {
@@ -84,26 +87,28 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
 
             val enOppfolgingsoppgaveRecord = kafkaRecordSlot1.captured.value()
 
-            enOppfolgingsoppgaveRecord.tekst shouldBeEqualTo enOppfolgingsoppgave.tekst
-            enOppfolgingsoppgaveRecord.oppfolgingsgrunner shouldBeEqualTo enOppfolgingsoppgave.oppfolgingsgrunner
+            enOppfolgingsoppgaveRecord.tekst shouldBeEqualTo enOppfolgingsoppgave.sisteVersjon().tekst
+            enOppfolgingsoppgaveRecord.oppfolgingsgrunner shouldBeEqualTo listOf(enOppfolgingsoppgave.sisteVersjon().oppfolgingsgrunn)
             enOppfolgingsoppgaveRecord.personIdent shouldBeEqualTo enOppfolgingsoppgave.personIdent.value
-            enOppfolgingsoppgaveRecord.veilederIdent shouldBeEqualTo enOppfolgingsoppgave.createdBy
+            enOppfolgingsoppgaveRecord.veilederIdent shouldBeEqualTo enOppfolgingsoppgave.sisteVersjon().createdBy
             enOppfolgingsoppgaveRecord.isActive shouldBeEqualTo enOppfolgingsoppgave.isActive
             enOppfolgingsoppgaveRecord.frist.shouldBeNull()
 
             val annenOppfolgingsoppgaveRecord = kafkaRecordSlot2.captured.value()
-            annenOppfolgingsoppgaveRecord.frist shouldBeEqualTo annenOppfolgingsoppgave.frist
+            annenOppfolgingsoppgaveRecord.frist shouldBeEqualTo annenOppfolgingsoppgave.sisteVersjon().frist
 
             oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(personIdent)
                 .all { it.publishedAt != null } shouldBeEqualTo true
         }
         it("does not publish published huskelapp") {
-            val enHuskelapp = Oppfolgingsoppgave.create(
-                personIdent = personIdent,
-                veilederIdent = veilederIdent,
-                tekst = "En oppfolgingsoppgave",
-                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
-            )
+            val enHuskelapp: Oppfolgingsoppgave =
+                Oppfolgingsoppgave.create(
+                    personIdent = personIdent,
+                    veilederIdent = veilederIdent,
+                    tekst = "En oppfolgingsoppgave",
+                    oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                )
+
             oppfolgingsoppgaveRepository.create(enHuskelapp)
             val publishedHuskelapp = enHuskelapp.publish()
             oppfolgingsoppgaveRepository.updatePublished(publishedHuskelapp)
@@ -132,7 +137,7 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
                 personIdent,
                 veilederIdent,
                 tekst = "En oppfolgingsoppgave",
-                oppfolgingsgrunner = listOf(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE)
+                oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
             )
             oppfolgingsoppgaveRepository.create(enHuskelapp)
 
@@ -147,7 +152,7 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
 
             val newTekst = "En oppfolgingsoppgave"
             val newFrist = LocalDate.now().plusDays(3)
-            oppfolgingsoppgaveService.addVersion(
+            oppfolgingsoppgaveService.editOppfolgingsoppgave(
                 existingOppfolgingsoppgaveUuid = enHuskelapp.uuid,
                 veilederIdent = veilederIdent,
                 newTekst = newTekst,
@@ -168,9 +173,9 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
 
             kafkaHuskelapp.tekst shouldBeEqualTo newTekst
             kafkaHuskelapp.frist shouldBeEqualTo newFrist
-            kafkaHuskelapp.oppfolgingsgrunner shouldBeEqualTo enHuskelapp.oppfolgingsgrunner
+            kafkaHuskelapp.oppfolgingsgrunner shouldBeEqualTo listOf(enHuskelapp.sisteVersjon().oppfolgingsgrunn)
             kafkaHuskelapp.personIdent shouldBeEqualTo enHuskelapp.personIdent.value
-            kafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.createdBy
+            kafkaHuskelapp.veilederIdent shouldBeEqualTo enHuskelapp.sisteVersjon().createdBy
             kafkaHuskelapp.isActive shouldBeEqualTo enHuskelapp.isActive
 
             oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(personIdent)
