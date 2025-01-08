@@ -41,13 +41,19 @@ fun main() {
         )
     )
 
-    val applicationEngineEnvironment = applicationEngineEnvironment {
+    val applicationEngineEnvironment = applicationEnvironment {
         log = logger
         config = HoconApplicationConfig(ConfigFactory.load())
-        connector {
-            port = applicationPort
-        }
-        module {
+    }
+    val server = embeddedServer(
+        factory = Netty,
+        environment = applicationEngineEnvironment,
+        configure = {
+            connector {
+                port = applicationPort
+            }
+        },
+        module = {
             databaseModule(
                 databaseEnvironment = environment.database,
             )
@@ -71,17 +77,12 @@ fun main() {
                 oppfolgingsoppgaveService = oppfolgingsoppgaveService,
                 oppfolgingsoppgaveProducer = oppfolgingsoppgaveProducer,
             )
+
+            monitor.subscribe(ApplicationStarted) {
+                applicationState.ready = true
+                logger.info("Application is ready, running Java VM ${Runtime.version()}")
+            }
         }
-    }
-
-    applicationEngineEnvironment.monitor.subscribe(ApplicationStarted) {
-        applicationState.ready = true
-        logger.info("Application is ready, running Java VM ${Runtime.version()}")
-    }
-
-    val server = embeddedServer(
-        factory = Netty,
-        environment = applicationEngineEnvironment,
     )
 
     Runtime.getRuntime().addShutdownHook(
