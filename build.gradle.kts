@@ -2,7 +2,7 @@ group = "no.nav.syfo"
 version = "0.0.1"
 
 val confluent = "7.5.1"
-val flyway = "9.22.3"
+val flyway = "10.16.0"
 val hikari = "5.1.0"
 val jacksonDataType = "2.18.2"
 val kafka = "3.7.0"
