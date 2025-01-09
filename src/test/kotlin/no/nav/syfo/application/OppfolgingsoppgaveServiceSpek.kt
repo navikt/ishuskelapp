@@ -1,10 +1,12 @@
 package no.nav.syfo.application
 
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
-import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.Oppfolgingsgrunn
+import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.testhelper.ExternalMockEnvironment
 import no.nav.syfo.testhelper.UserConstants
+import no.nav.syfo.testhelper.UserConstants.ARBEIDSTAKER_PERSONIDENT
+import no.nav.syfo.testhelper.UserConstants.VEILEDER_IDENT
 import no.nav.syfo.testhelper.dropData
 import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldBeGreaterThan
@@ -24,42 +26,43 @@ class OppfolgingsoppgaveServiceSpek : Spek({
         val oppfolgingsoppgaveRepository = OppfolgingsoppgaveRepository(database = database)
         val oppfolgingsoppgaveService = OppfolgingsoppgaveService(oppfolgingsoppgaveRepository)
 
-        val oppfolgingsoppgave = Oppfolgingsoppgave.create(
-            personIdent = UserConstants.ARBEIDSTAKER_PERSONIDENT,
-            veilederIdent = UserConstants.VEILEDER_IDENT,
-            tekst = "En god tekst for en oppfolgingsoppgave",
-            oppfolgingsgrunner = listOf(Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT),
-            frist = LocalDate.now().plusDays(1),
-        )
+        val oppfolgingsoppgave: Oppfolgingsoppgave =
+            Oppfolgingsoppgave.create(
+                personIdent = ARBEIDSTAKER_PERSONIDENT,
+                veilederIdent = VEILEDER_IDENT,
+                tekst = "En god tekst for en oppfolgingsoppgave",
+                oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
+                frist = LocalDate.now().plusDays(1),
+            )
 
         afterEachTest {
             database.dropData()
         }
 
-        describe("addVersion") {
+        describe("editOppfolgingsoppgave") {
             it("adds a new version of oppfolgingsoppgave with only edited frist") {
-                val newFrist = oppfolgingsoppgave.frist!!.plusWeeks(1)
                 val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
                 val publishedOppfolgingsoppgave = createdOppfolgingsoppgave.publish()
                 oppfolgingsoppgaveRepository.updatePublished(publishedOppfolgingsoppgave)
 
-                val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
+                val newFrist = oppfolgingsoppgave.sisteVersjon().frist!!.plusWeeks(1)
+                val newOppfolgingsoppgave = oppfolgingsoppgaveService.editOppfolgingsoppgave(
                     existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
                     veilederIdent = UserConstants.OTHER_VEILEDER_IDENT,
-                    newTekst = oppfolgingsoppgave.tekst,
+                    newTekst = oppfolgingsoppgave.sisteVersjon().tekst,
                     newFrist = newFrist,
                 )
 
                 newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
                 newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
-                newOppfolgingsoppgave?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
-                newOppfolgingsoppgave?.tekst shouldBeEqualTo oppfolgingsoppgave.tekst
-                newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
+                newOppfolgingsoppgave?.sisteVersjon()?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
+                newOppfolgingsoppgave?.sisteVersjon()?.tekst shouldBeEqualTo oppfolgingsoppgave.sisteVersjon().tekst
+                newOppfolgingsoppgave?.sisteVersjon()?.oppfolgingsgrunn shouldBeEqualTo oppfolgingsoppgave.sisteVersjon().oppfolgingsgrunn
                 newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
                 newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
 
-                newOppfolgingsoppgave?.frist shouldNotBeEqualTo oppfolgingsoppgave.frist
-                newOppfolgingsoppgave?.frist shouldBeEqualTo newFrist
+                newOppfolgingsoppgave?.sisteVersjon()?.frist shouldNotBeEqualTo oppfolgingsoppgave.sisteVersjon().frist
+                newOppfolgingsoppgave?.sisteVersjon()?.frist shouldBeEqualTo newFrist
 
                 newOppfolgingsoppgave?.publishedAt.shouldBeNull()
                 newOppfolgingsoppgave?.updatedAt!! shouldBeGreaterThan createdOppfolgingsoppgave.updatedAt
@@ -67,35 +70,35 @@ class OppfolgingsoppgaveServiceSpek : Spek({
         }
 
         it("adds a new version of oppfolgingsoppgave with only edited tekst") {
-            val newTekst = oppfolgingsoppgave.tekst + " - enda mer informasjon her"
             val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
 
-            val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
+            val newTekst = oppfolgingsoppgave.sisteVersjon().tekst + " - enda mer informasjon her"
+            val newOppfolgingsoppgave = oppfolgingsoppgaveService.editOppfolgingsoppgave(
                 existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
                 veilederIdent = UserConstants.OTHER_VEILEDER_IDENT,
                 newTekst = newTekst,
-                newFrist = oppfolgingsoppgave.frist,
+                newFrist = oppfolgingsoppgave.sisteVersjon().frist,
             )
 
             newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
             newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
-            newOppfolgingsoppgave?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
-            newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
-            newOppfolgingsoppgave?.frist shouldBeEqualTo oppfolgingsoppgave.frist
+            newOppfolgingsoppgave?.sisteVersjon()?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
+            newOppfolgingsoppgave?.sisteVersjon()?.oppfolgingsgrunn shouldBeEqualTo oppfolgingsoppgave.sisteVersjon().oppfolgingsgrunn
+            newOppfolgingsoppgave?.sisteVersjon()?.frist shouldBeEqualTo oppfolgingsoppgave.sisteVersjon().frist
             newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
             newOppfolgingsoppgave?.publishedAt shouldBeEqualTo oppfolgingsoppgave.publishedAt
             newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
 
-            newOppfolgingsoppgave?.tekst shouldNotBeEqualTo oppfolgingsoppgave.tekst
-            newOppfolgingsoppgave?.tekst shouldBeEqualTo newTekst
+            newOppfolgingsoppgave?.sisteVersjon()?.tekst shouldNotBeEqualTo oppfolgingsoppgave.sisteVersjon().tekst
+            newOppfolgingsoppgave?.sisteVersjon()?.tekst shouldBeEqualTo newTekst
             newOppfolgingsoppgave?.publishedAt.shouldBeNull()
         }
         it("adds a new version of oppfolgingsoppgave with edited frist and tekst") {
-            val newTekst = oppfolgingsoppgave.tekst + " - enda mer informasjon her"
-            val newFrist = oppfolgingsoppgave.frist!!.plusWeeks(1)
             val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
 
-            val newOppfolgingsoppgave = oppfolgingsoppgaveService.addVersion(
+            val newTekst = oppfolgingsoppgave.sisteVersjon().tekst + " - enda mer informasjon her"
+            val newFrist = oppfolgingsoppgave.sisteVersjon().frist!!.plusWeeks(1)
+            val newOppfolgingsoppgave = oppfolgingsoppgaveService.editOppfolgingsoppgave(
                 existingOppfolgingsoppgaveUuid = createdOppfolgingsoppgave.uuid,
                 veilederIdent = UserConstants.OTHER_VEILEDER_IDENT,
                 newTekst = newTekst,
@@ -104,17 +107,17 @@ class OppfolgingsoppgaveServiceSpek : Spek({
 
             newOppfolgingsoppgave?.uuid shouldBeEqualTo oppfolgingsoppgave.uuid
             newOppfolgingsoppgave?.personIdent shouldBeEqualTo oppfolgingsoppgave.personIdent
-            newOppfolgingsoppgave?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
-            newOppfolgingsoppgave?.oppfolgingsgrunner shouldBeEqualTo oppfolgingsoppgave.oppfolgingsgrunner
+            newOppfolgingsoppgave?.sisteVersjon()?.createdBy shouldBeEqualTo UserConstants.OTHER_VEILEDER_IDENT
+            newOppfolgingsoppgave?.sisteVersjon()?.oppfolgingsgrunn shouldBeEqualTo oppfolgingsoppgave.sisteVersjon().oppfolgingsgrunn
             newOppfolgingsoppgave?.isActive shouldBeEqualTo oppfolgingsoppgave.isActive
             newOppfolgingsoppgave?.publishedAt shouldBeEqualTo oppfolgingsoppgave.publishedAt
             newOppfolgingsoppgave?.removedBy shouldBeEqualTo oppfolgingsoppgave.removedBy
 
-            newOppfolgingsoppgave?.frist shouldNotBeEqualTo oppfolgingsoppgave.frist
-            newOppfolgingsoppgave?.frist shouldBeEqualTo newFrist
+            newOppfolgingsoppgave?.sisteVersjon()?.frist shouldNotBeEqualTo oppfolgingsoppgave.sisteVersjon().frist
+            newOppfolgingsoppgave?.sisteVersjon()?.frist shouldBeEqualTo newFrist
 
-            newOppfolgingsoppgave?.tekst shouldNotBeEqualTo oppfolgingsoppgave.tekst
-            newOppfolgingsoppgave?.tekst shouldBeEqualTo newTekst
+            newOppfolgingsoppgave?.sisteVersjon()?.tekst shouldNotBeEqualTo oppfolgingsoppgave.sisteVersjon().tekst
+            newOppfolgingsoppgave?.sisteVersjon()?.tekst shouldBeEqualTo newTekst
 
             newOppfolgingsoppgave?.publishedAt.shouldBeNull()
         }
