@@ -285,7 +285,7 @@ private fun DatabaseInterface.getUnpublishedOppfolgingsoppgaver(): List<POppfolg
 
 private const val querySetPublished = """
     UPDATE huskelapp
-    SET published_at = ?, updated_at = ?
+    SET published_at = ?
     WHERE uuid = ?
 """
 
@@ -298,8 +298,7 @@ private fun DatabaseInterface.updatePublished(oppfolgingsoppgave: Oppfolgingsopp
 private fun Connection.updatePublished(oppfolgingsoppgave: Oppfolgingsoppgave) {
     this.prepareStatement(querySetPublished).use {
         it.setObject(1, oppfolgingsoppgave.publishedAt)
-        it.setObject(2, oppfolgingsoppgave.updatedAt)
-        it.setString(3, oppfolgingsoppgave.uuid.toString())
+        it.setString(2, oppfolgingsoppgave.uuid.toString())
         val updated = it.executeUpdate()
         if (updated != 1) {
             throw SQLException("Expected a single row to be updated, got update count $updated")
