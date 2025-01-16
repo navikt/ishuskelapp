@@ -1,12 +1,13 @@
 package no.nav.syfo.application
 
 import IOppfolgingsoppgaveRepository
-import no.nav.syfo.api.model.OppfolgingsoppgaveRequestDTO
+import no.nav.syfo.domain.Oppfolgingsgrunn
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_CREATED
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_REMOVED
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.domain.Oppfolgingsoppgave
+import no.nav.syfo.infrastructure.COUNT_OPPFOLGINGSOPPGAVE_OPPFOLGINGSGRUNN_EDITED
 import java.time.LocalDate
 import java.util.*
 
@@ -27,15 +28,17 @@ class OppfolgingsoppgaveService(
     fun createOppfolgingsoppgave(
         personIdent: PersonIdent,
         veilederIdent: String,
-        newOppfolgingsoppgave: OppfolgingsoppgaveRequestDTO,
+        oppfolgingsgrunn: Oppfolgingsgrunn,
+        tekst: String?,
+        frist: LocalDate?,
     ): Oppfolgingsoppgave {
         val oppfolgingsoppgave = oppfolgingsoppgaveRepository.create(
             oppfolgingsoppgave = Oppfolgingsoppgave.create(
                 personIdent = personIdent,
                 veilederIdent = veilederIdent,
-                tekst = newOppfolgingsoppgave.tekst,
-                oppfolgingsgrunn = newOppfolgingsoppgave.oppfolgingsgrunn,
-                frist = newOppfolgingsoppgave.frist,
+                tekst = tekst,
+                oppfolgingsgrunn = oppfolgingsgrunn,
+                frist = frist,
             )
         )
         COUNT_HUSKELAPP_CREATED.increment()
@@ -46,20 +49,42 @@ class OppfolgingsoppgaveService(
     fun editOppfolgingsoppgave(
         existingOppfolgingsoppgaveUuid: UUID,
         veilederIdent: String,
+        newOppfolgingsgrunn: Oppfolgingsgrunn?,
         newTekst: String?,
         newFrist: LocalDate?,
     ): Oppfolgingsoppgave? {
         return oppfolgingsoppgaveRepository.getOppfolgingsoppgave(existingOppfolgingsoppgaveUuid)
             ?.let { existingOppfolgingsoppgave ->
-                existingOppfolgingsoppgave
-                    .edit(
+                if (newOppfolgingsgrunn != null && shouldCreateNewOppfolgingsoppgave(newOppfolgingsgrunn, existingOppfolgingsoppgave)) {
+                    removeOppfolgingsoppgave(
+                        oppfolgingsoppgave = existingOppfolgingsoppgave,
+                        veilederIdent = veilederIdent
+                    )
+                    val newOppfolgingsoppgave = createOppfolgingsoppgave(
+                        personIdent = existingOppfolgingsoppgave.personIdent,
                         veilederIdent = veilederIdent,
+                        oppfolgingsgrunn = newOppfolgingsgrunn,
                         tekst = newTekst,
                         frist = newFrist,
                     )
-                    .run { oppfolgingsoppgaveRepository.edit(this) }
+                    COUNT_OPPFOLGINGSOPPGAVE_OPPFOLGINGSGRUNN_EDITED.increment()
+                    newOppfolgingsoppgave
+                } else {
+                    existingOppfolgingsoppgave
+                        .edit(
+                            veilederIdent = veilederIdent,
+                            tekst = newTekst,
+                            frist = newFrist,
+                        )
+                        .run { oppfolgingsoppgaveRepository.edit(this) }
+                }
             }
     }
+
+    private fun shouldCreateNewOppfolgingsoppgave(
+        newOppfolgingsgrunn: Oppfolgingsgrunn,
+        existingOppfolgingsoppgave: Oppfolgingsoppgave
+    ) = existingOppfolgingsoppgave.sisteVersjon().oppfolgingsgrunn != newOppfolgingsgrunn
 
     fun getUnpublishedOppfolgingsoppgaver(): List<Oppfolgingsoppgave> =
         oppfolgingsoppgaveRepository.getUnpublished()

@@ -62,7 +62,9 @@ fun Route.registerOppfolgingsoppgaveApi(
                 val oppfolgingsoppgave = oppfolgingsoppgaveService.createOppfolgingsoppgave(
                     personIdent = personIdent,
                     veilederIdent = veilederIdent,
-                    newOppfolgingsoppgave = requestDTO,
+                    oppfolgingsgrunn = requestDTO.oppfolgingsgrunn,
+                    tekst = requestDTO.tekst,
+                    frist = requestDTO.frist,
                 )
                 call.respond(HttpStatusCode.Created, oppfolgingsoppgave)
             }
@@ -80,6 +82,7 @@ fun Route.registerOppfolgingsoppgaveApi(
                 oppfolgingsoppgaveService.editOppfolgingsoppgave(
                     existingOppfolgingsoppgaveUuid = uuid,
                     veilederIdent = veilederIdent,
+                    newOppfolgingsgrunn = requestDTO.oppfolgingsgrunn,
                     newTekst = requestDTO.tekst,
                     newFrist = requestDTO.frist,
                 )
