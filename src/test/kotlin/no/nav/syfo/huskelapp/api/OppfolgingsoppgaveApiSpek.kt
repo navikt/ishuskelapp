@@ -397,16 +397,18 @@ class OppfolgingsoppgaveApiSpek : Spek({
         describe("Post new version of oppfolgingsoppgave") {
             describe("Happy path") {
                 it("OK with new date and other veileder") {
+                    val oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                     val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                         personIdent = ARBEIDSTAKER_PERSONIDENT,
                         veilederIdent = VEILEDER_IDENT,
                         tekst = "En oppfolgingsoppgave",
-                        oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
+                        oppfolgingsgrunn = oppfolgingsgrunn,
                         frist = LocalDate.now().minusDays(1)
                     )
                     val existingOppfolgingsoppgave =
                         oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
                     val requestDTO = EditedOppfolgingsoppgaveDTO(
+                        oppfolgingsgrunn = oppfolgingsgrunn,
                         tekst = existingOppfolgingsoppgave.sisteVersjon().tekst,
                         frist = LocalDate.now().plusDays(1),
                     )
@@ -438,16 +440,18 @@ class OppfolgingsoppgaveApiSpek : Spek({
                     }
                 }
                 it("OK with new tekst and same veileder") {
+                    val oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
                     val oppfolgingsoppgave = Oppfolgingsoppgave.create(
                         personIdent = ARBEIDSTAKER_PERSONIDENT,
                         veilederIdent = VEILEDER_IDENT,
                         tekst = "En oppfolgingsoppgave",
-                        oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
+                        oppfolgingsgrunn = oppfolgingsgrunn,
                         frist = LocalDate.now().minusDays(1)
                     )
                     val existingOppfolgingsoppgave =
                         oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
                     val requestDTO = EditedOppfolgingsoppgaveDTO(
+                        oppfolgingsgrunn = oppfolgingsgrunn,
                         tekst = "Ny tekst",
                         frist = existingOppfolgingsoppgave.sisteVersjon().frist,
                     )
@@ -475,6 +479,54 @@ class OppfolgingsoppgaveApiSpek : Spek({
                         oppfolgingsoppgaveVersjon.tekst shouldBeEqualTo requestDTO.tekst
                         oppfolgingsoppgaveVersjon.frist shouldBeEqualTo requestDTO.frist
                         oppfolgingsoppgaveVersjon.createdBy shouldBeEqualTo oppfolgingsoppgave.sisteVersjon().createdBy
+                    }
+                }
+                it("OK with new oppfolgingsgrunn") {
+                    val oppfolgingsoppgave = Oppfolgingsoppgave.create(
+                        personIdent = ARBEIDSTAKER_PERSONIDENT,
+                        veilederIdent = VEILEDER_IDENT,
+                        tekst = "En oppfolgingsoppgave",
+                        oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
+                        frist = LocalDate.now().minusDays(1)
+                    )
+                    val existingOppfolgingsoppgave =
+                        oppfolgingsoppgaveRepository.create(oppfolgingsoppgave = oppfolgingsoppgave)
+                    val requestDTO = EditedOppfolgingsoppgaveDTO(
+                        oppfolgingsgrunn = Oppfolgingsgrunn.SAMTALE_MED_BRUKER,
+                        tekst = "Ny tekst",
+                        frist = existingOppfolgingsoppgave.sisteVersjon().frist,
+                    )
+
+                    testApplication {
+                        val client = setupApiAndClient()
+                        client.post("$huskelappApiBasePath/${existingOppfolgingsoppgave.uuid}") {
+                            bearerAuth(validToken)
+                            header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                            contentType(ContentType.Application.Json)
+                            setBody(requestDTO)
+                        }.apply {
+                            status shouldBeEqualTo HttpStatusCode.Created
+                        }
+
+                        val response = client.get(huskelappApiBasePath) {
+                            bearerAuth(validToken)
+                            header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                        }
+
+                        response.status shouldBeEqualTo HttpStatusCode.OK
+                        val responseDTOs = response.body<List<OppfolgingsoppgaveResponseDTO>>()
+                        responseDTOs shouldHaveSize 2
+
+                        val aktivOppfolgingsoppgave = responseDTOs.first()
+                        aktivOppfolgingsoppgave.isActive shouldBe true
+                        aktivOppfolgingsoppgave.versjoner shouldHaveSize 1
+                        aktivOppfolgingsoppgave.versjoner.first().oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.SAMTALE_MED_BRUKER
+
+                        val inaktivOppfolgingsoppgave = responseDTOs.last()
+                        inaktivOppfolgingsoppgave.isActive shouldBe false
+                        inaktivOppfolgingsoppgave.versjoner shouldHaveSize 1
+                        inaktivOppfolgingsoppgave.versjoner.first().oppfolgingsgrunn shouldBeEqualTo Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                        inaktivOppfolgingsoppgave.uuid shouldBeEqualTo existingOppfolgingsoppgave.uuid.toString()
                     }
                 }
             }
@@ -619,6 +671,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 oppfolgingsoppgaveService.editOppfolgingsoppgave(
                     existingOppfolgingsoppgaveUuid = oppfolgingsoppgaver[0].uuid,
                     veilederIdent = VEILEDER_IDENT,
+                    newOppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                     newTekst = "Ny tekst",
                     newFrist = LocalDate.now().plusDays(1),
                 )
@@ -832,6 +885,7 @@ class OppfolgingsoppgaveApiSpek : Spek({
                 oppfolgingsoppgaveService.editOppfolgingsoppgave(
                     existingOppfolgingsoppgaveUuid = oppfolgingsoppgaver[0].uuid,
                     veilederIdent = VEILEDER_IDENT,
+                    newOppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE,
                     newTekst = "Ny tekst",
                     newFrist = LocalDate.now().plusDays(1),
                 )

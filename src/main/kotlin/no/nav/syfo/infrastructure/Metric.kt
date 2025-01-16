@@ -28,3 +28,9 @@ val COUNT_HUSKELAPP_REMOVED: Counter =
     Counter.builder(HUSKELAPP_REMOVED)
         .description("Counts the number of huskelapp removed")
         .register(METRICS_REGISTRY)
+
+const val OPPFOLGINGSOPPGAVE_OPPFOLGINGSGRUNN_EDITED = "${METRICS_NS}_oppfolgingsoppgave_oppfolgingsgrunn_edited_count"
+val COUNT_OPPFOLGINGSOPPGAVE_OPPFOLGINGSGRUNN_EDITED: Counter =
+    Counter.builder(OPPFOLGINGSOPPGAVE_OPPFOLGINGSGRUNN_EDITED)
+        .description("Counts the number of oppfolgingsoppgave oppfolgingsgrunn edited")
+        .register(METRICS_REGISTRY)

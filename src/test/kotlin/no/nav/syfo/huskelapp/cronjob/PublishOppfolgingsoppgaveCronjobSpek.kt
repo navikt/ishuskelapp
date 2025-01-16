@@ -133,11 +133,12 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
             }
         }
         it("publishes edited huskelapp") {
+            val oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
             val enHuskelapp = Oppfolgingsoppgave.create(
                 personIdent,
                 veilederIdent,
                 tekst = "En oppfolgingsoppgave",
-                oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
+                oppfolgingsgrunn = oppfolgingsgrunn
             )
             oppfolgingsoppgaveRepository.create(enHuskelapp)
 
@@ -155,6 +156,7 @@ class PublishOppfolgingsoppgaveCronjobSpek : Spek({
             oppfolgingsoppgaveService.editOppfolgingsoppgave(
                 existingOppfolgingsoppgaveUuid = enHuskelapp.uuid,
                 veilederIdent = veilederIdent,
+                newOppfolgingsgrunn = oppfolgingsgrunn,
                 newTekst = newTekst,
                 newFrist = newFrist,
             )
