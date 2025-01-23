@@ -219,15 +219,8 @@ private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
            hv.created_at as versjon_created_at, hv.created_by as versjon_created_by, hv.tekst as versjon_tekst, 
            hv.oppfolgingsgrunner as versjon_oppfolgingsgrunner, hv.frist as versjon_frist
     FROM HUSKELAPP h
-    INNER JOIN (
-        SELECT hv1.*
-        FROM HUSKELAPP_VERSJON hv1
-        INNER JOIN (
-            SELECT huskelapp_id, MAX(created_at) AS max_created_at
-            FROM HUSKELAPP_VERSJON
-            GROUP BY huskelapp_id
-        ) hv2 ON hv1.huskelapp_id = hv2.huskelapp_id AND hv1.created_at = hv2.max_created_at
-    ) hv ON h.id = hv.huskelapp_id
+    INNER JOIN HUSKELAPP_VERSJON_LATEST latest ON (h.id = latest.huskelapp_id)
+    INNER JOIN HUSKELAPP_VERSJON hv ON (latest.latest_versjon_id = hv.id)
     WHERE h.personident = ANY (string_to_array(?, ',')) AND h.is_active = true
 """
 
