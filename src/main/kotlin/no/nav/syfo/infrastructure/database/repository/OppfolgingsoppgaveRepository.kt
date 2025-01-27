@@ -300,17 +300,22 @@ private const val queryGetOppfolgingsoppgaveVersjonLatest = """
 
 private fun DatabaseInterface.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon> {
     return connection.use { connection ->
-        val latestVersion = connection.prepareStatement(queryGetOppfolgingsoppgaveVersjonLatest).use {
-            it.setInt(1, oppfolgingsoppgaveId)
-            it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
-        }
-        val oldVersions = connection.prepareStatement(queryGetOppfolgingsoppgaveVersjon).use {
-            it.setInt(1, oppfolgingsoppgaveId)
-            it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
-        }
+        val latestVersion = connection.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId, latest = true)
+        val oldVersions = connection.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId, latest = false)
         latestVersion + oldVersions
     }
 }
+
+internal fun Connection.getOppfolgingsoppgaveVersjoner(
+    oppfolgingsoppgaveId: Int,
+    latest: Boolean,
+): List<POppfolgingsoppgaveVersjon> =
+    this.prepareStatement(
+        if (latest) queryGetOppfolgingsoppgaveVersjonLatest else queryGetOppfolgingsoppgaveVersjon
+    ).use {
+        it.setInt(1, oppfolgingsoppgaveId)
+        it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
+    }
 
 private const val queryGetUnpublishedOppfolgingsoppgaver = """
     SELECT * 
