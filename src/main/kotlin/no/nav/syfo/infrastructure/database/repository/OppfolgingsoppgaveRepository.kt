@@ -51,7 +51,7 @@ class OppfolgingsoppgaveRepository(
             val createdOppfolgingsoppgave = connection.createOppfolgingsoppgave(oppfolgingsoppgave)
             val createdVersion = connection.createOppfolgingsoppgaveVersjon(
                 oppfolgingsoppgaveId = createdOppfolgingsoppgave.id,
-                newOppfolgingsoppgave = oppfolgingsoppgave
+                newOppfolgingsoppgave = oppfolgingsoppgave,
             )
             connection.commit()
             return createdOppfolgingsoppgave.toOppfolgingsoppgave(listOf(createdVersion))
@@ -72,6 +72,8 @@ class OppfolgingsoppgaveRepository(
         oppfolgingsoppgave: Oppfolgingsoppgave
     ): UUID {
         database.connection.use { connection ->
+            connection.moveOppfolgingsoppgaveVersjon(oppfolgingsoppgaveId)
+            connection.removeOppfolgingsoppgaveVersjonLatest(oppfolgingsoppgaveId)
             connection.createOppfolgingsoppgaveVersjon(oppfolgingsoppgaveId, oppfolgingsoppgave)
             connection.updateOppfolgingsoppgave(oppfolgingsoppgave)
             connection.updatePublished(oppfolgingsoppgave)
@@ -86,10 +88,10 @@ class OppfolgingsoppgaveRepository(
 
     private fun Connection.createOppfolgingsoppgaveVersjon(
         oppfolgingsoppgaveId: Int,
-        newOppfolgingsoppgave: Oppfolgingsoppgave
+        newOppfolgingsoppgave: Oppfolgingsoppgave,
     ): POppfolgingsoppgaveVersjon {
         val newVersjon = newOppfolgingsoppgave.versjoner.first()
-        val idList = this.prepareStatement(CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY).use {
+        val idList = this.prepareStatement(CREATE_OPPFOLGINGSOPPGAVE_VERSJON_LATEST_QUERY).use {
             it.setString(1, UUID.randomUUID().toString())
             it.setInt(2, oppfolgingsoppgaveId)
             it.setObject(3, newVersjon.createdAt)
@@ -107,6 +109,26 @@ class OppfolgingsoppgaveRepository(
         return idList.first()
     }
 
+    private fun Connection.moveOppfolgingsoppgaveVersjon(oppfolgingsoppgaveId: Int) {
+        val inserted = this.prepareStatement(MOVE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY).use {
+            it.setInt(1, oppfolgingsoppgaveId)
+            it.executeUpdate()
+        }
+        if (inserted != 1) {
+            throw NoElementInsertedException("Moving HUSKELAPP_VERSJON failed, no rows affected.")
+        }
+    }
+
+    private fun Connection.removeOppfolgingsoppgaveVersjonLatest(oppfolgingsoppgaveId: Int) {
+        val updated = this.prepareStatement(REMOVE_OPPFOLGINGSOPPGAVE_VERSJON_LATEST_QUERY).use {
+            it.setInt(1, oppfolgingsoppgaveId)
+            it.executeUpdate()
+        }
+        if (updated != 1) {
+            throw NoElementInsertedException("Removing HUSKELAPP_VERSJON_LATEST failed, no rows affected.")
+        }
+    }
+
     override fun getUnpublished(): List<Oppfolgingsoppgave> =
         database.getUnpublishedOppfolgingsoppgaver().map { it.toOppfolgingsoppgave() }
 
@@ -117,9 +139,9 @@ class OppfolgingsoppgaveRepository(
         database.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave = oppfolgingsoppgave)
 
     companion object {
-        private const val CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY =
+        private const val CREATE_OPPFOLGINGSOPPGAVE_VERSJON_LATEST_QUERY =
             """
-            INSERT INTO HUSKELAPP_VERSJON (
+            INSERT INTO HUSKELAPP_VERSJON_LATEST (
                 id,
                 uuid,
                 huskelapp_id,
@@ -130,6 +152,24 @@ class OppfolgingsoppgaveRepository(
                 frist
             ) values (DEFAULT, ?, ?, ?, ?, ?, ?, ?)
             RETURNING *
+            """
+
+        private const val MOVE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY =
+            """
+            INSERT INTO HUSKELAPP_VERSJON (
+                uuid,
+                huskelapp_id,
+                created_at,
+                created_by,
+                tekst,
+                oppfolgingsgrunner,
+                frist
+            ) SELECT uuid,huskelapp_id,created_at,created_by,tekst,oppfolgingsgrunner,frist FROM HUSKELAPP_VERSJON_LATEST WHERE huskelapp_id = ?
+            """
+
+        private const val REMOVE_OPPFOLGINGSOPPGAVE_VERSJON_LATEST_QUERY =
+            """
+            DELETE FROM HUSKELAPP_VERSJON_LATEST WHERE huskelapp_id = ?
             """
     }
 }
@@ -219,8 +259,7 @@ private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
            hv.created_at as versjon_created_at, hv.created_by as versjon_created_by, hv.tekst as versjon_tekst, 
            hv.oppfolgingsgrunner as versjon_oppfolgingsgrunner, hv.frist as versjon_frist
     FROM HUSKELAPP h
-    INNER JOIN HUSKELAPP_VERSJON_LATEST latest ON (h.id = latest.huskelapp_id)
-    INNER JOIN HUSKELAPP_VERSJON hv ON (latest.latest_versjon_id = hv.id)
+    INNER JOIN HUSKELAPP_VERSJON_LATEST hv ON (h.id = hv.huskelapp_id)
     WHERE h.personident = ANY (string_to_array(?, ',')) AND h.is_active = true
 """
 
@@ -252,12 +291,24 @@ private const val queryGetOppfolgingsoppgaveVersjon = """
     ORDER BY created_at DESC
 """
 
+private const val queryGetOppfolgingsoppgaveVersjonLatest = """
+    SELECT *
+    FROM HUSKELAPP_VERSJON_LATEST
+    WHERE huskelapp_id = ?
+    ORDER BY created_at DESC
+"""
+
 private fun DatabaseInterface.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon> {
     return connection.use { connection ->
-        connection.prepareStatement(queryGetOppfolgingsoppgaveVersjon).use {
+        val latestVersion = connection.prepareStatement(queryGetOppfolgingsoppgaveVersjonLatest).use {
             it.setInt(1, oppfolgingsoppgaveId)
             it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
         }
+        val oldVersions = connection.prepareStatement(queryGetOppfolgingsoppgaveVersjon).use {
+            it.setInt(1, oppfolgingsoppgaveId)
+            it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
+        }
+        latestVersion + oldVersions
     }
 }
 
