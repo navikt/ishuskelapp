@@ -33,6 +33,9 @@ fun DatabaseInterface.dropData() {
             DELETE FROM HUSKELAPP_VERSJON
         """.trimIndent(),
         """
+            DELETE FROM HUSKELAPP_VERSJON_LATEST
+        """.trimIndent(),
+        """
             DELETE FROM HUSKELAPP
         """.trimIndent(),
     )
