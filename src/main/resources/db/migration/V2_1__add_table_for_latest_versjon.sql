@@ -16,6 +16,8 @@ INSERT INTO HUSKELAPP_VERSJON_LATEST (uuid, huskelapp_id, created_at, created_by
 SELECT uuid, huskelapp_id, created_at, created_by, tekst, oppfolgingsgrunner, frist from HUSKELAPP_VERSJON
 WHERE id IN (SELECT latest_versjon_id FROM HUSKELAPP_VERSJON_LATEST_OLD);
 
+CREATE INDEX IX_HUSKELAPP_VERSJON_LATEST_HUSKELAPP_ID on HUSKELAPP_VERSJON_LATEST (huskelapp_id);
+
 DROP VIEW HUSKELAPP_VERSJON_LATEST_OLD;
 
 DELETE FROM HUSKELAPP_VERSJON
