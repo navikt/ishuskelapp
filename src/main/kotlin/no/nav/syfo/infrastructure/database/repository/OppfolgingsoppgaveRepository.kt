@@ -263,14 +263,14 @@ private fun DatabaseInterface.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveI
     }
 }
 
-private const val updateOppfolgingsoppgaveVersjonNotLatest = """
+private const val updateOppfolgingsoppgaveVersjonSetNotLatest = """
     UPDATE HUSKELAPP_VERSJON
     SET latest=false
     WHERE huskelapp_id = ? AND latest
 """
 
 private fun Connection.updateOppfolgingsoppgaveVersjonSetNotLatest(oppfolgingsoppgaveId: Int) {
-    this.prepareStatement(updateOppfolgingsoppgaveVersjonNotLatest).use {
+    this.prepareStatement(updateOppfolgingsoppgaveVersjonSetNotLatest).use {
         it.setInt(1, oppfolgingsoppgaveId)
         it.executeUpdate()
     }
