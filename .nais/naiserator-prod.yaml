@@ -14,8 +14,8 @@ spec:
     cpuThresholdPercentage: 70
   startup:
     path: /internal/is_ready
-    periodSeconds: 5
-    timeout: 5
+    periodSeconds: 10
+    timeout: 240
     failureThreshold: 30
   liveness:
     path: /internal/is_alive
