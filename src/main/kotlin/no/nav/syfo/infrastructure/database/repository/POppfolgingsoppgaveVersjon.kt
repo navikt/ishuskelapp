@@ -14,6 +14,7 @@ data class POppfolgingsoppgaveVersjon(
     val tekst: String?,
     val oppfolgingsgrunner: List<String>,
     val frist: LocalDate?,
+    val latest: Boolean,
 ) {
     fun toOppfolgingsoppgaveVersjon(): OppfolgingsoppgaveVersjon {
         return OppfolgingsoppgaveVersjon.createFromDatabase(
