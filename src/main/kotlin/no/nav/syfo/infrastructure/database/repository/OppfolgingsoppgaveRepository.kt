@@ -220,7 +220,7 @@ private fun DatabaseInterface.getPOppfolgingsoppgave(uuid: UUID): POppfolgingsop
 private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
     SELECT h.*, hv.id as versjon_id, hv.uuid as versjon_uuid, hv.huskelapp_id as versjon_huskelapp_id, 
            hv.created_at as versjon_created_at, hv.created_by as versjon_created_by, hv.tekst as versjon_tekst, 
-           hv.oppfolgingsgrunner as versjon_oppfolgingsgrunner, hv.frist as versjon_frist
+           hv.oppfolgingsgrunner as versjon_oppfolgingsgrunner, hv.frist as versjon_frist, hv.latest as versjon_latest
     FROM HUSKELAPP h
     INNER JOIN HUSKELAPP_VERSJON hv ON (h.id = hv.huskelapp_id AND hv.latest)
     WHERE h.personident = ANY (string_to_array(?, ',')) AND h.is_active = true
@@ -255,12 +255,19 @@ private const val queryGetOppfolgingsoppgaveVersjon = """
 """
 
 private fun DatabaseInterface.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveId: Int): List<POppfolgingsoppgaveVersjon> {
-    return connection.use { connection ->
+    val versjoner = connection.use { connection ->
         connection.prepareStatement(queryGetOppfolgingsoppgaveVersjon).use {
             it.setInt(1, oppfolgingsoppgaveId)
             it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
         }
     }
+    if (!versjoner.first().latest) {
+        throw IllegalStateException("Latest version of oppfolgingsoppgave is not marked as latest: $oppfolgingsoppgaveId")
+    }
+    if (versjoner.filter { it.latest }.size > 1) {
+        throw IllegalStateException("Multiple versions of oppfolgingsoppgave is marked as latest: $oppfolgingsoppgaveId")
+    }
+    return versjoner
 }
 
 private const val updateOppfolgingsoppgaveVersjonSetNotLatest = """
@@ -360,4 +367,5 @@ private fun ResultSet.toPOppfolgingsoppgaveVersjon(
     oppfolgingsgrunner = getString("${col_name_prefix}oppfolgingsgrunner").split(",").map(String::trim)
         .filter(String::isNotEmpty),
     frist = getDate("${col_name_prefix}frist")?.toLocalDate(),
+    latest = getBoolean("${col_name_prefix}latest"),
 )

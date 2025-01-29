@@ -32,8 +32,9 @@ class OppfolgingsoppgaveProducer(
                     key,
                     oppfolgingsoppgaveRecord,
                 )
-            ).get()
-            log.info("OppfolgingsoppgaveRecord with uuid ${oppfolgingsoppgaveRecord.uuid} sent to huskelapp topic")
+            ).also {
+                it.get()
+            }
         } catch (e: Exception) {
             log.error(
                 "Exception was thrown when attempting to send OppfolgingsoppgaveRecord with key {}: ${e.message}",

@@ -14,11 +14,13 @@ class PublishOppfolgingsoppgaveCronjob(
 
     override suspend fun run() {
         val result = runJob()
-        log.info(
-            "Completed publishing oppfolgingsoppgave processing job with result: {}, {}",
-            StructuredArguments.keyValue("failed", result.failed),
-            StructuredArguments.keyValue("updated", result.updated),
-        )
+        if (result.failed + result.updated > 0) {
+            log.info(
+                "Completed publishing oppfolgingsoppgave processing job with result: {}, {}",
+                StructuredArguments.keyValue("failed", result.failed),
+                StructuredArguments.keyValue("updated", result.updated),
+            )
+        }
     }
 
     fun runJob(): CronjobResult {
