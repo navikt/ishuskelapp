@@ -72,6 +72,7 @@ class OppfolgingsoppgaveRepository(
         oppfolgingsoppgave: Oppfolgingsoppgave
     ): UUID {
         database.connection.use { connection ->
+            connection.updateOppfolgingsoppgaveVersjonSetNotLatest(oppfolgingsoppgaveId)
             connection.createOppfolgingsoppgaveVersjon(oppfolgingsoppgaveId, oppfolgingsoppgave)
             connection.updateOppfolgingsoppgave(oppfolgingsoppgave)
             connection.updatePublished(oppfolgingsoppgave)
@@ -97,6 +98,7 @@ class OppfolgingsoppgaveRepository(
             it.setStringOrNull(5, newVersjon.tekst)
             it.setStringOrNull(6, newVersjon.oppfolgingsgrunn.toString())
             it.setDateOrNull(7, newVersjon.frist?.let { date -> Date.valueOf(date) })
+            it.setBoolean(8, true)
             it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
         }
 
@@ -127,8 +129,9 @@ class OppfolgingsoppgaveRepository(
                 created_by,
                 tekst,
                 oppfolgingsgrunner,
-                frist
-            ) values (DEFAULT, ?, ?, ?, ?, ?, ?, ?)
+                frist,
+                latest
+            ) values (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING *
             """
     }
@@ -219,8 +222,7 @@ private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
            hv.created_at as versjon_created_at, hv.created_by as versjon_created_by, hv.tekst as versjon_tekst, 
            hv.oppfolgingsgrunner as versjon_oppfolgingsgrunner, hv.frist as versjon_frist
     FROM HUSKELAPP h
-    INNER JOIN HUSKELAPP_VERSJON_LATEST latest ON (h.id = latest.huskelapp_id)
-    INNER JOIN HUSKELAPP_VERSJON hv ON (latest.latest_versjon_id = hv.id)
+    INNER JOIN HUSKELAPP_VERSJON hv ON (h.id = hv.huskelapp_id AND hv.latest)
     WHERE h.personident = ANY (string_to_array(?, ',')) AND h.is_active = true
 """
 
@@ -258,6 +260,19 @@ private fun DatabaseInterface.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveI
             it.setInt(1, oppfolgingsoppgaveId)
             it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
         }
+    }
+}
+
+private const val updateOppfolgingsoppgaveVersjonSetNotLatest = """
+    UPDATE HUSKELAPP_VERSJON
+    SET latest=false
+    WHERE huskelapp_id = ? AND latest
+"""
+
+private fun Connection.updateOppfolgingsoppgaveVersjonSetNotLatest(oppfolgingsoppgaveId: Int) {
+    this.prepareStatement(updateOppfolgingsoppgaveVersjonSetNotLatest).use {
+        it.setInt(1, oppfolgingsoppgaveId)
+        it.executeUpdate()
     }
 }
 

@@ -65,6 +65,48 @@ class OppfolgingsoppgaveRepositorySpek : Spek({
                 oppfolgingsoppgaveVersions.size shouldBe 2
                 oppfolgingsoppgaveVersions[1].frist shouldBeEqualTo oppfolgingsoppgave.sisteVersjon().frist
                 oppfolgingsoppgaveVersions[0].frist shouldBeEqualTo newFrist
+                oppfolgingsoppgaveVersions[0].tekst shouldBeEqualTo oppfolgingsoppgaveVersions[1].tekst
+            }
+            it("creates a new version of oppfolgingsoppgave with new tekst") {
+                val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
+                val newText = "Changed"
+                val existingText = createdOppfolgingsoppgave.sisteVersjon().tekst
+                val existingFrist = createdOppfolgingsoppgave.sisteVersjon().frist
+                val editedOppfolgingsoppgave = createdOppfolgingsoppgave.edit(
+                    tekst = newText,
+                    frist = existingFrist,
+                    veilederIdent = VEILEDER_IDENT,
+                )
+
+                val oppfolgingsoppgaveVersions = oppfolgingsoppgaveRepository.edit(editedOppfolgingsoppgave)?.versjoner!!
+
+                oppfolgingsoppgaveVersions.size shouldBe 2
+                oppfolgingsoppgaveVersions[0].frist shouldBeEqualTo existingFrist
+                oppfolgingsoppgaveVersions[0].tekst shouldBeEqualTo newText
+                oppfolgingsoppgaveVersions[1].frist shouldBeEqualTo existingFrist
+                oppfolgingsoppgaveVersions[1].tekst shouldBeEqualTo existingText
+            }
+            it("creates several versions of oppfolgingsoppgave") {
+                val createdOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
+                val existingFrist = createdOppfolgingsoppgave.sisteVersjon().frist
+
+                val updated = createdOppfolgingsoppgave.edit(
+                    tekst = "changed",
+                    frist = existingFrist,
+                    veilederIdent = VEILEDER_IDENT,
+                )
+                oppfolgingsoppgaveRepository.edit(updated)
+
+                val updatedAgain = updated.edit(
+                    tekst = "changedAgain",
+                    frist = existingFrist,
+                    veilederIdent = VEILEDER_IDENT,
+                )
+
+                val oppfolgingsoppgaveVersions = oppfolgingsoppgaveRepository.edit(updatedAgain)?.versjoner!!
+
+                oppfolgingsoppgaveVersions.size shouldBe 3
+                oppfolgingsoppgaveVersions[0].tekst shouldBeEqualTo "changedAgain"
             }
         }
     }
