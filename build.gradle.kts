@@ -1,27 +1,25 @@
 group = "no.nav.syfo"
 version = "0.0.1"
 
-val confluent = "7.5.1"
-val flyway = "9.22.3"
-val hikari = "5.1.0"
+val flyway = "11.3.0"
+val hikari = "6.2.1"
 val jacksonDataType = "2.18.2"
-val kafka = "3.7.0"
+val kafka = "3.9.0"
 val kluent = "1.73"
-val ktor = "3.0.2"
-val logback = "1.5.12"
-val logstashEncoder = "7.4"
-val micrometerRegistry = "1.12.8"
-val mockk = "1.13.13"
-val nimbusJoseJwt = "9.47"
-val postgres = "42.7.4"
+val ktor = "3.0.3"
+val logback = "1.5.16"
+val logstashEncoder = "8.0"
+val micrometerRegistry = "1.12.13"
+val mockk = "1.13.16"
+val nimbusJoseJwt = "10.0.1"
+val postgres = "42.7.5"
 val postgresEmbedded = "2.1.0"
-val scala = "2.13.12"
 val spek = "2.0.19"
 
 plugins {
-    kotlin("jvm") version "2.1.0"
-    id("com.gradleup.shadow") version "8.3.5"
-    id("org.jlleitschuh.gradle.ktlint") version "11.6.0"
+    kotlin("jvm") version "2.1.10"
+    id("com.gradleup.shadow") version "8.3.6"
+    id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
 }
 
 repositories {
@@ -53,7 +51,7 @@ dependencies {
     // Database
     implementation("org.postgresql:postgresql:$postgres")
     implementation("com.zaxxer:HikariCP:$hikari")
-    implementation("org.flywaydb:flyway-core:$flyway")
+    implementation("org.flywaydb:flyway-database-postgresql:$flyway")
     testImplementation("io.zonky.test:embedded-postgres:$postgresEmbedded")
 
     // Kafka
@@ -65,7 +63,7 @@ dependencies {
         implementation("org.apache.zookeeper:zookeeper") {
             because("org.apache.kafka:kafka_2.13:$kafka -> https://www.cve.org/CVERecord?id=CVE-2023-44981")
             version {
-                require("3.8.3")
+                require("3.9.3")
             }
         }
     }
@@ -99,6 +97,7 @@ tasks {
     }
 
     shadowJar {
+        mergeServiceFiles()
         archiveBaseName.set("app")
         archiveClassifier.set("")
         archiveVersion.set("")
