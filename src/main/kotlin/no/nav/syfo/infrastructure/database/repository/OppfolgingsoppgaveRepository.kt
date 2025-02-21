@@ -118,6 +118,22 @@ class OppfolgingsoppgaveRepository(
     override fun updateRemovedOppfolgingsoppgave(oppfolgingsoppgave: Oppfolgingsoppgave) =
         database.updateRemovedOppfolgingsoppgave(oppfolgingsoppgave = oppfolgingsoppgave)
 
+    override fun updatePersonident(nyPersonident: PersonIdent, oppfolgingsoppgaver: List<Oppfolgingsoppgave>) {
+        database.connection.use { connection ->
+            connection.prepareStatement(UPDATE_OPPFOLGINGSOPPGAVE_PERSONIDENT).use {
+                oppfolgingsoppgaver.forEach { oppfolgingsoppgave ->
+                    it.setString(1, nyPersonident.value)
+                    it.setString(2, oppfolgingsoppgave.uuid.toString())
+                    val updated = it.executeUpdate()
+                    if (updated != 1) {
+                        throw SQLException("Expected a single row to be updated, got update count $updated")
+                    }
+                }
+            }
+            connection.commit()
+        }
+    }
+
     companion object {
         private const val CREATE_OPPFOLGINGSOPPGAVE_VERSJON_QUERY =
             """
@@ -133,6 +149,13 @@ class OppfolgingsoppgaveRepository(
                 latest
             ) values (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING *
+            """
+
+        private const val UPDATE_OPPFOLGINGSOPPGAVE_PERSONIDENT =
+            """
+            UPDATE huskelapp
+            SET personident = ?
+            WHERE uuid = ?
             """
     }
 }

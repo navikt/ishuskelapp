@@ -17,4 +17,5 @@ interface IOppfolgingsoppgaveRepository {
     fun getUnpublished(): List<Oppfolgingsoppgave>
     fun updatePublished(oppfolgingsoppgave: Oppfolgingsoppgave)
     fun updateRemovedOppfolgingsoppgave(oppfolgingsoppgave: Oppfolgingsoppgave)
+    fun updatePersonident(nyPersonident: PersonIdent, oppfolgingsoppgaver: List<Oppfolgingsoppgave>)
 }
