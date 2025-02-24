@@ -1,6 +1,7 @@
 group = "no.nav.syfo"
 version = "0.0.1"
 
+val confluentVersion = "7.8.0"
 val flyway = "11.3.0"
 val hikari = "6.2.1"
 val jacksonDataType = "2.18.2"
@@ -70,6 +71,22 @@ dependencies {
 
     // (De-)serialization
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonDataType")
+
+    implementation("io.confluent:kafka-avro-serializer:$confluentVersion", excludeLog4j)
+    constraints {
+        implementation("org.apache.avro:avro") {
+            because("io.confluent:kafka-avro-serializer:$confluentVersion -> https://www.cve.org/CVERecord?id=CVE-2023-39410")
+            version {
+                require("1.12.0")
+            }
+        }
+        implementation("org.apache.commons:commons-compress") {
+            because("org.apache.commons:commons-compress:1.22 -> https://www.cve.org/CVERecord?id=CVE-2012-2098")
+            version {
+                require("1.27.1")
+            }
+        }
+    }
 
     // Tests
     testImplementation("io.ktor:ktor-server-test-host:$ktor")
