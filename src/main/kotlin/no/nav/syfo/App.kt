@@ -6,15 +6,18 @@ import io.ktor.server.config.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import no.nav.syfo.api.apiModule
-import no.nav.syfo.infrastructure.cronjob.cronjobModule
-import no.nav.syfo.infrastructure.database.applicationDatabase
-import no.nav.syfo.infrastructure.database.databaseModule
+import no.nav.syfo.application.OppfolgingsoppgaveService
 import no.nav.syfo.infrastructure.client.azuread.AzureAdClient
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.infrastructure.client.wellknown.getWellKnown
-import no.nav.syfo.application.OppfolgingsoppgaveService
+import no.nav.syfo.infrastructure.cronjob.cronjobModule
+import no.nav.syfo.infrastructure.database.applicationDatabase
+import no.nav.syfo.infrastructure.database.databaseModule
 import no.nav.syfo.infrastructure.database.repository.OppfolgingsoppgaveRepository
 import no.nav.syfo.infrastructure.kafka.OppfolgingsoppgaveProducer
+import no.nav.syfo.infrastructure.kafka.identhendelse.IdenthendelseConsumer
+import no.nav.syfo.infrastructure.kafka.identhendelse.IdenthendelseService
+import no.nav.syfo.infrastructure.kafka.identhendelse.launchIdenthendelseConsumer
 import no.nav.syfo.infrastructure.kafka.oppfolgingsoppgaveKafkaProducer
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
@@ -76,6 +79,15 @@ fun main() {
                 environment = environment,
                 oppfolgingsoppgaveService = oppfolgingsoppgaveService,
                 oppfolgingsoppgaveProducer = oppfolgingsoppgaveProducer,
+            )
+            launchIdenthendelseConsumer(
+                applicationState = applicationState,
+                kafkaEnvironment = environment.kafka,
+                identhendelseConsumer = IdenthendelseConsumer(
+                    identhendelseService = IdenthendelseService(
+                        oppfolgingsoppgaveRepository = oppfolgingsoppgaveRepository,
+                    )
+                ),
             )
 
             monitor.subscribe(ApplicationStarted) {
