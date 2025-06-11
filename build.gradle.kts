@@ -13,7 +13,7 @@ val logstashEncoder = "8.1"
 val micrometerRegistry = "1.12.13"
 val mockk = "1.13.17"
 val nimbusJoseJwt = "10.1"
-val postgres = "42.7.5"
+val postgres = "42.7.7"
 val postgresEmbedded = "2.1.0"
 val spek = "2.0.19"
 
