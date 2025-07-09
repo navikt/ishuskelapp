@@ -15,6 +15,7 @@ val mockk = "1.13.17"
 val nimbusJoseJwt = "10.1"
 val postgres = "42.7.5"
 val postgresEmbedded = "2.1.0"
+val postgresRuntimeVersion = "17.5.0"
 val spek = "2.0.19"
 
 plugins {
@@ -54,6 +55,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:$hikari")
     implementation("org.flywaydb:flyway-database-postgresql:$flyway")
     testImplementation("io.zonky.test:embedded-postgres:$postgresEmbedded")
+    testImplementation(platform("io.zonky.test.postgres:embedded-postgres-binaries-bom:$postgresRuntimeVersion"))
 
     // Kafka
     val excludeLog4j = fun ExternalModuleDependency.() {
