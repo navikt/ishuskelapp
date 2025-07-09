@@ -1,0 +1,1 @@
+CREATE INDEX IX_HUSKELAPP_UNPUBLISHED on HUSKELAPP (personident, created_at) WHERE published_at IS NULL;
