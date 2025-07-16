@@ -8,17 +8,16 @@ import io.ktor.server.testing.*
 import no.nav.syfo.ApplicationState
 import no.nav.syfo.api.endpoints.registerPodApi
 import no.nav.syfo.infrastructure.database.DatabaseInterface
-import no.nav.syfo.testhelper.TestDatabase
-import no.nav.syfo.testhelper.TestDatabaseNotResponding
-import org.amshove.kluent.shouldBeEqualTo
-import org.amshove.kluent.shouldNotBeEqualTo
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import no.nav.syfo.testhelper.ExternalMockEnvironment
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 
-object PodApiSpek : Spek({
+class PodApiTest {
 
-    val database = TestDatabase()
-    val databaseNotResponding = TestDatabaseNotResponding()
+    private val database = ExternalMockEnvironment.instance.database
 
     fun ApplicationTestBuilder.setupPodApi(database: DatabaseInterface, applicationState: ApplicationState) {
         application {
@@ -31,8 +30,16 @@ object PodApiSpek : Spek({
         }
     }
 
-    describe("Successful liveness and readiness checks") {
-        it("Returns ok on is_alive") {
+    @AfterEach
+    fun tearDown() {
+        database.resetDatabase()
+    }
+
+    @Nested
+    @DisplayName("Successful liveness and readiness checks")
+    inner class SuccessfulChecks {
+        @Test
+        fun `Returns ok on is_alive`() {
             testApplication {
                 setupPodApi(
                     database = database,
@@ -40,11 +47,13 @@ object PodApiSpek : Spek({
                 )
 
                 val response = client.get("/internal/is_alive")
-                response.status.isSuccess() shouldBeEqualTo true
-                response.bodyAsText() shouldNotBeEqualTo null
+                assertTrue(response.status.isSuccess())
+                assertNotNull(response.bodyAsText())
             }
         }
-        it("Returns ok on is_alive") {
+
+        @Test
+        fun `Returns ok on is_ready`() {
             testApplication {
                 setupPodApi(
                     database = database,
@@ -52,14 +61,17 @@ object PodApiSpek : Spek({
                 )
 
                 val response = client.get("/internal/is_ready")
-                response.status.isSuccess() shouldBeEqualTo true
-                response.bodyAsText() shouldNotBeEqualTo null
+                assertTrue(response.status.isSuccess())
+                assertNotNull(response.bodyAsText())
             }
         }
     }
 
-    describe("Unsuccessful liveness and readiness checks") {
-        it("Returns internal server error when liveness check fails") {
+    @Nested
+    @DisplayName("Unsuccessful liveness and readiness checks")
+    inner class UnsuccessfulChecks {
+        @Test
+        fun `Returns internal server error when liveness check fails`() {
             testApplication {
                 setupPodApi(
                     database = database,
@@ -67,12 +79,13 @@ object PodApiSpek : Spek({
                 )
 
                 val response = client.get("/internal/is_alive")
-                response.status shouldBeEqualTo HttpStatusCode.InternalServerError
-                response.bodyAsText() shouldNotBeEqualTo null
+                assertEquals(HttpStatusCode.InternalServerError, response.status)
+                assertNotNull(response.bodyAsText())
             }
         }
 
-        it("Returns internal server error when readiness check fails") {
+        @Test
+        fun `Returns internal server error when readiness check fails`() {
             testApplication {
                 setupPodApi(
                     database = database,
@@ -80,36 +93,45 @@ object PodApiSpek : Spek({
                 )
 
                 val response = client.get("/internal/is_ready")
-                response.status shouldBeEqualTo HttpStatusCode.InternalServerError
-                response.bodyAsText() shouldNotBeEqualTo null
+                assertEquals(HttpStatusCode.InternalServerError, response.status)
+                assertNotNull(response.bodyAsText())
             }
         }
     }
 
-    describe("Successful liveness and unsuccessful readiness checks when database not working") {
-        it("Returns ok on is_alive") {
+    @Nested
+    @DisplayName("Successful liveness and unsuccessful readiness checks when database not working")
+    inner class DatabaseNotWorkingChecks {
+        @Test
+        fun `Returns ok on is_alive`() {
             testApplication {
                 setupPodApi(
-                    database = databaseNotResponding,
+                    database = database,
                     applicationState = ApplicationState(alive = true, ready = true)
                 )
+
+                database.simulateDatabaseError()
 
                 val response = client.get("/internal/is_alive")
-                response.status.isSuccess() shouldBeEqualTo true
-                response.bodyAsText() shouldNotBeEqualTo null
+                assertTrue(response.status.isSuccess())
+                assertNotNull(response.bodyAsText())
             }
         }
-        it("Returns internal server error when readiness check fails") {
+
+        @Test
+        fun `Returns internal server error when readiness check fails`() {
             testApplication {
                 setupPodApi(
-                    database = databaseNotResponding,
+                    database = database,
                     applicationState = ApplicationState(alive = true, ready = true)
                 )
 
+                database.simulateDatabaseError()
+
                 val response = client.get("/internal/is_ready")
-                response.status shouldBeEqualTo HttpStatusCode.InternalServerError
-                response.bodyAsText() shouldNotBeEqualTo null
+                assertEquals(HttpStatusCode.InternalServerError, response.status)
+                assertNotNull(response.bodyAsText())
             }
         }
     }
-})
+}
