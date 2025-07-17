@@ -12,18 +12,39 @@ class TestDatabase : DatabaseInterface {
         EmbeddedPostgres.builder().setLocaleConfig("locale", "en_US").start()
     }
 
-    override val connection: Connection
+    private var shouldSimulateError = false
+    private val workingConnection: Connection
         get() = pg.postgresDatabase.connection.apply { autoCommit = false }
+
+    override val connection: Connection
+        get() = if (shouldSimulateError) {
+            throw Exception("Simulated database connection failure")
+        } else {
+            workingConnection
+        }
 
     init {
 
         Flyway.configure().run {
-            dataSource(pg.postgresDatabase).load().migrate()
+            dataSource(pg.postgresDatabase).validateMigrationNaming(true).load().migrate()
         }
     }
 
     fun stop() {
         pg.close()
+    }
+
+    fun simulateDatabaseError() {
+        shouldSimulateError = true
+    }
+
+    fun restoreDatabase() {
+        shouldSimulateError = false
+    }
+
+    fun resetDatabase() {
+        restoreDatabase()
+        dropData()
     }
 }
 

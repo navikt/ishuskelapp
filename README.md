@@ -14,9 +14,8 @@ Applikasjon for å skrive oppfølgingsoppgave
 
 ##### Test Libraries:
 
-* Kluent
 * Mockk
-* Spek
+* JUnit
 
 #### Requirements
 
