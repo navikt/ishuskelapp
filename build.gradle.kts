@@ -8,10 +8,10 @@ val flyway = "11.11.2"
 val hikari = "6.3.0"
 val jacksonDataType = "2.19.2"
 val kafka = "3.9.0"
-val ktor = "3.2.3"
+val ktor = "3.3.0"
 val logback = "1.5.18"
 val logstashEncoder = "8.1"
-val micrometerRegistry = "1.15.3"
+val micrometerRegistry = "1.12.13"
 val mockk = "1.14.5"
 val nimbusJoseJwt = "10.4.2"
 val postgres = "42.7.7"
@@ -64,14 +64,19 @@ dependencies {
     }
     implementation("org.apache.kafka:kafka_2.13:$kafka", excludeLog4j)
     constraints {
-        implementation("org.apache.zookeeper:zookeeper") {
-            because("org.apache.kafka:kafka_2.13:$kafka -> https://www.cve.org/CVERecord?id=CVE-2023-44981")
+        implementation("org.bitbucket.b_c:jose4j") {
+            because("org.apache.kafka:kafka_2.13:$kafkaVersion -> https://github.com/advisories/GHSA-6qvw-249j-h44c")
             version {
-                require("3.9.3")
+                require("0.9.6")
+            }
+        }
+        implementation("commons-beanutils:commons-beanutils") {
+            because("org.apache.kafka:kafka_2.13:$kafkaVersion -> https://www.cve.org/CVERecord?id=CVE-2025-48734")
+            version {
+                require("1.11.0")
             }
         }
     }
-
     // (De-)serialization
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonDataType")
 
