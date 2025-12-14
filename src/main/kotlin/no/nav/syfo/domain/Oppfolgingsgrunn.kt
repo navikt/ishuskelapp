@@ -12,5 +12,6 @@ enum class Oppfolgingsgrunn {
     VURDER_14A,
     VURDER_ANNEN_YTELSE,
     SAMTALE_MED_BRUKER,
+    DELTAR_FORSOK_FORSTERKET_OPPFOLGING,
     ANNET,
 }
