@@ -8,8 +8,10 @@ import io.ktor.server.routing.*
 import no.nav.syfo.api.endpoints.RequestParameters.IS_ACTIVE
 import no.nav.syfo.api.model.*
 import no.nav.syfo.application.OppfolgingsoppgaveService
+import no.nav.syfo.domain.NoChangesDetectedException
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
+import no.nav.syfo.infrastructure.kafka.log
 import no.nav.syfo.util.*
 import java.util.*
 
@@ -79,23 +81,28 @@ fun Route.registerOppfolgingsoppgaveApi(
                 val requestDTO = call.receive<EditedOppfolgingsoppgaveDTO>()
                 val veilederIdent = call.getNAVIdent()
 
-                oppfolgingsoppgaveService.editOppfolgingsoppgave(
-                    existingOppfolgingsoppgaveUuid = uuid,
-                    veilederIdent = veilederIdent,
-                    newOppfolgingsgrunn = requestDTO.oppfolgingsgrunn,
-                    newTekst = requestDTO.tekst,
-                    newFrist = requestDTO.frist,
-                )
-                    ?.let { createdOppfolgingsoppgaveVersjon ->
-                        call.respond(
-                            HttpStatusCode.Created,
-                            OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(createdOppfolgingsoppgaveVersjon)
-                        )
-                    }
-                    ?: call.respond(
-                        HttpStatusCode.NotFound,
-                        "Could not find existing oppfolgingsoppgave with uuid: $uuid"
+                try {
+                    oppfolgingsoppgaveService.editOppfolgingsoppgave(
+                        existingOppfolgingsoppgaveUuid = uuid,
+                        veilederIdent = veilederIdent,
+                        newOppfolgingsgrunn = requestDTO.oppfolgingsgrunn,
+                        newTekst = requestDTO.tekst,
+                        newFrist = requestDTO.frist,
                     )
+                        ?.let { createdOppfolgingsoppgaveVersjon ->
+                            call.respond(
+                                HttpStatusCode.Created,
+                                OppfolgingsoppgaveResponseDTO.fromOppfolgingsoppgave(createdOppfolgingsoppgaveVersjon)
+                            )
+                        }
+                        ?: call.respond(
+                            HttpStatusCode.NotFound,
+                            "Could not find existing oppfolgingsoppgave with uuid: $uuid"
+                        )
+                } catch (error: NoChangesDetectedException) {
+                    log.warn(error.message)
+                    call.respond(HttpStatusCode.NoContent)
+                }
             }
         }
 
