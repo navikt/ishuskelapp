@@ -20,7 +20,7 @@ data class OppfolgingsoppgaveVersjon private constructor(
         veilederIdent: String
     ): OppfolgingsoppgaveVersjon {
         if (this.tekst == tekst && this.frist == frist) {
-            throw IllegalArgumentException("No changes detected, not updating oppfolgingsoppgave")
+            throw NoChangesDetectedException("No changes detected, not updating oppfolgingsoppgave")
         }
 
         return this.copy(
@@ -67,3 +67,5 @@ data class OppfolgingsoppgaveVersjon private constructor(
         )
     }
 }
+
+class NoChangesDetectedException(message: String) : RuntimeException(message)
