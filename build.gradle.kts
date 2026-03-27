@@ -74,7 +74,7 @@ dependencies {
     }
     // (De-)serialization
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonDataType")
-    implementation("tools.jackson.core:jackson-databind:${jacksonDatabindVersion}")
+    implementation("tools.jackson.core:jackson-databind:$jacksonDatabindVersion")
 
     implementation("io.confluent:kafka-avro-serializer:$confluentVersion", excludeLog4j)
 
