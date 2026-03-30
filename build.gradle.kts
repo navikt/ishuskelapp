@@ -6,14 +6,15 @@ version = "0.0.1"
 val confluentVersion = "8.1.1"
 val flyway = "11.19.0"
 val hikari = "7.0.2"
-val jacksonDataType = "2.21.0"
+val jacksonDataType = "2.21.1"
+val jacksonDatabindVersion = "3.1.0"
 val kafka = "4.1.1"
-val ktor = "3.4.0"
+val ktor = "3.4.1"
 val logback = "1.5.31"
 val logstashEncoder = "9.0"
-val micrometerRegistry = "1.12.13"
+val micrometerRegistry = "1.16.3"
 val mockk = "1.14.9"
-val nimbusJoseJwt = "10.7"
+val nimbusJoseJwt = "10.8"
 val postgres = "42.7.10"
 val postgresEmbedded = "2.2.0"
 val postgresRuntimeVersion = "17.5.0"
@@ -64,12 +65,6 @@ dependencies {
     }
     implementation("org.apache.kafka:kafka_2.13:$kafka", excludeLog4j)
     constraints {
-        implementation("org.bitbucket.b_c:jose4j") {
-            because("org.apache.kafka:kafka_2.13:$kafka -> https://github.com/advisories/GHSA-6qvw-249j-h44c")
-            version {
-                require("0.9.6")
-            }
-        }
         implementation("commons-beanutils:commons-beanutils") {
             because("org.apache.kafka:kafka_2.13:$kafka -> https://www.cve.org/CVERecord?id=CVE-2025-48734")
             version {
@@ -79,22 +74,9 @@ dependencies {
     }
     // (De-)serialization
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonDataType")
+    implementation("tools.jackson.core:jackson-databind:$jacksonDatabindVersion")
 
     implementation("io.confluent:kafka-avro-serializer:$confluentVersion", excludeLog4j)
-    constraints {
-        implementation("org.apache.avro:avro") {
-            because("io.confluent:kafka-avro-serializer:$confluentVersion -> https://www.cve.org/CVERecord?id=CVE-2023-39410")
-            version {
-                require("1.12.1")
-            }
-        }
-        implementation("org.apache.commons:commons-compress") {
-            because("org.apache.commons:commons-compress:1.22 -> https://www.cve.org/CVERecord?id=CVE-2012-2098")
-            version {
-                require("1.28.0")
-            }
-        }
-    }
 
     // Tests
     testImplementation(kotlin("test"))
