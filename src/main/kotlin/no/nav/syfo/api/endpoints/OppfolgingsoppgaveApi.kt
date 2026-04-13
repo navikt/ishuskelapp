@@ -42,7 +42,7 @@ fun Route.registerOppfolgingsoppgaveApi(
 ) {
     route(huskelappApiBasePath) {
         get {
-            call.checkVeilederTilgang(
+            checkVeilederTilgang(
                 action = API_ACTION,
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
             ) {
@@ -68,9 +68,10 @@ fun Route.registerOppfolgingsoppgaveApi(
         }
 
         post {
-            call.checkVeilederTilgang(
+            checkVeilederTilgang(
                 action = API_ACTION,
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+                requiresWriteAccess = true,
             ) {
                 val personIdent = call.personIdent()
                 val veilederIdent = call.getNAVIdent()
@@ -89,9 +90,10 @@ fun Route.registerOppfolgingsoppgaveApi(
         }
 
         post("/{$huskelappParam}") {
-            call.checkVeilederTilgang(
+            checkVeilederTilgang(
                 action = API_ACTION,
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+                requiresWriteAccess = true,
             ) {
                 val uuid = UUID.fromString(call.parameters[huskelappParam])
                 val requestDTO = call.receive<EditedOppfolgingsoppgaveDTO>()
@@ -123,9 +125,10 @@ fun Route.registerOppfolgingsoppgaveApi(
         }
 
         delete("/{$huskelappParam}") {
-            call.checkVeilederTilgang(
+            checkVeilederTilgang(
                 action = API_ACTION,
                 veilederTilgangskontrollClient = veilederTilgangskontrollClient,
+                requiresWriteAccess = true,
             ) {
                 val oppfolgingsoppgaveUuid = UUID.fromString(call.parameters[huskelappParam])
                 val veilederIdent = call.getNAVIdent()

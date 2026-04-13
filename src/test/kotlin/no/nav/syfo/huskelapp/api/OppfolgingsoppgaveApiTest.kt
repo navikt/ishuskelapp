@@ -23,6 +23,8 @@ import no.nav.syfo.testhelper.UserConstants.ARBEIDSTAKER_PERSONIDENT
 import no.nav.syfo.testhelper.UserConstants.FAILS_VEILEDER_IDENT
 import no.nav.syfo.testhelper.UserConstants.OTHER_VEILEDER_IDENT
 import no.nav.syfo.testhelper.UserConstants.VEILEDER_IDENT
+import no.nav.syfo.testhelper.tokenForVeilederWithFullTilgang
+import no.nav.syfo.testhelper.tokenForVeilederWithNoWriteTilgang
 import no.nav.syfo.util.NAV_PERSONIDENT_HEADER
 import no.nav.syfo.util.configure
 import org.junit.jupiter.api.AfterEach
@@ -50,11 +52,6 @@ class OppfolgingsoppgaveApiTest {
         database.dropData()
     }
 
-    private val validToken = generateJWT(
-        audience = externalMockEnvironment.environment.azure.appClientId,
-        issuer = externalMockEnvironment.wellKnownInternalAzureAD.issuer,
-        navIdent = VEILEDER_IDENT,
-    )
     private val validTokenOtherVeileder = generateJWT(
         audience = externalMockEnvironment.environment.azure.appClientId,
         issuer = externalMockEnvironment.wellKnownInternalAzureAD.issuer,
@@ -87,7 +84,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.get(activeOppfolgingsoppgaveUrl) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
 
@@ -103,7 +100,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.get(activeOppfolgingsoppgaveUrl) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
 
@@ -118,7 +115,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.get(activeOppfolgingsoppgaveUrl) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
 
@@ -137,17 +134,17 @@ class OppfolgingsoppgaveApiTest {
 
             @Test
             fun `returns status Forbidden if denied access to person`() {
-                testDeniedPersonAccess(huskelappApiBasePath, validToken, HttpMethod.Get)
+                testDeniedPersonAccess(huskelappApiBasePath, tokenForVeilederWithFullTilgang, HttpMethod.Get)
             }
 
             @Test
             fun `returns status BadRequest if no NAV_PERSONIDENT_HEADER is supplied`() {
-                testMissingPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Get)
+                testMissingPersonIdent(huskelappApiBasePath, tokenForVeilederWithFullTilgang, HttpMethod.Get)
             }
 
             @Test
             fun `returns status BadRequest if NAV_PERSONIDENT_HEADER with invalid PersonIdent is supplied`() {
-                testInvalidPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Get)
+                testInvalidPersonIdent(huskelappApiBasePath, tokenForVeilederWithFullTilgang, HttpMethod.Get)
             }
         }
     }
@@ -171,7 +168,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.get(huskelappApiBasePath) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                 }
 
@@ -206,7 +203,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.get(huskelappApiBasePath) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                 }
 
@@ -258,7 +255,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.get(huskelappApiBasePath) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                 }
 
@@ -314,7 +311,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.post(huskelappApiBasePath) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         contentType(ContentType.Application.Json)
                         setBody(requestDTOWithTekst)
@@ -333,7 +330,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.get("$huskelappApiBasePath?$IS_ACTIVE=true") {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
 
@@ -360,7 +357,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.post(huskelappApiBasePath) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         contentType(ContentType.Application.Json)
                         setBody(requestDTOWithOppfolgingsgrunn)
@@ -372,7 +369,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.get("$huskelappApiBasePath?$IS_ACTIVE=true") {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
 
@@ -393,7 +390,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     client.post(huskelappApiBasePath) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         contentType(ContentType.Application.Json)
                         setBody(requestDTO)
@@ -401,7 +398,7 @@ class OppfolgingsoppgaveApiTest {
                         assertEquals(HttpStatusCode.Created, status)
                     }
                     client.post(huskelappApiBasePath) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         contentType(ContentType.Application.Json)
                         setBody(requestDTO)
@@ -427,17 +424,31 @@ class OppfolgingsoppgaveApiTest {
 
             @Test
             fun `returns status Forbidden if denied access to person`() {
-                testDeniedPersonAccess(huskelappApiBasePath, validToken, HttpMethod.Post)
+                testDeniedPersonAccess(huskelappApiBasePath, tokenForVeilederWithFullTilgang, HttpMethod.Post)
+            }
+
+            @Test
+            fun `returns status Forbidden if denied write access`() {
+                testApplication {
+                    val client = setupApiAndClient()
+                    val response = client.post(huskelappApiBasePath) {
+                        bearerAuth(tokenForVeilederWithNoWriteTilgang)
+                        header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                        contentType(ContentType.Application.Json)
+                        setBody(OppfolgingsoppgaveRequestDTO("tekst", Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT))
+                    }
+                    assertEquals(HttpStatusCode.Forbidden, response.status)
+                }
             }
 
             @Test
             fun `returns status BadRequest if no NAV_PERSONIDENT_HEADER is supplied`() {
-                testMissingPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Post)
+                testMissingPersonIdent(huskelappApiBasePath, tokenForVeilederWithFullTilgang, HttpMethod.Post)
             }
 
             @Test
             fun `returns status BadRequest if NAV_PERSONIDENT_HEADER with invalid PersonIdent is supplied`() {
-                testInvalidPersonIdent(huskelappApiBasePath, validToken, HttpMethod.Post)
+                testInvalidPersonIdent(huskelappApiBasePath, tokenForVeilederWithFullTilgang, HttpMethod.Post)
             }
         }
     }
@@ -478,7 +489,7 @@ class OppfolgingsoppgaveApiTest {
                     }
 
                     val response = client.get("$huskelappApiBasePath?$IS_ACTIVE=true") {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
 
@@ -514,7 +525,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     client.post("$huskelappApiBasePath/${existingOppfolgingsoppgave.uuid}") {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         contentType(ContentType.Application.Json)
                         setBody(requestDTO)
@@ -523,7 +534,7 @@ class OppfolgingsoppgaveApiTest {
                     }
 
                     val response = client.get("$huskelappApiBasePath?$IS_ACTIVE=true") {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
 
@@ -557,7 +568,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     client.post("$huskelappApiBasePath/${existingOppfolgingsoppgave.uuid}") {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                         contentType(ContentType.Application.Json)
                         setBody(requestDTO)
@@ -566,7 +577,7 @@ class OppfolgingsoppgaveApiTest {
                     }
 
                     val response = client.get(huskelappApiBasePath) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
 
@@ -640,7 +651,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.delete(deleteHuskelappUrl) {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
                     assertEquals(HttpStatusCode.NoContent, response.status)
@@ -661,7 +672,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.delete("$huskelappApiBasePath/${UUID.randomUUID()}") {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
                     assertEquals(HttpStatusCode.NotFound, response.status)
@@ -675,7 +686,7 @@ class OppfolgingsoppgaveApiTest {
                 testApplication {
                     val client = setupApiAndClient()
                     val response = client.delete("$huskelappApiBasePath/${inactiveOppfolgingsoppgave.uuid}") {
-                        bearerAuth(validToken)
+                        bearerAuth(tokenForVeilederWithFullTilgang)
                         header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
                     }
                     assertEquals(HttpStatusCode.NotFound, response.status)
@@ -689,17 +700,29 @@ class OppfolgingsoppgaveApiTest {
 
             @Test
             fun `returns status Forbidden if denied access to person`() {
-                testDeniedPersonAccess(deleteHuskelappUrl, validToken, HttpMethod.Delete)
+                testDeniedPersonAccess(deleteHuskelappUrl, tokenForVeilederWithFullTilgang, HttpMethod.Delete)
+            }
+
+            @Test
+            fun `returns status Forbidden if denied write access`() {
+                testApplication {
+                    val client = setupApiAndClient()
+                    val response = client.delete(deleteHuskelappUrl) {
+                        bearerAuth(tokenForVeilederWithNoWriteTilgang)
+                        header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value)
+                    }
+                    assertEquals(HttpStatusCode.Forbidden, response.status)
+                }
             }
 
             @Test
             fun `returns status BadRequest if no NAV_PERSONIDENT_HEADER is supplied`() {
-                testMissingPersonIdent(deleteHuskelappUrl, validToken, HttpMethod.Delete)
+                testMissingPersonIdent(deleteHuskelappUrl, tokenForVeilederWithFullTilgang, HttpMethod.Delete)
             }
 
             @Test
             fun `returns status BadRequest if NAV_PERSONIDENT_HEADER with invalid PersonIdent is supplied`() {
-                testInvalidPersonIdent(deleteHuskelappUrl, validToken, HttpMethod.Delete)
+                testInvalidPersonIdent(deleteHuskelappUrl, tokenForVeilederWithFullTilgang, HttpMethod.Delete)
             }
         }
     }
@@ -731,7 +754,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.post(url) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     contentType(ContentType.Application.Json)
                     setBody(requestDTO)
                 }
@@ -764,7 +787,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.post(url) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     contentType(ContentType.Application.Json)
                     setBody(requestDTO)
                 }
@@ -803,7 +826,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.post(url) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     contentType(ContentType.Application.Json)
                     setBody(requestDTO)
                 }
@@ -853,7 +876,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.post(url) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     contentType(ContentType.Application.Json)
                     setBody(requestDTO)
                 }
@@ -899,7 +922,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.post(url) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     contentType(ContentType.Application.Json)
                     setBody(requestDTO)
                 }
@@ -921,7 +944,7 @@ class OppfolgingsoppgaveApiTest {
             testApplication {
                 val client = setupApiAndClient()
                 val response = client.post(url) {
-                    bearerAuth(validToken)
+                    bearerAuth(tokenForVeilederWithFullTilgang)
                     contentType(ContentType.Application.Json)
                     setBody(requestDTO)
                 }
@@ -960,15 +983,15 @@ private fun testMissingToken(url: String, httpMethod: HttpMethod) {
 
 private fun testMissingPersonIdent(
     url: String,
-    validToken: String,
+    tokenForVeilederWithFullTilgang: String,
     httpMethod: HttpMethod,
 ) {
     testApplication {
         val client = setupApiAndClient()
         val response = when (httpMethod) {
-            HttpMethod.Post -> client.post(url) { bearerAuth(validToken) }
-            HttpMethod.Delete -> client.delete(url) { bearerAuth(validToken) }
-            else -> client.get(url) { bearerAuth(validToken) }
+            HttpMethod.Post -> client.post(url) { bearerAuth(tokenForVeilederWithFullTilgang) }
+            HttpMethod.Delete -> client.delete(url) { bearerAuth(tokenForVeilederWithFullTilgang) }
+            else -> client.get(url) { bearerAuth(tokenForVeilederWithFullTilgang) }
         }
         assertEquals(HttpStatusCode.BadRequest, response.status)
     }
@@ -976,22 +999,22 @@ private fun testMissingPersonIdent(
 
 private fun testInvalidPersonIdent(
     url: String,
-    validToken: String,
+    tokenForVeilederWithFullTilgang: String,
     httpMethod: HttpMethod,
 ) {
     testApplication {
         val client = setupApiAndClient()
         val response = when (httpMethod) {
             HttpMethod.Post -> client.post(url) {
-                bearerAuth(validToken)
+                bearerAuth(tokenForVeilederWithFullTilgang)
                 header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value.drop(1))
             }
             HttpMethod.Delete -> client.delete(url) {
-                bearerAuth(validToken)
+                bearerAuth(tokenForVeilederWithFullTilgang)
                 header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value.drop(1))
             }
             else -> client.get(url) {
-                bearerAuth(validToken)
+                bearerAuth(tokenForVeilederWithFullTilgang)
                 header(NAV_PERSONIDENT_HEADER, ARBEIDSTAKER_PERSONIDENT.value.drop(1))
             }
         }

@@ -3,6 +3,7 @@ package no.nav.syfo.util
 import com.auth0.jwt.JWT
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.routing.*
 import no.nav.syfo.api.ForbiddenAccessVeilederException
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
@@ -29,22 +30,31 @@ fun ApplicationCall.getNAVIdent(): String {
 fun ApplicationCall.getBearerHeader(): String? =
     this.request.headers[HttpHeaders.Authorization]?.removePrefix("Bearer ")
 
-suspend fun ApplicationCall.checkVeilederTilgang(
+suspend fun RoutingContext.checkVeilederTilgang(
     action: String,
     veilederTilgangskontrollClient: VeilederTilgangskontrollClient,
+    requiresWriteAccess: Boolean = false,
     block: suspend () -> Unit,
 ) {
-    val callId = getCallId()
-    val token = getBearerHeader()
+    val callId = call.getCallId()
+    val token = call.getBearerHeader()
         ?: throw IllegalArgumentException("Failed to complete the following action: $action. No Authorization header supplied")
-    val personident = getPersonIdent()
+    val personident = call.getPersonIdent()
         ?: throw IllegalArgumentException("Failed to $action: No $NAV_PERSONIDENT_HEADER supplied in request header")
 
-    val hasAccess = veilederTilgangskontrollClient.hasAccess(
-        callId = callId,
-        personIdent = personident,
-        token = token,
-    )
+    val hasAccess = if (requiresWriteAccess) {
+        veilederTilgangskontrollClient.hasWriteAccess(
+            callId = callId,
+            personIdent = personident,
+            token = token,
+        )
+    } else {
+        veilederTilgangskontrollClient.hasAccess(
+            callId = callId,
+            personIdent = personident,
+            token = token,
+        )
+    }
     if (!hasAccess) {
         throw ForbiddenAccessVeilederException(
             action = action,

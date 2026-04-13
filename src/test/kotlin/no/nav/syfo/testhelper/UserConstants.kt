@@ -14,6 +14,7 @@ object UserConstants {
     val PERSONIDENT_VEILEDER_NO_ACCESS = PersonIdent(ARBEIDSTAKER_PERSONIDENT.value.replace("3", "1"))
 
     const val VEILEDER_IDENT = "Z999999"
+    const val VEILEDER_IDENT_NO_WRITE_ACCESS = "Z999996"
     const val OTHER_VEILEDER_IDENT = "Z999998"
     const val FAILS_VEILEDER_IDENT = "Z999997"
 }

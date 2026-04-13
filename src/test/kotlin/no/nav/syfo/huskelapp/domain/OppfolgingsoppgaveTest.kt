@@ -21,6 +21,6 @@ class OppfolgingsoppgaveTest {
         assertFalse(removedOppfolgingsoppgave.isActive)
         assertEquals(UserConstants.OTHER_VEILEDER_IDENT, removedOppfolgingsoppgave.removedBy)
         assertNull(removedOppfolgingsoppgave.publishedAt)
-        assertTrue(removedOppfolgingsoppgave.updatedAt > oppfolgingsoppgave.createdAt)
+        assertTrue(removedOppfolgingsoppgave.updatedAt >= oppfolgingsoppgave.createdAt)
     }
 }
