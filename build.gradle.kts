@@ -6,10 +6,10 @@ version = "0.0.1"
 val confluentVersion = "8.1.1"
 val flyway = "11.19.0"
 val hikari = "7.0.2"
-val jacksonDataType = "2.21.1"
-val jacksonDatabindVersion = "3.1.0"
-val kafka = "4.1.1"
-val ktor = "3.4.1"
+val jacksonDataType = "2.21.2"
+val jacksonDatabindVersion = "3.1.1"
+val kafka = "4.2.0"
+val ktor = "3.4.2"
 val logback = "1.5.31"
 val logstashEncoder = "9.0"
 val micrometerRegistry = "1.16.3"
@@ -17,7 +17,7 @@ val mockk = "1.14.9"
 val nimbusJoseJwt = "10.8"
 val postgres = "42.7.10"
 val postgresEmbedded = "2.2.0"
-val postgresRuntimeVersion = "17.5.0"
+val postgresRuntimeVersion = "17.9.0"
 
 plugins {
     kotlin("jvm") version "2.3.10"
@@ -62,6 +62,7 @@ dependencies {
     // Kafka
     val excludeLog4j = fun ExternalModuleDependency.() {
         exclude(group = "log4j")
+        exclude(group = "org.apache.logging.log4j")
     }
     implementation("org.apache.kafka:kafka_2.13:$kafka", excludeLog4j)
     constraints {
