@@ -20,7 +20,7 @@ val postgresEmbedded = "2.2.2"
 val postgresRuntimeVersion = "17.9.0"
 
 plugins {
-    kotlin("jvm") version "2.3.20"
+    kotlin("jvm") version "2.3.10"
     id("com.gradleup.shadow") version "8.3.8"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
     id("com.adarshr.test-logger") version "4.0.0"
