@@ -137,10 +137,33 @@ class OppfolgingsoppgaveServiceTest {
             newFrist = oppfolgingsoppgave.sisteVersjon().frist,
         )
 
-        assertFalse(oppfolgingsoppgaveRepository.getOppfolgingsoppgave(uuid = createdOppfolgingsoppgave.uuid)?.isActive ?: true)
+        assertFalse(
+            oppfolgingsoppgaveRepository.getOppfolgingsoppgave(uuid = createdOppfolgingsoppgave.uuid)?.isActive ?: true
+        )
 
         assertNotEquals(createdOppfolgingsoppgave.uuid, newOppfolgingsoppgave?.uuid)
         assertTrue(newOppfolgingsoppgave?.isActive ?: false)
         assertEquals(Oppfolgingsgrunn.VURDER_14A, newOppfolgingsoppgave?.sisteVersjon()?.oppfolgingsgrunn)
+    }
+
+    @Test
+    fun `getActiveOppfolgingsoppgave returns last oppfolgingsoppgave when multiple exists`() {
+        val firstOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
+
+        val secondOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(
+            Oppfolgingsoppgave.create(
+                personIdent = ARBEIDSTAKER_PERSONIDENT,
+                veilederIdent = UserConstants.OTHER_VEILEDER_IDENT,
+                tekst = "Nyere oppfolgingsoppgave",
+                oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
+                frist = LocalDate.now().plusDays(2),
+            ),
+        )
+
+        val result = oppfolgingsoppgaveService.getActiveOppfolgingsoppgave(ARBEIDSTAKER_PERSONIDENT)
+
+        assertNotNull(result)
+        assertEquals(secondOppfolgingsoppgave.uuid, result?.uuid)
+        assertNotEquals(firstOppfolgingsoppgave.uuid, result?.uuid)
     }
 }

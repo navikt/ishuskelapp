@@ -12,6 +12,7 @@ data class OppfolgingsoppgaveVersjon private constructor(
     val tekst: String?,
     val oppfolgingsgrunn: Oppfolgingsgrunn,
     val frist: LocalDate?,
+    val latest: Boolean,
 ) {
     fun edit(
         tekst: String?,
@@ -47,6 +48,7 @@ data class OppfolgingsoppgaveVersjon private constructor(
                 tekst = tekst,
                 oppfolgingsgrunn = oppfolgingsgrunn,
                 frist = frist,
+                latest = true,
             )
         }
 
@@ -57,6 +59,7 @@ data class OppfolgingsoppgaveVersjon private constructor(
             tekst: String?,
             oppfolgingsgrunn: String,
             frist: LocalDate?,
+            latest: Boolean,
         ) = OppfolgingsoppgaveVersjon(
             uuid = uuid,
             createdAt = createdAt,
@@ -64,6 +67,7 @@ data class OppfolgingsoppgaveVersjon private constructor(
             tekst = tekst,
             oppfolgingsgrunn = Oppfolgingsgrunn.valueOf(oppfolgingsgrunn),
             frist = frist,
+            latest = latest,
         )
     }
 }

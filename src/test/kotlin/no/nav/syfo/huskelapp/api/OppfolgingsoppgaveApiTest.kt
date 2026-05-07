@@ -213,7 +213,7 @@ class OppfolgingsoppgaveApiTest {
 
                 assertEquals(2, responseDTO.size)
 
-                val sisteOppfolgingsoppgave = responseDTO[0]
+                val sisteOppfolgingsoppgave = responseDTO.last()
                 val sisteVersjon = sisteOppfolgingsoppgave.versjoner.first()
 
                 assertEquals(ARBEIDSTAKER_PERSONIDENT, sisteOppfolgingsoppgave.personIdent)
@@ -225,7 +225,7 @@ class OppfolgingsoppgaveApiTest {
                 assertEquals(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE, sisteVersjon.oppfolgingsgrunn)
                 assertEquals("Oppfølgingsoppgave nr. 2", sisteVersjon.tekst)
 
-                val forsteOppfolgingsoppgave = responseDTO[1]
+                val forsteOppfolgingsoppgave = responseDTO.first()
                 val forsteVersjon = forsteOppfolgingsoppgave.versjoner.first()
 
                 assertEquals(ARBEIDSTAKER_PERSONIDENT, forsteOppfolgingsoppgave.personIdent)
@@ -585,12 +585,12 @@ class OppfolgingsoppgaveApiTest {
                     val responseDTOs = response.body<List<OppfolgingsoppgaveResponseDTO>>()
                     assertEquals(2, responseDTOs.size)
 
-                    val aktivOppfolgingsoppgave = responseDTOs.first()
+                    val aktivOppfolgingsoppgave = responseDTOs.last()
                     assertTrue(aktivOppfolgingsoppgave.isActive)
                     assertEquals(1, aktivOppfolgingsoppgave.versjoner.size)
                     assertEquals(Oppfolgingsgrunn.SAMTALE_MED_BRUKER, aktivOppfolgingsoppgave.versjoner.first().oppfolgingsgrunn)
 
-                    val inaktivOppfolgingsoppgave = responseDTOs.last()
+                    val inaktivOppfolgingsoppgave = responseDTOs.first()
                     assertFalse(inaktivOppfolgingsoppgave.isActive)
                     assertEquals(1, inaktivOppfolgingsoppgave.versjoner.size)
                     assertEquals(Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE, inaktivOppfolgingsoppgave.versjoner.first().oppfolgingsgrunn)

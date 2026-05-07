@@ -46,7 +46,7 @@ data class Oppfolgingsoppgave private constructor(
         )
     }
 
-    fun sisteVersjon() = versjoner.first()
+    fun sisteVersjon() = versjoner.single { it.latest }
 
     companion object {
         fun create(

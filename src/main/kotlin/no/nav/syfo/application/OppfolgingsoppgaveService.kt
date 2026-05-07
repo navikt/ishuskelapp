@@ -16,8 +16,7 @@ class OppfolgingsoppgaveService(
 ) {
     fun getActiveOppfolgingsoppgave(personIdent: PersonIdent): Oppfolgingsoppgave? =
         oppfolgingsoppgaveRepository.getOppfolgingsoppgaver(personIdent)
-            .firstOrNull()
-            ?.takeIf { it.isActive }
+            .lastOrNull { it.isActive }
 
     fun getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Oppfolgingsoppgave> =
         oppfolgingsoppgaveRepository.getActiveOppfolgingsoppgaver(personidenter)
