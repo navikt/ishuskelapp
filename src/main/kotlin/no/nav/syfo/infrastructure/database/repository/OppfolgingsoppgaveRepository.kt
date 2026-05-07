@@ -98,7 +98,7 @@ class OppfolgingsoppgaveRepository(
             it.setStringOrNull(5, newVersjon.tekst)
             it.setStringOrNull(6, newVersjon.oppfolgingsgrunn.toString())
             it.setDateOrNull(7, newVersjon.frist?.let { date -> Date.valueOf(date) })
-            it.setBoolean(8, true)
+            it.setBoolean(8, newVersjon.latest)
             it.executeQuery().toList { toPOppfolgingsoppgaveVersjon() }
         }
 
@@ -213,7 +213,7 @@ private const val queryGetOppfolgingsoppgaveByPersonIdent = """
     SELECT *
     FROM HUSKELAPP
     WHERE personident = ?
-    ORDER BY created_at DESC
+    ORDER BY created_at ASC
 """
 
 private fun DatabaseInterface.getOppfolgingsoppgaver(personIdent: PersonIdent): List<POppfolgingsoppgave> {
@@ -247,6 +247,7 @@ private const val queryGetActiveOppfolgingsoppgaverByPersonident = """
     FROM HUSKELAPP h
     INNER JOIN HUSKELAPP_VERSJON hv ON (h.id = hv.huskelapp_id AND hv.latest)
     WHERE h.personident = ANY (string_to_array(?, ',')) AND h.is_active = true
+    ORDER BY created_at ASC
 """
 
 private fun DatabaseInterface.getActiveOppfolgingsoppgaver(personidenter: List<PersonIdent>): List<Oppfolgingsoppgave> {

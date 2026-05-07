@@ -23,7 +23,8 @@ data class POppfolgingsoppgaveVersjon(
             createdBy = createdBy,
             tekst = tekst,
             oppfolgingsgrunn = oppfolgingsgrunner.first(),
-            frist = frist
+            frist = frist,
+            latest = latest,
         )
     }
 }
