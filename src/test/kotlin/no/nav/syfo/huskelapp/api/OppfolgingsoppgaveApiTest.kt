@@ -386,7 +386,7 @@ class OppfolgingsoppgaveApiTest {
             }
 
             @Test
-            fun `Does not store unchanged`() {
+            fun `Conflict on active oppfolgingsoppgave`() {
                 testApplication {
                     val client = setupApiAndClient()
                     client.post(huskelappApiBasePath) {
@@ -403,7 +403,7 @@ class OppfolgingsoppgaveApiTest {
                         contentType(ContentType.Application.Json)
                         setBody(requestDTO)
                     }.apply {
-                        assertEquals(HttpStatusCode.Created, status)
+                        assertEquals(HttpStatusCode.Conflict, status)
                     }
 
                     val oppfolgingsoppgave =
@@ -871,7 +871,10 @@ class OppfolgingsoppgaveApiTest {
 
         @Test
         fun `Gets all oppfolgingsoppgaver and send no duplicates when duplicates personident are sent in request`() {
-            createOppfolgingsoppgaver(identer = listOf(*personidenter.toTypedArray(), ARBEIDSTAKER_PERSONIDENT))
+            val oppfolgingsoppgaver = createOppfolgingsoppgaver(identer = listOf(*personidenter.toTypedArray()))
+            val oppfolgingsoppgave = oppfolgingsoppgaver.find { it.personIdent == ARBEIDSTAKER_PERSONIDENT }!!
+            oppfolgingsoppgaveRepository.remove(oppfolgingsoppgave.remove(VEILEDER_IDENT))
+            createOppfolgingsoppgaver(identer = listOf(ARBEIDSTAKER_PERSONIDENT))
 
             testApplication {
                 val client = setupApiAndClient()

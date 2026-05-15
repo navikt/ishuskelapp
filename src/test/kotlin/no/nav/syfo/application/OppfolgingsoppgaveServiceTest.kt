@@ -147,8 +147,9 @@ class OppfolgingsoppgaveServiceTest {
     }
 
     @Test
-    fun `getActiveOppfolgingsoppgave returns last oppfolgingsoppgave when multiple exists`() {
+    fun `getActiveOppfolgingsoppgave returns active oppfolgingsoppgave when previous is removed`() {
         val firstOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(oppfolgingsoppgave)
+        oppfolgingsoppgaveService.removeOppfolgingsoppgave(firstOppfolgingsoppgave, VEILEDER_IDENT)
 
         val secondOppfolgingsoppgave = oppfolgingsoppgaveRepository.create(
             Oppfolgingsoppgave.create(

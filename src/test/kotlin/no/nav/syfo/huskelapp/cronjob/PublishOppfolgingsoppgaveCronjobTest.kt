@@ -64,6 +64,7 @@ class PublishOppfolgingsoppgaveCronjobTest {
             tekst = "En oppfolgingsoppgave",
             oppfolgingsgrunn = Oppfolgingsgrunn.VURDER_DIALOGMOTE_SENERE
         )
+        val removeEnOppfolgingsoppgave = enOppfolgingsoppgave.remove(veilederIdent)
         val annenOppfolgingsoppgave = Oppfolgingsoppgave.create(
             personIdent,
             veilederIdent,
@@ -71,9 +72,10 @@ class PublishOppfolgingsoppgaveCronjobTest {
             oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
             frist = LocalDate.now().plusWeeks(1),
         )
-        listOf(enOppfolgingsoppgave, annenOppfolgingsoppgave).forEach {
-            oppfolgingsoppgaveRepository.create(it)
-        }
+
+        oppfolgingsoppgaveRepository.create(enOppfolgingsoppgave)
+        oppfolgingsoppgaveRepository.updateRemovedOppfolgingsoppgave(removeEnOppfolgingsoppgave)
+        oppfolgingsoppgaveRepository.create(annenOppfolgingsoppgave)
 
         val result = publishOppfolgingsoppgaveCronjob.runJob()
 
@@ -88,16 +90,21 @@ class PublishOppfolgingsoppgaveCronjobTest {
         }
 
         val enOppfolgingsoppgaveRecord = kafkaRecordSlot1.captured.value()
-
-        assertEquals(enOppfolgingsoppgave.sisteVersjon().tekst, enOppfolgingsoppgaveRecord.tekst)
-        assertEquals(listOf(enOppfolgingsoppgave.sisteVersjon().oppfolgingsgrunn), enOppfolgingsoppgaveRecord.oppfolgingsgrunner)
-        assertEquals(enOppfolgingsoppgave.personIdent.value, enOppfolgingsoppgaveRecord.personIdent)
-        assertEquals(enOppfolgingsoppgave.sisteVersjon().createdBy, enOppfolgingsoppgaveRecord.veilederIdent)
-        assertEquals(enOppfolgingsoppgave.isActive, enOppfolgingsoppgaveRecord.isActive)
+        val currentEnOppfolgingsoppgave = oppfolgingsoppgaveRepository.getOppfolgingsoppgave(enOppfolgingsoppgave.uuid)
+        assertNotNull(currentEnOppfolgingsoppgave)
+        assertEquals(currentEnOppfolgingsoppgave?.sisteVersjon()?.tekst, enOppfolgingsoppgaveRecord.tekst)
+        assertEquals(
+            listOf(currentEnOppfolgingsoppgave?.sisteVersjon()?.oppfolgingsgrunn),
+            enOppfolgingsoppgaveRecord.oppfolgingsgrunner
+        )
+        assertEquals(currentEnOppfolgingsoppgave?.personIdent?.value, enOppfolgingsoppgaveRecord.personIdent)
+        assertEquals(currentEnOppfolgingsoppgave?.sisteVersjon()?.createdBy, enOppfolgingsoppgaveRecord.veilederIdent)
+        assertEquals(currentEnOppfolgingsoppgave?.isActive, enOppfolgingsoppgaveRecord.isActive)
         assertNull(enOppfolgingsoppgaveRecord.frist)
 
         val annenOppfolgingsoppgaveRecord = kafkaRecordSlot2.captured.value()
-        assertEquals(annenOppfolgingsoppgave.sisteVersjon().frist, annenOppfolgingsoppgaveRecord.frist)
+        val currentAnnenOppfolgingsoppgave = oppfolgingsoppgaveRepository.getOppfolgingsoppgave(annenOppfolgingsoppgave.uuid)
+        assertEquals(currentAnnenOppfolgingsoppgave?.sisteVersjon()?.frist, annenOppfolgingsoppgaveRecord.frist)
 
         assertTrue(
             oppfolgingsoppgaveRepository.getPOppfolgingsoppgaver(personIdent)
