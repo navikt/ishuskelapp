@@ -1,6 +1,7 @@
 package no.nav.syfo.infrastructure.database.repository
 
 import IOppfolgingsoppgaveRepository
+import no.nav.syfo.domain.ActiveOppfolgingsoppgaveAlreadyExistsException
 import no.nav.syfo.domain.Oppfolgingsoppgave
 import no.nav.syfo.domain.PersonIdent
 import no.nav.syfo.infrastructure.COUNT_HUSKELAPP_VERSJON_CREATED
@@ -48,13 +49,20 @@ class OppfolgingsoppgaveRepository(
 
     override fun create(oppfolgingsoppgave: Oppfolgingsoppgave): Oppfolgingsoppgave {
         database.connection.use { connection ->
-            val createdOppfolgingsoppgave = connection.createOppfolgingsoppgave(oppfolgingsoppgave)
-            val createdVersion = connection.createOppfolgingsoppgaveVersjon(
-                oppfolgingsoppgaveId = createdOppfolgingsoppgave.id,
-                newOppfolgingsoppgave = oppfolgingsoppgave
-            )
-            connection.commit()
-            return createdOppfolgingsoppgave.toOppfolgingsoppgave(listOf(createdVersion))
+            try {
+                val createdOppfolgingsoppgave = connection.createOppfolgingsoppgave(oppfolgingsoppgave)
+                val createdVersion = connection.createOppfolgingsoppgaveVersjon(
+                    oppfolgingsoppgaveId = createdOppfolgingsoppgave.id,
+                    newOppfolgingsoppgave = oppfolgingsoppgave
+                )
+                connection.commit()
+                return createdOppfolgingsoppgave.toOppfolgingsoppgave(listOf(createdVersion))
+            } catch (exception: SQLException) {
+                if (exception.sqlState == SQLSTATE_UNIQUE_VIOLATION) {
+                    throw ActiveOppfolgingsoppgaveAlreadyExistsException(oppfolgingsoppgave.personIdent)
+                }
+                throw exception
+            }
         }
     }
 
@@ -159,6 +167,9 @@ class OppfolgingsoppgaveRepository(
             """
     }
 }
+
+private const val SQLSTATE_UNIQUE_VIOLATION = "23505"
+private const val IX_HUSKELAPP_PERSONIDENT_ACTIVE_TRUE = "ix_huskelapp_personident_active_true"
 
 private const val queryCreateOppfolgingsoppgave =
     """

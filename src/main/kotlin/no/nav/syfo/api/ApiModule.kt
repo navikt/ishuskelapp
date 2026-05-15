@@ -20,6 +20,7 @@ import no.nav.syfo.api.auth.installJwtAuthentication
 import no.nav.syfo.api.endpoints.registerOppfolgingsoppgaveApi
 import no.nav.syfo.api.endpoints.registerMetricApi
 import no.nav.syfo.api.endpoints.registerPodApi
+import no.nav.syfo.domain.ActiveOppfolgingsoppgaveAlreadyExistsException
 import no.nav.syfo.infrastructure.database.DatabaseInterface
 import no.nav.syfo.infrastructure.client.veiledertilgang.VeilederTilgangskontrollClient
 import no.nav.syfo.infrastructure.client.wellknown.WellKnown
@@ -124,6 +125,10 @@ private fun Application.installStatusPages() {
 
                 is ForbiddenAccessVeilederException -> {
                     HttpStatusCode.Forbidden
+                }
+
+                is ActiveOppfolgingsoppgaveAlreadyExistsException -> {
+                    HttpStatusCode.Conflict
                 }
 
                 else -> {
