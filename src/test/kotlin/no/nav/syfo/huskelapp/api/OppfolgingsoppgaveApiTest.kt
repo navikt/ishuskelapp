@@ -604,7 +604,7 @@ class OppfolgingsoppgaveApiTest {
         inner class UnhappyPath {
             @Test
             fun `Returns status NotFound if oppfolgingsoppgave does not exist`() {
-                val requestDTO = OppfolgingsoppgaveRequestDTO(
+                val requestDTO = EditedOppfolgingsoppgaveDTO(
                     tekst = null,
                     oppfolgingsgrunn = Oppfolgingsgrunn.TA_KONTAKT_SYKEMELDT,
                     frist = LocalDate.now().plusDays(1),
