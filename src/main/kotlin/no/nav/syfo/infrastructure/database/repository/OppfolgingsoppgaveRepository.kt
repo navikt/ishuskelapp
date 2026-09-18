@@ -80,6 +80,7 @@ class OppfolgingsoppgaveRepository(
         oppfolgingsoppgave: Oppfolgingsoppgave
     ): UUID {
         database.connection.use { connection ->
+            connection.lockOppfolgingsoppgave(oppfolgingsoppgaveId)
             connection.updateOppfolgingsoppgaveVersjonSetNotLatest(oppfolgingsoppgaveId)
             connection.createOppfolgingsoppgaveVersjon(oppfolgingsoppgaveId, oppfolgingsoppgave)
             connection.updateOppfolgingsoppgave(oppfolgingsoppgave)
@@ -303,6 +304,17 @@ private fun DatabaseInterface.getOppfolgingsoppgaveVersjoner(oppfolgingsoppgaveI
         throw IllegalStateException("Multiple versions of oppfolgingsoppgave is marked as latest: $oppfolgingsoppgaveId")
     }
     return versjoner
+}
+
+private const val queryLockOppfolgingsoppgave = """
+    SELECT id FROM HUSKELAPP WHERE id = ? FOR UPDATE
+"""
+
+private fun Connection.lockOppfolgingsoppgave(oppfolgingsoppgaveId: Int) {
+    this.prepareStatement(queryLockOppfolgingsoppgave).use {
+        it.setInt(1, oppfolgingsoppgaveId)
+        it.executeQuery()
+    }
 }
 
 private const val updateOppfolgingsoppgaveVersjonSetNotLatest = """
