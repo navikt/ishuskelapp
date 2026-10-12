@@ -17,7 +17,7 @@ val mockk = "1.14.11"
 val nimbusJoseJwt = "10.10"
 val postgres = "42.7.13"
 val postgresEmbedded = "2.2.2"
-val postgresRuntimeVersion = "17.9.0"
+val postgresRuntimeVersion = "18.6.0"
 
 plugins {
     kotlin("jvm") version "2.4.20"
