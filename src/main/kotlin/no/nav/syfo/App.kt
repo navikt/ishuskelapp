@@ -20,7 +20,6 @@ import no.nav.syfo.infrastructure.kafka.identhendelse.IdenthendelseService
 import no.nav.syfo.infrastructure.kafka.identhendelse.launchIdenthendelseConsumer
 import no.nav.syfo.infrastructure.kafka.oppfolgingsoppgaveKafkaProducer
 import org.slf4j.LoggerFactory
-import java.util.concurrent.TimeUnit
 
 const val applicationPort = 8080
 
@@ -94,12 +93,11 @@ fun main() {
                 applicationState.ready = true
                 logger.info("Application is ready, running Java VM ${Runtime.version()}")
             }
-        }
-    )
 
-    Runtime.getRuntime().addShutdownHook(
-        Thread {
-            server.stop(10, 10, TimeUnit.SECONDS)
+            monitor.subscribe(ApplicationStopping) {
+                applicationState.ready = false
+                logger.info("Application is stopping")
+            }
         }
     )
 

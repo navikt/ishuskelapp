@@ -3,7 +3,7 @@ import com.adarshr.gradle.testlogger.theme.ThemeType
 group = "no.nav.syfo"
 version = "0.0.1"
 
-val confluentVersion = "8.3.0"
+val confluentVersion = "8.4.0"
 val flyway = "11.19.0"
 val hikari = "7.1.0"
 val jacksonDataType = "2.22.4"
@@ -35,7 +35,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
 
-    implementation("io.ktor:ktor-client-apache:$ktor")
+    implementation("io.ktor:ktor-client-apache5:$ktor")
     implementation("io.ktor:ktor-client-content-negotiation:$ktor")
     implementation("io.ktor:ktor-serialization-jackson:$ktor")
     implementation("io.ktor:ktor-server-auth-jwt:$ktor")
@@ -66,10 +66,9 @@ dependencies {
     }
     implementation("org.apache.kafka:kafka_2.13:$kafka", excludeLog4j)
     constraints {
-        implementation("commons-beanutils:commons-beanutils") {
-            because("org.apache.kafka:kafka_2.13:$kafka -> https://www.cve.org/CVERecord?id=CVE-2025-48734")
+        implementation("at.yawk.lz4:lz4-java") {
             version {
-                require("1.11.0")
+                require("1.11.4")
             }
         }
     }
@@ -78,6 +77,13 @@ dependencies {
     implementation("tools.jackson.core:jackson-databind:$jacksonDatabindVersion")
 
     implementation("io.confluent:kafka-avro-serializer:$confluentVersion", excludeLog4j)
+    constraints {
+        implementation("com.google.guava:guava") {
+            version {
+                require("33.8.0-jre")
+            }
+        }
+    }
 
     // Tests
     testImplementation(kotlin("test"))
